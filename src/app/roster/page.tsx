@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useGuildStore } from '@/lib/guildStore';
 import { Member } from '@/types/member';
 import JobEmblem from '@/components/tactical/JobEmblem';
@@ -8,12 +9,13 @@ import JobEmblemBar from '@/components/tactical/JobEmblemBar';
 import AutoSaveBadge from '@/components/common/AutoSaveBadge';
 import { JOB_FAMILIES, JOB_LOOKUP, getJobMeta } from '@/constants/jobs';
 
-type SortField = 'name' | 'job' | 'status' | 'gear';
+type SortField = 'name' | 'job' | 'status' | 'gear' | 'title';
 type SortDirection = 'asc' | 'desc';
 
 export default function RosterPage() {
   const { members, setMembers, saveToCloud, isSaving, lastSavedAt } = useGuildStore();
 
+  const [mounted, setMounted] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedFamily, setSelectedFamily] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -21,6 +23,10 @@ export default function RosterPage() {
   // Sorting state
   const [sortField, setSortField] = useState<SortField>('gear');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -49,6 +55,8 @@ export default function RosterPage() {
   const [formJob, setFormJob] = useState('Lord Knight');
   const [formGear, setFormGear] = useState('');
   const [formLevel, setFormLevel] = useState('');
+  const [formPosition, setFormPosition] = useState('');
+  const [formTitle, setFormTitle] = useState('');
   const [formStatus, setFormStatus] = useState<'ready' | 'leave'>('ready');
 
   // Count by family for top bar
@@ -69,7 +77,9 @@ export default function RosterPage() {
     return members.filter((m) => {
       const nameMatch = m.name?.toLowerCase().includes(query);
       const jobMatch = m.job?.toLowerCase().includes(query);
-      if (query && !nameMatch && !jobMatch) return false;
+      const posMatch = m.position?.toLowerCase().includes(query);
+      const titleMatch = m.title?.toLowerCase().includes(query);
+      if (query && !nameMatch && !jobMatch && !posMatch && !titleMatch) return false;
 
       if (selectedFamily) {
         const meta = JOB_LOOKUP[m.job?.trim().toLowerCase()];
@@ -87,6 +97,10 @@ export default function RosterPage() {
         comparison = (a.name || '').localeCompare(b.name || '', 'th', { sensitivity: 'base' });
       } else if (sortField === 'job') {
         comparison = (a.job || '').localeCompare(b.job || '', 'th', { sensitivity: 'base' });
+      } else if (sortField === 'title') {
+        const aText = `${a.position || ''} ${a.title || ''}`.trim();
+        const bText = `${b.position || ''} ${b.title || ''}`.trim();
+        comparison = aText.localeCompare(bText, 'th', { sensitivity: 'base' });
       } else if (sortField === 'status') {
         const aVal = a.status === 'ready' ? 1 : 0;
         const bVal = b.status === 'ready' ? 1 : 0;
@@ -138,6 +152,8 @@ export default function RosterPage() {
     setFormJob('Lord Knight');
     setFormGear('');
     setFormLevel('90');
+    setFormPosition('สมาชิกทั่วไป');
+    setFormTitle('');
     setFormStatus('ready');
     setModalOpen(true);
   };
@@ -148,6 +164,8 @@ export default function RosterPage() {
     setFormJob(m.job);
     setFormGear(m.gear ? String(m.gear) : '');
     setFormLevel(m.lv ? String(m.lv) : '90');
+    setFormPosition(m.position || '');
+    setFormTitle(m.title || '');
     setFormStatus(m.status);
     setModalOpen(true);
   };
@@ -167,6 +185,8 @@ export default function RosterPage() {
             job: formJob,
             gear: formGear ? parseInt(formGear, 10) : undefined,
             lv: formLevel ? parseInt(formLevel, 10) : undefined,
+            position: formPosition.trim() || undefined,
+            title: formTitle.trim() || undefined,
             status: formStatus,
             updatedAt: new Date().toISOString(),
           };
@@ -179,6 +199,8 @@ export default function RosterPage() {
         job: formJob,
         gear: formGear ? parseInt(formGear, 10) : undefined,
         lv: formLevel ? parseInt(formLevel, 10) : undefined,
+        position: formPosition.trim() || undefined,
+        title: formTitle.trim() || undefined,
         status: formStatus,
         updatedAt: new Date().toISOString(),
       };
@@ -291,6 +313,8 @@ export default function RosterPage() {
               <option value="name-desc">ชื่อสมาชิก (ฮ-ก / Z-A)</option>
               <option value="job-asc">สายอาชีพ (A-Z)</option>
               <option value="job-desc">สายอาชีพ (Z-A)</option>
+              <option value="title-asc">ตำแหน่ง / Title (ก-ฮ / A-Z)</option>
+              <option value="title-desc">ตำแหน่ง / Title (ฮ-ก / Z-A)</option>
               <option value="status-desc">สถานะ (พร้อมวอร์ก่อน)</option>
               <option value="status-asc">สถานะ (คนลาก่อน)</option>
             </select>
@@ -337,6 +361,16 @@ export default function RosterPage() {
                   </span>
                 </th>
                 <th
+                  onClick={() => handleSort('title')}
+                  className="py-3 px-3 cursor-pointer hover:text-white transition select-none group"
+                  title="คลิกเพื่อเรียงตามตำแหน่ง / Title"
+                >
+                  <span className="inline-flex items-center">
+                    ตำแหน่ง / Title
+                    {renderSortIcon('title')}
+                  </span>
+                </th>
+                <th
                   onClick={() => handleSort('status')}
                   className="py-3 px-3 cursor-pointer hover:text-white transition select-none group"
                   title="คลิกเพื่อเรียงตามสถานะ"
@@ -362,7 +396,7 @@ export default function RosterPage() {
             <tbody className="divide-y divide-slate-800/80">
               {sortedMembers.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-500">
+                  <td colSpan={7} className="py-12 text-center text-slate-500">
                     ไม่พบสมาชิกตามเงื่อนไขที่ค้นหา
                   </td>
                 </tr>
@@ -409,6 +443,23 @@ export default function RosterPage() {
                         </span>
                       </td>
 
+                      <td className="py-3 px-3 text-xs text-slate-300">
+                        {m.position || m.title ? (
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-semibold text-slate-200">
+                              {m.position || 'สมาชิกทั่วไป'}
+                            </span>
+                            {m.title && (
+                              <span className="text-slate-400 font-normal">
+                                ({m.title})
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-slate-500">-</span>
+                        )}
+                      </td>
+
                       <td className="py-3 px-3">
                         {m.status === 'leave' ? (
                           <span className="inline-flex items-center gap-1 rounded-full bg-rose-950/40 border border-rose-500/30 px-2 py-0.5 text-[10px] font-bold text-rose-300">
@@ -453,8 +504,8 @@ export default function RosterPage() {
       </div>
 
       {/* Add / Edit Member Modal */}
-      {modalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+      {modalOpen && mounted && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-[#0e1422] border border-slate-800 rounded-3xl p-6 w-full max-w-md space-y-4 shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="font-extrabold text-white text-base">
@@ -496,6 +547,30 @@ export default function RosterPage() {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-400 mb-1">ตำแหน่งในกิลด์ (Position)</label>
+                  <input
+                    type="text"
+                    value={formPosition}
+                    onChange={(e) => setFormPosition(e.target.value)}
+                    placeholder="เช่น นักออกแบบ, เสมียน, สมาชิกทั่วไป"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 mb-1">ฉายา (Title)</label>
+                  <input
+                    type="text"
+                    value={formTitle}
+                    onChange={(e) => setFormTitle(e.target.value)}
+                    placeholder="เช่น Pathfinder III, Pathfinder IV"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -551,7 +626,8 @@ export default function RosterPage() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
