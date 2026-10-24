@@ -8,6 +8,7 @@ import JobEmblem from '@/components/tactical/JobEmblem';
 import JobEmblemBar from '@/components/tactical/JobEmblemBar';
 import AutoSaveBadge from '@/components/common/AutoSaveBadge';
 import { JOB_FAMILIES, JOB_LOOKUP, getJobMeta } from '@/constants/jobs';
+import { getTitleMeta, TITLE_LIST } from '@/constants/titles';
 
 type SortField = 'name' | 'job' | 'status' | 'gear' | 'title';
 type SortDirection = 'asc' | 'desc';
@@ -443,21 +444,35 @@ export default function RosterPage() {
                         </span>
                       </td>
 
-                      <td className="py-3 px-3 text-xs text-slate-300">
-                        {m.position || m.title ? (
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="font-semibold text-slate-200">
-                              {m.position || 'สมาชิกทั่วไป'}
+                      <td className="py-2.5 px-3">
+                        <div className="flex flex-col gap-1 items-start min-w-[130px]">
+                          {m.position && (
+                            <span className="font-semibold text-xs text-slate-200">
+                              {m.position}
                             </span>
-                            {m.title && (
-                              <span className="text-slate-400 font-normal">
-                                ({m.title})
-                              </span>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-slate-500">-</span>
-                        )}
+                          )}
+                          {(() => {
+                            const titleMeta = getTitleMeta(m.title);
+                            if (titleMeta) {
+                              return (
+                                <img
+                                  src={titleMeta.image}
+                                  alt={titleMeta.name}
+                                  title={titleMeta.name}
+                                  className="h-7 w-auto object-contain rounded shadow-sm hover:scale-105 transition-transform cursor-pointer"
+                                />
+                              );
+                            }
+                            if (m.title) {
+                              return (
+                                <span className="text-slate-400 text-xs font-normal">
+                                  ({m.title})
+                                </span>
+                              );
+                            }
+                            return !m.position ? <span className="text-slate-500 text-xs">-</span> : null;
+                          })()}
+                        </div>
                       </td>
 
                       <td className="py-3 px-3">
@@ -563,13 +578,28 @@ export default function RosterPage() {
 
                 <div>
                   <label className="block text-slate-400 mb-1">ฉายา (Title)</label>
-                  <input
-                    type="text"
-                    value={formTitle}
-                    onChange={(e) => setFormTitle(e.target.value)}
-                    placeholder="เช่น Pathfinder III, Pathfinder IV"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500"
-                  />
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={formTitle}
+                      onChange={(e) => setFormTitle(e.target.value)}
+                      list="rosterTitleOptions"
+                      placeholder="เช่น Pathfinder III"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500"
+                    />
+                    <datalist id="rosterTitleOptions">
+                      {TITLE_LIST.map((t) => (
+                        <option key={t.key} value={t.name} />
+                      ))}
+                    </datalist>
+                    {getTitleMeta(formTitle) && (
+                      <img
+                        src={getTitleMeta(formTitle)!.image}
+                        alt="Preview"
+                        className="h-8 w-auto object-contain rounded border border-slate-700 shrink-0"
+                      />
+                    )}
+                  </div>
                 </div>
               </div>
 
