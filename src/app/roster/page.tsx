@@ -6,11 +6,12 @@ import { useGuildStore } from '@/lib/guildStore';
 import { Member } from '@/types/member';
 import JobEmblem from '@/components/tactical/JobEmblem';
 import JobEmblemBar from '@/components/tactical/JobEmblemBar';
+import TitleMedal from '@/components/tactical/TitleMedal';
 import AutoSaveBadge from '@/components/common/AutoSaveBadge';
 import { JOB_FAMILIES, JOB_LOOKUP, getJobMeta } from '@/constants/jobs';
-import { getTitleMeta, TITLE_LIST } from '@/constants/titles';
+import { getTitleMeta, TITLE_LIST, getTitleRankWeight } from '@/constants/titles';
 
-type SortField = 'name' | 'job' | 'status' | 'gear' | 'title';
+type SortField = 'name' | 'job' | 'position' | 'title' | 'status' | 'gear';
 type SortDirection = 'asc' | 'desc';
 
 export default function RosterPage() {
@@ -98,10 +99,24 @@ export default function RosterPage() {
         comparison = (a.name || '').localeCompare(b.name || '', 'th', { sensitivity: 'base' });
       } else if (sortField === 'job') {
         comparison = (a.job || '').localeCompare(b.job || '', 'th', { sensitivity: 'base' });
+      } else if (sortField === 'position') {
+        const aVal = a.position || 'สมาชิกทั่วไป';
+        const bVal = b.position || 'สมาชิกทั่วไป';
+        comparison = aVal.localeCompare(bVal, 'th', { sensitivity: 'base' });
       } else if (sortField === 'title') {
-        const aText = `${a.position || ''} ${a.title || ''}`.trim();
-        const bText = `${b.position || ''} ${b.title || ''}`.trim();
-        comparison = aText.localeCompare(bText, 'th', { sensitivity: 'base' });
+        const aRank = getTitleRankWeight(a.title);
+        const bRank = getTitleRankWeight(b.title);
+        if (aRank === 0 && bRank === 0) {
+          comparison = (a.title || '').localeCompare(b.title || '', 'th', { sensitivity: 'base' });
+        } else if (aRank === 0) {
+          return 1;
+        } else if (bRank === 0) {
+          return -1;
+        } else if (aRank !== bRank) {
+          comparison = aRank - bRank;
+        } else {
+          comparison = (a.title || '').localeCompare(b.title || '', 'th', { sensitivity: 'base' });
+        }
       } else if (sortField === 'status') {
         const aVal = a.status === 'ready' ? 1 : 0;
         const bVal = b.status === 'ready' ? 1 : 0;
@@ -362,12 +377,22 @@ export default function RosterPage() {
                   </span>
                 </th>
                 <th
-                  onClick={() => handleSort('title')}
+                  onClick={() => handleSort('position')}
                   className="py-3 px-3 cursor-pointer hover:text-white transition select-none group"
-                  title="คลิกเพื่อเรียงตามตำแหน่ง / Title"
+                  title="คลิกเพื่อเรียงตามตำแหน่ง"
                 >
                   <span className="inline-flex items-center">
-                    ตำแหน่ง / Title
+                    ตำแหน่ง
+                    {renderSortIcon('position')}
+                  </span>
+                </th>
+                <th
+                  onClick={() => handleSort('title')}
+                  className="py-3 px-3 cursor-pointer hover:text-white transition select-none group"
+                  title="คลิกเพื่อเรียงตาม Title"
+                >
+                  <span className="inline-flex items-center">
+                    Title
                     {renderSortIcon('title')}
                   </span>
                 </th>
@@ -397,7 +422,7 @@ export default function RosterPage() {
             <tbody className="divide-y divide-slate-800/80">
               {sortedMembers.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-500">
+                  <td colSpan={8} className="py-12 text-center text-slate-500">
                     ไม่พบสมาชิกตามเงื่อนไขที่ค้นหา
                   </td>
                 </tr>
@@ -445,34 +470,22 @@ export default function RosterPage() {
                       </td>
 
                       <td className="py-2.5 px-3">
-                        <div className="flex flex-col gap-1 items-start min-w-[130px]">
-                          {m.position && (
-                            <span className="font-semibold text-xs text-slate-200">
-                              {m.position}
+                        <span className="font-semibold text-xs text-slate-200">
+                          {m.position || 'สมาชิกทั่วไป'}
+                        </span>
+                      </td>
+
+                      <td className="py-2.5 px-3">
+                        {m.title ? (
+                          <div className="flex items-center gap-2">
+                            <TitleMedal title={m.title} size={28} />
+                            <span className="text-xs text-slate-300 font-medium whitespace-nowrap">
+                              {m.title}
                             </span>
-                          )}
-                          {(() => {
-                            const titleMeta = getTitleMeta(m.title);
-                            if (titleMeta) {
-                              return (
-                                <img
-                                  src={titleMeta.image}
-                                  alt={titleMeta.name}
-                                  title={titleMeta.name}
-                                  className="h-7 w-auto object-contain rounded shadow-sm hover:scale-105 transition-transform cursor-pointer"
-                                />
-                              );
-                            }
-                            if (m.title) {
-                              return (
-                                <span className="text-slate-400 text-xs font-normal">
-                                  ({m.title})
-                                </span>
-                              );
-                            }
-                            return !m.position ? <span className="text-slate-500 text-xs">-</span> : null;
-                          })()}
-                        </div>
+                          </div>
+                        ) : (
+                          <span className="text-slate-500 text-xs">-</span>
+                        )}
                       </td>
 
                       <td className="py-3 px-3">
@@ -592,12 +605,10 @@ export default function RosterPage() {
                         <option key={t.key} value={t.name} />
                       ))}
                     </datalist>
-                    {getTitleMeta(formTitle) && (
-                      <img
-                        src={getTitleMeta(formTitle)!.image}
-                        alt="Preview"
-                        className="h-8 w-auto object-contain rounded border border-slate-700 shrink-0"
-                      />
+                    {formTitle.trim() && (
+                      <div className="shrink-0">
+                        <TitleMedal title={formTitle} size={34} />
+                      </div>
                     )}
                   </div>
                 </div>
