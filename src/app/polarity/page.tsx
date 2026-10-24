@@ -182,59 +182,64 @@ export default function PolarityPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
-          {/* Date & Member Stats (Top Banner right section) */}
-          <div className="bg-slate-100 dark:bg-indigo-950/80 border border-slate-300 dark:border-indigo-500/50 rounded-xl px-3 py-1.5 flex items-center gap-2 shadow-sm">
-            <span className="text-slate-700 dark:text-indigo-200 font-semibold text-xs flex items-center gap-1">
-              <span>📅</span>
-              <span>ข้อมูลวันที่:</span>
-            </span>
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="bg-white dark:bg-slate-900/90 border border-slate-300 dark:border-indigo-500/40 hover:border-indigo-400 rounded-lg px-2 py-0.5 text-slate-900 dark:text-white font-bold mono text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/40 cursor-pointer shadow-inner"
-            />
-            <button
-              type="button"
-              onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
-              className="px-2 py-0.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow transition active:scale-95 cursor-pointer"
-              title="กลับมาวันนี้"
-            >
-              วันนี้
-            </button>
+        <div className="flex flex-wrap items-center gap-3 lg:justify-end">
+          {/* Status & Date */}
+          <div className="flex items-center gap-2">
+            <div className="bg-slate-100 dark:bg-slate-900/90 border border-slate-300 dark:border-indigo-500/40 rounded-xl px-2.5 py-1.5 flex items-center gap-2 shadow-xs text-xs">
+              <span className="text-slate-700 dark:text-indigo-200 font-semibold flex items-center gap-1">
+                <span>📅</span>
+                <span className="hidden sm:inline">ข้อมูลวันที่:</span>
+              </span>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="bg-white dark:bg-slate-950 border border-slate-300 dark:border-indigo-500/30 hover:border-indigo-400 rounded-lg px-2 py-0.5 text-slate-900 dark:text-white font-bold font-mono text-xs focus:outline-none cursor-pointer"
+              />
+              <button
+                type="button"
+                onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
+                className="px-2 py-0.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-[11px] shadow transition active:scale-95 cursor-pointer"
+                title="กลับมาวันนี้"
+              >
+                วันนี้
+              </button>
+            </div>
+
+            <AutoSaveBadge />
           </div>
 
-          <AutoSaveBadge />
+          {/* Action Buttons Toolbar */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleAddParty}
+              className="flex items-center gap-1.5 rounded-xl border border-amber-300 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-600/25 px-3 py-1.5 text-xs font-semibold text-amber-700 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-600/40 transition cursor-pointer whitespace-nowrap"
+            >
+              <span>➕</span>
+              <span>เพิ่มปาร์ตี้</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={handleAddParty}
-            className="flex items-center gap-1.5 rounded-xl border border-amber-300 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-600/25 px-3.5 py-1.5 text-xs font-semibold text-amber-700 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-600/40 hover:text-amber-900 dark:hover:text-white transition cursor-pointer"
-          >
-            <span>➕</span>
-            <span>เพิ่มปาร์ตี้</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setIsExportImageModalOpen(true)}
+              className="flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition shadow-sm cursor-pointer whitespace-nowrap"
+              title="ส่งออกรูปภาพผังสงครามดาว (PNG)"
+            >
+              <span>📸</span>
+              <span>ส่งออกรูป</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setIsExportImageModalOpen(true)}
-            className="flex items-center gap-1.5 rounded-xl border border-amber-300 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900/70 px-3.5 py-1.5 text-xs font-semibold text-amber-700 dark:text-amber-200 transition shadow-sm cursor-pointer"
-            title="ส่งออกรูปภาพผังสงครามดาว (PNG)"
-          >
-            <span>📸</span>
-            <span>ส่งออกรูปผังทัพ</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={saveToCloud}
-            disabled={isSaving}
-            className="flex items-center gap-1.5 rounded-xl border border-indigo-300 dark:border-indigo-500/40 bg-indigo-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-indigo-500 transition shadow-sm cursor-pointer"
-          >
-            <span>💾</span>
-            <span>{isSaving ? 'กำลังบันทึก...' : 'บันทึกขึ้น Cloud'}</span>
-          </button>
+            <button
+              type="button"
+              onClick={saveToCloud}
+              disabled={isSaving}
+              className="flex items-center gap-1.5 rounded-xl border border-indigo-400 dark:border-indigo-500/50 bg-indigo-600 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-indigo-500 transition shadow-sm cursor-pointer whitespace-nowrap disabled:opacity-50"
+            >
+              <span>💾</span>
+              <span>{isSaving ? 'กำลังบันทึก...' : 'บันทึก Cloud'}</span>
+            </button>
+          </div>
         </div>
       </div>
 
