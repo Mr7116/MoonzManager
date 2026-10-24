@@ -1,9 +1,15 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 export default function DonateCard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <>
@@ -38,15 +44,15 @@ export default function DonateCard() {
         </div>
       </div>
 
-      {/* Donate QR Zoom Modal */}
-      {isModalOpen && (
+      {/* Donate QR Zoom Modal (Rendered to body to stay above all elements) */}
+      {isModalOpen && mounted && createPortal(
         <div
           onClick={() => setIsModalOpen(false)}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-fadeIn"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 p-4 backdrop-blur-md"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-sm rounded-3xl border border-amber-500/50 bg-slate-900 p-6 space-y-4 text-center shadow-2xl"
+            className="relative w-full max-w-sm rounded-3xl border border-amber-500/50 bg-[#0d121f] p-6 space-y-4 text-center shadow-2xl"
           >
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="text-sm sm:text-base font-bold text-amber-300 flex items-center gap-1.5">
@@ -96,8 +102,10 @@ export default function DonateCard() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
 }
+
