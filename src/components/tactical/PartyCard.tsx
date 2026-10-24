@@ -103,32 +103,33 @@ export const PartyCard: React.FC<PartyCardProps> = ({
           </div>
         </div>
 
-        {/* Line 2: Team Identity & Move Team Dropdown */}
-        <div className="flex items-center justify-between gap-2 min-w-0 text-xs">
+        {/* Line 2: Team Identity */}
+        <div className="flex items-center justify-between gap-2 min-w-0">
           <span
             title={teamName}
-            className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300/70 dark:border-slate-700 truncate max-w-[140px] shrink"
+            className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300/70 dark:border-slate-700 truncate max-w-full"
           >
             {teamName}
           </span>
-
-          {!isReadOnly && onChangeTeam && allTeams.length > 1 && (
-            <div className="flex items-center gap-1 min-w-0 flex-1 justify-end">
-              <span className="text-[10px] text-slate-400 shrink-0">ย้ายไป:</span>
-              <select
-                value={party.teamId}
-                onChange={(e) => onChangeTeam(e.target.value)}
-                className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 rounded-lg px-2 py-1 text-[11px] text-slate-700 dark:text-slate-300 focus:outline-none max-w-[130px] truncate cursor-pointer"
-              >
-                {allTeams.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
         </div>
+
+        {/* Line 3: Move Team Dropdown (New Row) */}
+        {!isReadOnly && onChangeTeam && allTeams.length > 1 && (
+          <div className="flex items-center gap-1.5 min-w-0 pt-0.5">
+            <span className="text-[11px] text-slate-500 dark:text-slate-400 shrink-0 font-medium">ย้ายไป:</span>
+            <select
+              value={party.teamId}
+              onChange={(e) => onChangeTeam(e.target.value)}
+              className="flex-1 min-w-0 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 rounded-lg px-2.5 py-1 text-[11px] text-slate-700 dark:text-slate-200 focus:outline-none truncate cursor-pointer font-medium"
+            >
+              {allTeams.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Line 3: Tactical Controls (Lane - GVG only) */}
         {showLane && (
