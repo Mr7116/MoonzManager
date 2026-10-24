@@ -24,6 +24,7 @@ export default function SiegePage() {
     applyPresetToParty,
     selectedDate,
     setSelectedDate,
+    isLoading,
     isSaving,
     saveToCloud,
   } = useGuildStore();
@@ -42,28 +43,46 @@ export default function SiegePage() {
 
   // Sync initial team into store if parties exist but no teams are recorded
   useEffect(() => {
+    if (isLoading) return;
     if (siegeTeams.length === 0 && siegeParties.length > 0) {
       setSiegeTeams([{ id: 'siege_team_1', name: 'ทีมปราสาท 1', color: 'sky', field: 'main' }]);
     }
-  }, [siegeTeams.length, siegeParties.length, setSiegeTeams]);
+  }, [isLoading, siegeTeams.length, siegeParties.length, setSiegeTeams]);
 
-  // Migrate legacy parties (e.g. teamId: 'siege_main' or unknown) to first effective team
+  // If parties have teams not currently in siegeTeams, restore those teams instead of wiping them
   useEffect(() => {
-    if (effectiveTeams.length > 0 && siegeParties.length > 0) {
-      const knownIds = new Set(effectiveTeams.map((t) => t.id));
-      const hasLegacy = siegeParties.some((p) => !p.teamId || !knownIds.has(p.teamId));
-      if (hasLegacy) {
-        setSiegeParties((prev) =>
-          prev.map((p) => {
-            if (!p.teamId || !knownIds.has(p.teamId)) {
-              return { ...p, teamId: effectiveTeams[0].id };
-            }
-            return p;
-          })
-        );
-      }
+    if (isLoading) return;
+    const knownIds = new Set(siegeTeams.map((t) => t.id));
+    const unrecordedTeamIds = Array.from(new Set(siegeParties.map((p) => p.teamId).filter(Boolean)))
+      .filter((id) => id !== 'siege_main' && !knownIds.has(id!));
+
+    if (unrecordedTeamIds.length > 0) {
+      const recoveredTeams: Team[] = unrecordedTeamIds.map((tid, idx) => ({
+        id: tid!,
+        name: `ทีมปราสาท ${siegeTeams.length + idx + 1}`,
+        color: 'sky',
+        field: 'main',
+      }));
+      setSiegeTeams((prev) => [...prev, ...recoveredTeams]);
     }
-  }, [effectiveTeams, siegeParties, setSiegeParties]);
+  }, [isLoading, siegeTeams, siegeParties, setSiegeTeams]);
+
+  // Only migrate truly orphaned parties (missing teamId or legacy 'siege_main')
+  useEffect(() => {
+    if (isLoading || effectiveTeams.length === 0) return;
+    const hasOrphans = siegeParties.some((p) => !p.teamId || p.teamId === 'siege_main');
+    if (hasOrphans) {
+      const fallbackId = effectiveTeams[0].id;
+      setSiegeParties((prev) =>
+        prev.map((p) => {
+          if (!p.teamId || p.teamId === 'siege_main') {
+            return { ...p, teamId: fallbackId };
+          }
+          return p;
+        })
+      );
+    }
+  }, [isLoading, effectiveTeams, siegeParties, setSiegeParties]);
 
   // Assigned members in Siege
   const assignedMemberIds = useMemo(() => {
