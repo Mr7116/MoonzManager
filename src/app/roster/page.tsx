@@ -8,12 +8,39 @@ import JobEmblemBar from '@/components/tactical/JobEmblemBar';
 import AutoSaveBadge from '@/components/common/AutoSaveBadge';
 import { JOB_FAMILIES, JOB_LOOKUP, getJobMeta } from '@/constants/jobs';
 
+type SortField = 'name' | 'job' | 'status' | 'gear';
+type SortDirection = 'asc' | 'desc';
+
 export default function RosterPage() {
   const { members, setMembers, saveToCloud, isSaving, lastSavedAt } = useGuildStore();
 
   const [search, setSearch] = useState('');
   const [selectedFamily, setSelectedFamily] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // Sorting state
+  const [sortField, setSortField] = useState<SortField>('gear');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortDirection(field === 'gear' ? 'desc' : 'asc');
+    }
+  };
+
+  const renderSortIcon = (field: SortField) => {
+    if (sortField !== field) {
+      return <span className="text-slate-600 ml-1 text-[10px]">↕</span>;
+    }
+    return (
+      <span className="text-amber-400 ml-1 text-[11px] font-bold">
+        {sortDirection === 'asc' ? '▲' : '▼'}
+      </span>
+    );
+  };
 
   // Modal State for Add / Edit
   const [modalOpen, setModalOpen] = useState(false);
@@ -52,10 +79,32 @@ export default function RosterPage() {
     });
   }, [members, search, selectedFamily]);
 
+  // Sorted members based on active sortField and sortDirection
+  const sortedMembers = useMemo(() => {
+    return [...filteredMembers].sort((a, b) => {
+      let comparison = 0;
+      if (sortField === 'name') {
+        comparison = (a.name || '').localeCompare(b.name || '', 'th', { sensitivity: 'base' });
+      } else if (sortField === 'job') {
+        comparison = (a.job || '').localeCompare(b.job || '', 'th', { sensitivity: 'base' });
+      } else if (sortField === 'status') {
+        const aVal = a.status === 'ready' ? 1 : 0;
+        const bVal = b.status === 'ready' ? 1 : 0;
+        comparison = aVal - bVal;
+      } else if (sortField === 'gear') {
+        const aVal = Number(a.gear) || 0;
+        const bVal = Number(b.gear) || 0;
+        comparison = aVal - bVal;
+      }
+
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  }, [filteredMembers, sortField, sortDirection]);
+
   // Bulk selection
   const handleToggleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedIds(new Set(filteredMembers.map((m) => m.id)));
+      setSelectedIds(new Set(sortedMembers.map((m) => m.id)));
     } else {
       setSelectedIds(new Set());
     }
@@ -223,8 +272,33 @@ export default function RosterPage() {
           />
         </div>
 
-        <div className="text-xs text-slate-400">
-          แสดงผล <strong className="text-white">{filteredMembers.length}</strong> จากทั้งหมด {members.length} คน
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+          {/* Quick Sort Dropdown */}
+          <div className="flex items-center gap-1.5 text-xs">
+            <span className="text-slate-400 shrink-0">เรียงตาม:</span>
+            <select
+              value={`${sortField}-${sortDirection}`}
+              onChange={(e) => {
+                const [f, d] = e.target.value.split('-');
+                setSortField(f as SortField);
+                setSortDirection(d as SortDirection);
+              }}
+              className="bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5 text-xs text-amber-300 font-medium focus:outline-none focus:border-indigo-500 cursor-pointer"
+            >
+              <option value="gear-desc">Gear Score (มาก ➔ น้อย)</option>
+              <option value="gear-asc">Gear Score (น้อย ➔ มาก)</option>
+              <option value="name-asc">ชื่อสมาชิก (ก-ฮ / A-Z)</option>
+              <option value="name-desc">ชื่อสมาชิก (ฮ-ก / Z-A)</option>
+              <option value="job-asc">สายอาชีพ (A-Z)</option>
+              <option value="job-desc">สายอาชีพ (Z-A)</option>
+              <option value="status-desc">สถานะ (พร้อมวอร์ก่อน)</option>
+              <option value="status-asc">สถานะ (คนลาก่อน)</option>
+            </select>
+          </div>
+
+          <div className="text-xs text-slate-400 shrink-0">
+            แสดงผล <strong className="text-white">{sortedMembers.length}</strong> จากทั้งหมด {members.length} คน
+          </div>
         </div>
       </div>
 
@@ -237,27 +311,63 @@ export default function RosterPage() {
                 <th className="py-3 px-4 w-10">
                   <input
                     type="checkbox"
-                    checked={selectedIds.size === filteredMembers.length && filteredMembers.length > 0}
+                    checked={selectedIds.size === sortedMembers.length && sortedMembers.length > 0}
                     onChange={(e) => handleToggleSelectAll(e.target.checked)}
                     className="rounded border-slate-700 bg-slate-950 text-indigo-600"
                   />
                 </th>
-                <th className="py-3 px-3">สมาชิก</th>
-                <th className="py-3 px-3">สายอาชีพ</th>
-                <th className="py-3 px-3">สถานะ</th>
-                <th className="py-3 px-3">Gear Score</th>
+                <th
+                  onClick={() => handleSort('name')}
+                  className="py-3 px-3 cursor-pointer hover:text-white transition select-none group"
+                  title="คลิกเพื่อเรียงตามชื่อสมาชิก"
+                >
+                  <span className="inline-flex items-center">
+                    สมาชิก
+                    {renderSortIcon('name')}
+                  </span>
+                </th>
+                <th
+                  onClick={() => handleSort('job')}
+                  className="py-3 px-3 cursor-pointer hover:text-white transition select-none group"
+                  title="คลิกเพื่อเรียงตามสายอาชีพ"
+                >
+                  <span className="inline-flex items-center">
+                    สายอาชีพ
+                    {renderSortIcon('job')}
+                  </span>
+                </th>
+                <th
+                  onClick={() => handleSort('status')}
+                  className="py-3 px-3 cursor-pointer hover:text-white transition select-none group"
+                  title="คลิกเพื่อเรียงตามสถานะ"
+                >
+                  <span className="inline-flex items-center">
+                    สถานะ
+                    {renderSortIcon('status')}
+                  </span>
+                </th>
+                <th
+                  onClick={() => handleSort('gear')}
+                  className="py-3 px-3 cursor-pointer hover:text-white transition select-none group"
+                  title="คลิกเพื่อเรียงตาม Gear Score"
+                >
+                  <span className="inline-flex items-center">
+                    Gear Score
+                    {renderSortIcon('gear')}
+                  </span>
+                </th>
                 <th className="py-3 px-3 text-right">จัดการ</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/80">
-              {filteredMembers.length === 0 ? (
+              {sortedMembers.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-slate-500">
                     ไม่พบสมาชิกตามเงื่อนไขที่ค้นหา
                   </td>
                 </tr>
               ) : (
-                filteredMembers.map((m) => {
+                sortedMembers.map((m) => {
                   const meta = getJobMeta(m.job);
                   const isChecked = selectedIds.has(m.id);
 
