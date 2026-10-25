@@ -8,6 +8,16 @@ export interface BidRecord {
   note?: string;
 }
 
+export interface AuctionRound {
+  id: string;
+  name: string;
+  date: string;
+  status: 'active' | 'completed' | 'archived';
+  createdAt: string;
+  closedAt?: string;
+  note?: string;
+}
+
 export interface AuctionEntry {
   id: string;
   memberId: string;
@@ -18,6 +28,7 @@ export interface AuctionEntry {
 
 export interface AuctionItem {
   id: string;
+  roundId?: string;
   accessoryId: number;
   accessoryName: string;
   accessoryLevel?: number;

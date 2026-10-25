@@ -3,10 +3,12 @@
 import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
 import { useGuildStore } from '@/lib/guildStore';
-import { AuctionItem } from '@/types/auction';
+import { AuctionItem, AuctionRound } from '@/types/auction';
 import AddAuctionModal from '@/components/modals/AddAuctionModal';
 import RegisterMembersModal from '@/components/modals/RegisterMembersModal';
 import LuckyWheelModal from '@/components/modals/LuckyWheelModal';
+import CreateRoundModal from '@/components/modals/CreateRoundModal';
+import RoundHistoryModal from '@/components/modals/RoundHistoryModal';
 import AutoSaveBadge from '@/components/common/AutoSaveBadge';
 import JobEmblem from '@/components/tactical/JobEmblem';
 
@@ -15,6 +17,13 @@ export default function AuctionPage() {
     guildName,
     members,
     auctionItems,
+    auctionRounds,
+    activeRoundId,
+    setActiveRoundId,
+    createAuctionRound,
+    completeAuctionRound,
+    reopenAuctionRound,
+    deleteAuctionRound,
     addAuctionItems,
     startAuction,
     startAllPendingAuctions,
@@ -31,8 +40,16 @@ export default function AuctionPage() {
 
   // Modals state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isCreateRoundOpen, setIsCreateRoundOpen] = useState(false);
+  const [isRoundHistoryOpen, setIsRoundHistoryOpen] = useState(false);
   const [registerAuctionId, setRegisterAuctionId] = useState<string | null>(null);
   const [wheelAuctionId, setWheelAuctionId] = useState<string | null>(null);
+
+  // Active round object
+  const currentRound: AuctionRound | null = useMemo(() => {
+    if (auctionRounds.length === 0) return null;
+    return auctionRounds.find((r) => r.id === activeRoundId) || auctionRounds[0];
+  }, [auctionRounds, activeRoundId]);
 
   // Active items for modals (always fetched from live state)
   const registerAuction = useMemo(() => {
@@ -43,9 +60,18 @@ export default function AuctionPage() {
     return auctionItems.find((a) => a.id === wheelAuctionId) || null;
   }, [auctionItems, wheelAuctionId]);
 
-  // Filtered items
-  const filteredItems = useMemo(() => {
+  // Items belonging to current round
+  const roundItems = useMemo(() => {
+    if (!currentRound) return auctionItems;
     return auctionItems.filter((item) => {
+      const rId = item.roundId || auctionRounds[0]?.id || 'round_default';
+      return rId === currentRound.id;
+    });
+  }, [auctionItems, currentRound, auctionRounds]);
+
+  // Filtered items (by tab and search within the round)
+  const filteredItems = useMemo(() => {
+    return roundItems.filter((item) => {
       if (activeTab === 'pending' && item.status !== 'pending') return false;
       if (activeTab === 'active' && item.status !== 'active') return false;
       if (activeTab === 'ended' && item.status !== 'ended') return false;
@@ -60,14 +86,14 @@ export default function AuctionPage() {
       }
       return true;
     });
-  }, [auctionItems, activeTab, search]);
+  }, [roundItems, activeTab, search]);
 
-  // Statistics
+  // Statistics for currently selected round
   const stats = useMemo(() => {
-    const pendingCount = auctionItems.filter((a) => a.status === 'pending').length;
-    const activeCount = auctionItems.filter((a) => a.status === 'active').length;
-    const endedCount = auctionItems.filter((a) => a.status === 'ended').length;
-    const totalEntriesCount = auctionItems.reduce((sum, a) => sum + (a.entries?.length || 0), 0);
+    const pendingCount = roundItems.filter((a) => a.status === 'pending').length;
+    const activeCount = roundItems.filter((a) => a.status === 'active').length;
+    const endedCount = roundItems.filter((a) => a.status === 'ended').length;
+    const totalEntriesCount = roundItems.reduce((sum, a) => sum + (a.entries?.length || 0), 0);
 
     return {
       pendingCount,
@@ -75,7 +101,7 @@ export default function AuctionPage() {
       endedCount,
       totalEntriesCount,
     };
-  }, [auctionItems]);
+  }, [roundItems]);
 
   const handleStartAuction = (item: AuctionItem) => {
     startAuction(item.id);
@@ -83,7 +109,7 @@ export default function AuctionPage() {
 
   const handleStartAllPending = () => {
     if (stats.pendingCount === 0) return;
-    if (window.confirm(`คุณต้องการเปิดรับรายชื่อไอเทมทั้งหมดที่รออยู่จำนวน ${stats.pendingCount} ชิ้นพร้อมกันหรือไม่?`)) {
+    if (window.confirm(`คุณต้องการเปิดรับรายชื่อไอเทมทั้งหมดที่รออยู่ในรอบนี้จำนวน ${stats.pendingCount} ชิ้นพร้อมกันหรือไม่?`)) {
       startAllPendingAuctions();
     }
   };
@@ -101,24 +127,24 @@ export default function AuctionPage() {
   };
 
   return (
-    <div className="mx-auto max-w-[1600px] px-3 py-4 sm:px-6 space-y-5">
+    <div className="mx-auto max-w-[1600px] px-3 py-4 sm:px-6 space-y-4 sm:space-y-5">
       {/* Top Banner */}
       <div className="flex flex-col gap-4 rounded-3xl border border-rose-500/30 bg-white dark:bg-[#0d121f]/95 p-4 sm:p-5 shadow-xl lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-3">
-          <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-500/20 via-pink-500/20 to-amber-500/20 text-2xl border border-rose-500/40 shadow-sm text-amber-400">
+          <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-500/20 via-pink-500/20 to-amber-500/20 text-2xl border border-rose-500/40 shadow-sm text-amber-400 shrink-0">
             🎡
           </span>
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-wide">
-                สุ่มแจกไอเทมกิลด์ด้วยวงล้อ (Lucky Wheel Raffle) — {guildName}
+                สุ่มแจกไอเทมกิลด์ (Lucky Wheel Raffle) — {guildName}
               </h1>
               <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-500/15 border border-rose-500/40 text-rose-700 dark:text-rose-300">
                 💎 Accessory Quality = Red (Lv.90)
               </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              เพิ่มรายการของดรอปเป็น List ให้สมาชิกส่งรายชื่อเข้ามา แล้วสุ่มหาผู้โชคดีด้วยวงล้อสุ่ม (Lucky Wheel)
+              จัดกลุ่มของดรอปเป็นรอบ (Rounds) เพื่อเปิดรับรายชื่อ สุ่มด้วยวงล้อ และเก็บบันทึกประวัติย้อนหลังได้ทุกสัปดาห์
             </p>
           </div>
         </div>
@@ -127,7 +153,7 @@ export default function AuctionPage() {
         <div className="flex flex-wrap items-center gap-2.5">
           <AutoSaveBadge />
 
-          {stats.pendingCount > 0 && (
+          {stats.pendingCount > 0 && currentRound?.status === 'active' && (
             <button
               type="button"
               onClick={handleStartAllPending}
@@ -144,12 +170,134 @@ export default function AuctionPage() {
             className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-rose-950/40 transition cursor-pointer"
           >
             <span>+</span>
-            <span>เพิ่มของประมูล (เป็น List)</span>
+            <span>เพิ่มของในรอบนี้ (เป็น List)</span>
           </button>
         </div>
       </div>
 
-      {/* Summary Stats Cards */}
+      {/* Round Selector Bar (ครอบรอบประมูล) */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-3.5 sm:p-4 rounded-3xl border border-slate-700 bg-gradient-to-r from-[#0d1322] via-[#0b101c] to-[#101728] shadow-lg">
+        {/* Left: Round Dropdown Selector & Status Pill */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-500/20 text-xl border border-amber-500/30 text-amber-400 shrink-0">
+              🎯
+            </span>
+            <div>
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                เลือกรอบการประมูล / สุ่มแจก (Round):
+              </div>
+              <select
+                value={currentRound?.id || ''}
+                onChange={(e) => setActiveRoundId(e.target.value)}
+                className="bg-[#070b14] border border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold text-white focus:border-rose-500 focus:outline-none cursor-pointer max-w-[280px] sm:max-w-md mt-0.5"
+              >
+                {auctionRounds.map((r) => {
+                  const rItems = auctionItems.filter((i) => (i.roundId || auctionRounds[0]?.id || 'round_default') === r.id);
+                  const isComp = r.status === 'completed';
+                  return (
+                    <option key={r.id} value={r.id}>
+                      {isComp ? '🏆 [จบแล้ว]' : '🟢 [เปิดอยู่]'} {r.name} ({r.date}) — {rItems.length} ชิ้น
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+          </div>
+
+          {/* Current Round Status Pill */}
+          {currentRound && (
+            <div className="flex items-center gap-1.5 self-end mb-1">
+              {currentRound.status === 'completed' ? (
+                <span className="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 flex items-center gap-1">
+                  <span>🏆</span>
+                  <span>รอบนี้จบการประมูลแล้ว</span>
+                </span>
+              ) : (
+                <span className="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>กำลังดำเนินการ</span>
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Right: Round Operations */}
+        <div className="flex flex-wrap items-center gap-2 self-start md:self-center">
+          {currentRound && currentRound.status === 'active' && (
+            <button
+              type="button"
+              onClick={() => {
+                if (window.confirm(`คุณต้องการปิดรอบ "${currentRound.name}" หรือไม่?`)) {
+                  completeAuctionRound(currentRound.id);
+                }
+              }}
+              className="px-3 py-1.5 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 text-indigo-300 text-xs font-bold transition cursor-pointer flex items-center gap-1"
+              title="บันทึกว่าจบการประมูลรอบนี้แล้ว"
+            >
+              <span>🔒</span>
+              <span>ปิดรอบนี้</span>
+            </button>
+          )}
+
+          {currentRound && currentRound.status === 'completed' && (
+            <button
+              type="button"
+              onClick={() => reopenAuctionRound(currentRound.id)}
+              className="px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-xs font-bold transition cursor-pointer flex items-center gap-1"
+            >
+              <span>🔄</span>
+              <span>เปิดรอบนี้ใหม่</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setIsRoundHistoryOpen(true)}
+            className="px-3 py-1.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition cursor-pointer flex items-center gap-1"
+          >
+            <span>📜</span>
+            <span>ดูรอบย้อนหลัง ({auctionRounds.length})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsCreateRoundOpen(true)}
+            className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white text-xs font-extrabold shadow-md shadow-amber-950/40 transition cursor-pointer flex items-center gap-1"
+          >
+            <span>+</span>
+            <span>สร้างรอบใหม่</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Historical Round Banner */}
+      {currentRound && currentRound.status === 'completed' && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 p-3 rounded-2xl border border-indigo-500/40 bg-gradient-to-r from-indigo-950/40 via-purple-950/30 to-indigo-950/40 text-xs shadow-inner">
+          <div className="flex items-center gap-2 text-indigo-200">
+            <span className="text-base">📜</span>
+            <span>
+              คุณกำลังดูข้อมูลย้อนหลังของรอบ <strong className="text-white">&ldquo;{currentRound.name}&rdquo;</strong> (วันที่ {currentRound.date}) — บันทึกผลเสร็จสมบูรณ์แล้ว
+            </span>
+          </div>
+
+          {auctionRounds.some((r) => r.status === 'active') && (
+            <button
+              type="button"
+              onClick={() => {
+                const act = auctionRounds.find((r) => r.status === 'active');
+                if (act) setActiveRoundId(act.id);
+              }}
+              className="text-xs font-bold text-amber-300 hover:text-amber-200 underline cursor-pointer shrink-0"
+            >
+              สลับไปรอบปัจจุบัน ▶
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Summary Stats Cards for Selected Round */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* 1. Pending */}
         <div className="rounded-2xl border border-amber-500/30 bg-amber-950/15 p-3.5 sm:p-4 shadow-sm flex items-center gap-3">
@@ -196,7 +344,7 @@ export default function AuctionPage() {
             👥
           </span>
           <div>
-            <div className="text-[11px] font-semibold text-rose-400/90">ยอดคนลงชื่อร่วมชิงสะสม</div>
+            <div className="text-[11px] font-semibold text-rose-400/90">ยอดคนลงชื่อในรอบนี้</div>
             <div className="text-xl sm:text-2xl font-extrabold font-mono text-rose-300">
               {stats.totalEntriesCount} <span className="text-xs font-sans text-slate-400">คน</span>
             </div>
@@ -217,7 +365,7 @@ export default function AuctionPage() {
                 : 'text-slate-600 dark:text-slate-400 hover:text-white hover:bg-slate-800'
             }`}
           >
-            ทั้งหมด ({auctionItems.length})
+            ทั้งหมดในรอบ ({roundItems.length})
           </button>
 
           <button
@@ -312,19 +460,23 @@ export default function AuctionPage() {
       {filteredItems.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-slate-800 p-12 text-center space-y-3">
           <span className="text-4xl">🎡</span>
-          <h3 className="text-base font-bold text-slate-300">ไม่พบรายการที่ตรงกับเงื่อนไข</h3>
+          <h3 className="text-base font-bold text-slate-300">
+            {roundItems.length === 0
+              ? `ยังไม่มีรายการไอเทมในรอบ "${currentRound?.name || 'รอบปัจจุบัน'}"`
+              : 'ไม่พบรายการที่ตรงกับเงื่อนไขการค้นหา'}
+          </h3>
           <p className="text-xs text-slate-500 max-w-md mx-auto">
-            {auctionItems.length === 0
-              ? 'ยังไม่มีรายการไอเทมในกิลด์ คลิกปุ่ม "+ เพิ่มของประมูล (เป็น List)" ด้านบนเพื่อเริ่มรายการแรก'
+            {roundItems.length === 0
+              ? 'คลิกปุ่ม "+ เพิ่มของในรอบนี้ (เป็น List)" ด้านบนเพื่อเริ่มเลือกเครื่องประดับใส่ในรอบนี้'
               : 'ลองเปลี่ยนคำค้นหาหรือแท็บตัวกรองด้านบนเพื่อดูรายการอื่นๆ'}
           </p>
-          {auctionItems.length === 0 && (
+          {roundItems.length === 0 && (
             <button
               type="button"
               onClick={() => setIsAddModalOpen(true)}
               className="mt-2 inline-flex items-center gap-2 rounded-xl bg-rose-600 hover:bg-rose-500 px-4 py-2 text-xs font-bold text-white transition shadow cursor-pointer"
             >
-              <span>+ เพิ่มของประมูล (เป็น List)</span>
+              <span>+ เพิ่มของในรอบนี้ (เป็น List)</span>
             </button>
           )}
         </div>
@@ -722,7 +874,36 @@ export default function AuctionPage() {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onConfirm={(items) => {
-          addAuctionItems(items);
+          const currentRId = currentRound?.id || 'round_default';
+          addAuctionItems(items.map((i) => ({ ...i, roundId: currentRId })));
+        }}
+      />
+
+      <CreateRoundModal
+        isOpen={isCreateRoundOpen}
+        onClose={() => setIsCreateRoundOpen(false)}
+        onCreateRound={(name, date, note) => {
+          createAuctionRound(name, date, note);
+        }}
+      />
+
+      <RoundHistoryModal
+        isOpen={isRoundHistoryOpen}
+        onClose={() => setIsRoundHistoryOpen(false)}
+        rounds={auctionRounds}
+        activeRoundId={currentRound?.id || null}
+        auctionItems={auctionItems}
+        onSelectRound={(roundId) => {
+          setActiveRoundId(roundId);
+        }}
+        onCompleteRound={(roundId) => {
+          completeAuctionRound(roundId);
+        }}
+        onReopenRound={(roundId) => {
+          reopenAuctionRound(roundId);
+        }}
+        onDeleteRound={(roundId) => {
+          deleteAuctionRound(roundId);
         }}
       />
 

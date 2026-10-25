@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { supabase } from '@/lib/supabase';
 import { Member } from '@/types/member';
 import { Party, Team, LaneKey, FieldZoneKey } from '@/types/party';
-import { AuctionItem, AuctionEntry, BidRecord } from '@/types/auction';
+import { AuctionItem, AuctionEntry, AuctionRound, BidRecord } from '@/types/auction';
 
 export interface GuildState {
   guildName: string;
@@ -29,6 +29,10 @@ export interface GuildState {
   setPresetParties: React.Dispatch<React.SetStateAction<Party[]>>;
   auctionItems: AuctionItem[];
   setAuctionItems: React.Dispatch<React.SetStateAction<AuctionItem[]>>;
+  auctionRounds: AuctionRound[];
+  setAuctionRounds: React.Dispatch<React.SetStateAction<AuctionRound[]>>;
+  activeRoundId: string | null;
+  setActiveRoundId: (id: string | null) => void;
 
   selectedDate: string;
   setSelectedDate: (date: string) => void;
@@ -59,6 +63,13 @@ export interface GuildState {
   placeMemberInSlot: (partyId: string, slotIndex: number, memberId: string) => void;
   swapSlots: (fromPartyId: string, fromSlotIdx: number, toPartyId: string, toSlotIdx: number) => void;
   applyPresetToParty: (mode: 'gvg' | 'siege' | 'polarity', targetPartyId: string, presetPartyId: string) => void;
+
+  // Auction Round Operations
+  createAuctionRound: (name: string, date?: string, note?: string) => string;
+  updateAuctionRound: (id: string, updates: Partial<AuctionRound>) => void;
+  deleteAuctionRound: (id: string) => void;
+  completeAuctionRound: (id: string) => void;
+  reopenAuctionRound: (id: string) => void;
 
   // Auction Operations
   addAuctionItem: (item: Omit<AuctionItem, 'id' | 'createdAt' | 'currentPrice' | 'bids' | 'status' | 'entries'> & { status?: 'pending' | 'active' }) => void;
@@ -128,6 +139,43 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
   });
   const [polarityParties, setPolarityParties] = useState<Party[]>([]);
   const [presetParties, setPresetParties] = useState<Party[]>([]);
+  const [auctionRounds, setAuctionRounds] = useState<AuctionRound[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('Moonz_auction_rounds');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (e) {}
+    }
+    return [
+      {
+        id: 'round_default',
+        name: 'รอบประมูลรอบที่ 1',
+        date: new Date().toISOString().split('T')[0],
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        note: 'รอบประมูลเริ่มต้น',
+      },
+    ];
+  });
+  const [activeRoundId, setActiveRoundId] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cachedRounds = localStorage.getItem('Moonz_auction_rounds');
+        if (cachedRounds) {
+          const parsed = JSON.parse(cachedRounds);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const active = parsed.find((r: AuctionRound) => r.status === 'active');
+            return active ? active.id : parsed[0].id;
+          }
+        }
+      } catch (e) {}
+    }
+    return 'round_default';
+  });
+
   const [auctionItems, setAuctionItems] = useState<AuctionItem[]>(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -149,6 +197,14 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
       } catch (e) {}
     }
   }, [auctionItems]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('Moonz_auction_rounds', JSON.stringify(auctionRounds));
+      } catch (e) {}
+    }
+  }, [auctionRounds]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -173,6 +229,8 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
     polarityParties,
     presetParties,
     auctionItems,
+    auctionRounds,
+    activeRoundId,
   });
 
   useEffect(() => {
@@ -188,8 +246,10 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
       polarityParties,
       presetParties,
       auctionItems,
+      auctionRounds,
+      activeRoundId,
     };
-  }, [guildName, fileTimestamp, members, gvgTeams, gvgParties, siegeTeams, siegeParties, polarityTeams, polarityParties, presetParties, auctionItems]);
+  }, [guildName, fileTimestamp, members, gvgTeams, gvgParties, siegeTeams, siegeParties, polarityTeams, polarityParties, presetParties, auctionItems, auctionRounds, activeRoundId]);
 
   // Fetch from Supabase
   const loadFromCloud = useCallback(async () => {
@@ -330,10 +390,15 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
             );
           }
 
-          // Auction Items
+          // Auction Items & Rounds
           const auctionEntry = rawParties.find((p) => p.id === '__auction_items_config__');
-          if (auctionEntry && Array.isArray((auctionEntry as any).items)) {
-            setAuctionItems((auctionEntry as any).items);
+          if (auctionEntry) {
+            if (Array.isArray((auctionEntry as any).rounds) && (auctionEntry as any).rounds.length > 0) {
+              setAuctionRounds((auctionEntry as any).rounds);
+            }
+            if (Array.isArray((auctionEntry as any).items)) {
+              setAuctionItems((auctionEntry as any).items);
+            }
           }
         }
       }
@@ -399,12 +464,14 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
         id: '__auction_items_config__',
         category: '__system__',
         items: state.auctionItems,
+        rounds: state.auctionRounds,
       };
 
       try {
         localStorage.setItem('Moonz_siege_teams', JSON.stringify(state.siegeTeams));
         localStorage.setItem('Moonz_polarity_teams', JSON.stringify(state.polarityTeams));
         localStorage.setItem('Moonz_auctions', JSON.stringify(state.auctionItems));
+        localStorage.setItem('Moonz_auction_rounds', JSON.stringify(state.auctionRounds));
       } catch (e) {}
 
       const combinedParties = [
@@ -658,13 +725,71 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const createAuctionRound = (name: string, date?: string, note?: string): string => {
+    const newRoundId = `round_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const newRound: AuctionRound = {
+      id: newRoundId,
+      name: name.trim() || `รอบประมูล ${new Date().toLocaleDateString('th-TH')}`,
+      date: date || new Date().toISOString().split('T')[0],
+      status: 'active',
+      createdAt: new Date().toISOString(),
+      note: note?.trim() || undefined,
+    };
+    setAuctionRounds((prev) => [newRound, ...prev]);
+    setActiveRoundId(newRoundId);
+    triggerAutoSave();
+    return newRoundId;
+  };
+
+  const updateAuctionRound = (id: string, updates: Partial<AuctionRound>) => {
+    setAuctionRounds((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, ...updates } : r))
+    );
+    triggerAutoSave();
+  };
+
+  const deleteAuctionRound = (id: string) => {
+    setAuctionRounds((prev) => {
+      const remaining = prev.filter((r) => r.id !== id);
+      if (activeRoundId === id) {
+        setActiveRoundId(remaining.length > 0 ? remaining[0].id : null);
+      }
+      return remaining;
+    });
+    setAuctionItems((prev) => prev.filter((item) => item.roundId !== id));
+    triggerAutoSave();
+  };
+
+  const completeAuctionRound = (id: string) => {
+    setAuctionRounds((prev) =>
+      prev.map((r) =>
+        r.id === id
+          ? { ...r, status: 'completed', closedAt: new Date().toISOString() }
+          : r
+      )
+    );
+    triggerAutoSave();
+  };
+
+  const reopenAuctionRound = (id: string) => {
+    setAuctionRounds((prev) =>
+      prev.map((r) =>
+        r.id === id ? { ...r, status: 'active', closedAt: undefined } : r
+      )
+    );
+    setActiveRoundId(id);
+    triggerAutoSave();
+  };
+
   const addAuctionItems = (
-    itemsData: Array<Omit<AuctionItem, 'id' | 'createdAt' | 'currentPrice' | 'bids' | 'status' | 'entries'> & { status?: 'pending' | 'active' }>
+    itemsData: Array<Omit<AuctionItem, 'id' | 'createdAt' | 'currentPrice' | 'bids' | 'status' | 'entries'> & { status?: 'pending' | 'active'; roundId?: string }>
   ) => {
     const now = new Date().toISOString();
+    const currentRound = latestStateRef.current.activeRoundId || (latestStateRef.current.auctionRounds[0]?.id) || 'round_default';
     const newItems: AuctionItem[] = itemsData.map((itemData, index) => ({
       ...itemData,
       id: `auc_${Date.now()}_${index}_${Math.random().toString(36).substring(2, 6)}`,
+      roundId: itemData.roundId || currentRound,
       currentPrice: itemData.startPrice,
       status: itemData.status || 'pending',
       createdAt: now,
@@ -928,6 +1053,15 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
         setPresetParties,
         auctionItems,
         setAuctionItems,
+        auctionRounds,
+        setAuctionRounds,
+        activeRoundId,
+        setActiveRoundId,
+        createAuctionRound,
+        updateAuctionRound,
+        deleteAuctionRound,
+        completeAuctionRound,
+        reopenAuctionRound,
         selectedDate,
         setSelectedDate,
         isLoading,
