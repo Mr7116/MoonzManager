@@ -63,7 +63,7 @@ export default function AuctionPage() {
 
   // Items belonging to current round
   const roundItems = useMemo(() => {
-    if (!currentRound) return auctionItems;
+    if (!currentRound) return [];
     return auctionItems.filter((item) => {
       const rId = item.roundId || auctionRounds[0]?.id || 'round_default';
       return rId === currentRound.id;
@@ -154,7 +154,7 @@ export default function AuctionPage() {
         <div className="flex flex-wrap items-center gap-2.5">
           <AutoSaveBadge />
 
-          {stats.pendingCount > 0 && currentRound?.status === 'active' && (
+          {currentRound && stats.pendingCount > 0 && currentRound.status === 'active' && (
             <button
               type="button"
               onClick={handleStartAllPending}
@@ -165,14 +165,16 @@ export default function AuctionPage() {
             </button>
           )}
 
-          <button
-            type="button"
-            onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-rose-950/40 transition cursor-pointer"
-          >
-            <span>+</span>
-            <span>เพิ่มของในรอบนี้ (เป็น List)</span>
-          </button>
+          {currentRound && (
+            <button
+              type="button"
+              onClick={() => setIsAddModalOpen(true)}
+              className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-rose-950/40 transition cursor-pointer"
+            >
+              <span>+</span>
+              <span>เพิ่มของในรอบนี้ (เป็น List)</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -191,17 +193,22 @@ export default function AuctionPage() {
               <select
                 value={currentRound?.id || ''}
                 onChange={(e) => setActiveRoundId(e.target.value)}
-                className="bg-[#070b14] border border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold text-white focus:border-rose-500 focus:outline-none cursor-pointer max-w-[280px] sm:max-w-md mt-0.5"
+                disabled={auctionRounds.length === 0}
+                className="bg-[#070b14] border border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold text-white focus:border-rose-500 focus:outline-none cursor-pointer max-w-[280px] sm:max-w-md mt-0.5 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {auctionRounds.map((r) => {
-                  const rItems = auctionItems.filter((i) => (i.roundId || auctionRounds[0]?.id || 'round_default') === r.id);
-                  const isComp = r.status === 'completed';
-                  return (
-                    <option key={r.id} value={r.id}>
-                      {isComp ? '🏆 [จบแล้ว]' : '🟢 [เปิดอยู่]'} {r.name} ({r.date}) — {rItems.length} ชิ้น
-                    </option>
-                  );
-                })}
+                {auctionRounds.length === 0 ? (
+                  <option value="">-- ยังไม่มีรอบประมูล (กดปุ่ม + สร้างรอบใหม่) --</option>
+                ) : (
+                  auctionRounds.map((r) => {
+                    const rItems = auctionItems.filter((i) => (i.roundId || auctionRounds[0]?.id || 'round_default') === r.id);
+                    const isComp = r.status === 'completed';
+                    return (
+                      <option key={r.id} value={r.id}>
+                        {isComp ? '🏆 [จบแล้ว]' : '🟢 [เปิดอยู่]'} {r.name} ({r.date}) — {rItems.length} ชิ้น
+                      </option>
+                    );
+                  })
+                )}
               </select>
             </div>
           </div>
@@ -273,7 +280,36 @@ export default function AuctionPage() {
         </div>
       </div>
 
-      {/* Historical Round Banner */}
+      {/* If No Round is Created Yet */}
+      {!currentRound ? (
+        <div className="rounded-3xl border border-dashed border-slate-800 bg-gradient-to-b from-[#0b101d] to-[#070b14] p-10 sm:p-14 text-center space-y-4 shadow-inner">
+          <div className="w-16 h-16 mx-auto rounded-3xl bg-gradient-to-br from-amber-500/20 via-rose-500/15 to-purple-500/20 border border-amber-500/30 flex items-center justify-center text-4xl shadow-lg shadow-amber-500/10">
+            🎯
+          </div>
+
+          <div className="space-y-2 max-w-lg mx-auto">
+            <h3 className="text-lg sm:text-xl font-black text-white tracking-wide">
+              ยังไม่มีรอบการประมูล / สุ่มแจก
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+              กรุณากดปุ่ม <strong className="text-amber-300 font-semibold">&ldquo;+ สร้างรอบใหม่&rdquo;</strong> ด้านบน เพื่อกำหนดรอบการประมูล (เช่น รอบกิลด์วอร์ประจำสัปดาห์) ก่อนที่จะเปิดรับรายชื่อและสุ่มวงล้อ
+            </p>
+          </div>
+
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={() => setIsCreateRoundOpen(true)}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-600 via-rose-600 to-amber-500 hover:from-amber-500 hover:to-rose-500 text-white text-xs sm:text-sm font-extrabold shadow-xl shadow-amber-950/40 hover:scale-[1.02] active:scale-[0.98] transition cursor-pointer"
+            >
+              <span>+</span>
+              <span>สร้างรอบการประมูลใหม่</span>
+            </button>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Historical Round Banner */}
       {currentRound && currentRound.status === 'completed' && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 p-3 rounded-2xl border border-indigo-500/40 bg-gradient-to-r from-indigo-950/40 via-purple-950/30 to-indigo-950/40 text-xs shadow-inner">
           <div className="flex items-center gap-2 text-indigo-200">
@@ -951,6 +987,8 @@ export default function AuctionPage() {
             );
           })}
         </div>
+      )}
+        </>
       )}
 
       {/* Modals */}
