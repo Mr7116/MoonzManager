@@ -8,6 +8,14 @@ export interface BidRecord {
   note?: string;
 }
 
+export interface AuctionEntry {
+  id: string;
+  memberId: string;
+  memberName: string;
+  memberJob?: string;
+  registeredAt: string;
+}
+
 export interface AuctionItem {
   id: string;
   accessoryId: number;
@@ -22,6 +30,9 @@ export interface AuctionItem {
   currentPrice: number;
 
   status: 'pending' | 'active' | 'ended' | 'cancelled';
+
+  // Registered Participants for Lucky Wheel
+  entries: AuctionEntry[];
 
   // Winner Information
   winnerMemberId?: string;

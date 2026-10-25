@@ -16,7 +16,7 @@ interface AddAuctionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (
-    items: Array<Omit<AuctionItem, 'id' | 'createdAt' | 'currentPrice' | 'bids' | 'status'> & { status?: 'pending' | 'active' }>
+    items: Array<Omit<AuctionItem, 'id' | 'createdAt' | 'currentPrice' | 'bids' | 'status' | 'entries'> & { status?: 'pending' | 'active' }>
   ) => void;
 }
 
@@ -128,7 +128,7 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
     }
 
     const itemsToCreate: Array<
-      Omit<AuctionItem, 'id' | 'createdAt' | 'currentPrice' | 'bids' | 'status'> & { status?: 'pending' | 'active' }
+      Omit<AuctionItem, 'id' | 'createdAt' | 'currentPrice' | 'bids' | 'status' | 'entries'> & { status?: 'pending' | 'active' }
     > = [];
 
     for (const entry of selectedEntries) {
