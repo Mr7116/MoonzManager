@@ -394,7 +394,10 @@ export default function ExportImageModal({ isOpen, onClose, mode = 'gvg' }: Expo
                 <span
                   className={`px-1.5 py-0.5 rounded font-bold text-[9px] whitespace-nowrap shrink-0 border flex items-center gap-1 ${teamColorCfg.badgeClass}`}
                 >
-                  <span className={`w-1.5 h-1.5 rounded-full ${teamColorCfg.dotClass} shrink-0`} />
+                  <span
+                    style={{ backgroundColor: teamColorCfg.hex }}
+                    className="w-1.5 h-1.5 rounded-full shrink-0"
+                  />
                   <span>{team.name}</span>
                 </span>
               ) : (
@@ -427,7 +430,10 @@ export default function ExportImageModal({ isOpen, onClose, mode = 'gvg' }: Expo
                   <span
                     className={`px-2 py-0.5 rounded font-bold text-xs whitespace-nowrap border flex items-center gap-1.5 ${teamColorCfg.badgeClass}`}
                   >
-                    <span className={`w-2 h-2 rounded-full ${teamColorCfg.dotClass} shrink-0`} />
+                    <span
+                      style={{ backgroundColor: teamColorCfg.hex }}
+                      className="w-2 h-2 rounded-full shrink-0"
+                    />
                     <span>{team.name}</span>
                   </span>
                 ) : (
@@ -907,7 +913,12 @@ export default function ExportImageModal({ isOpen, onClose, mode = 'gvg' }: Expo
                                 }`}
                               >
                                 <div className="flex items-center gap-2 min-w-0">
-                                  {isSiege && <span className={`w-2.5 h-2.5 rounded-full ${itemColorCfg.dotClass} shrink-0`} />}
+                                  {isSiege && (
+                                    <span
+                                      style={{ backgroundColor: itemColorCfg.hex }}
+                                      className="w-2.5 h-2.5 rounded-full shrink-0 shadow-xs"
+                                    />
+                                  )}
                                   <span style={{ whiteSpace: 'nowrap', lineHeight: '1.8' }} className="font-extrabold text-sm sm:text-base tracking-wide truncate">
                                     {item.team.name}
                                   </span>
@@ -970,7 +981,12 @@ export default function ExportImageModal({ isOpen, onClose, mode = 'gvg' }: Expo
                         }
                       >
                         <div className="flex items-center gap-2.5">
-                          {isSiege && <span className={`w-3 h-3 rounded-full ${teamColorCfg.dotClass} shrink-0`} />}
+                          {isSiege && (
+                            <span
+                              style={{ backgroundColor: teamColorCfg.hex }}
+                              className="w-3 h-3 rounded-full shrink-0 shadow-xs"
+                            />
+                          )}
                           <span style={{ whiteSpace: 'nowrap', lineHeight: '1.8' }} className={`font-extrabold text-base tracking-wide ${isDarkPoster ? 'text-white' : 'text-slate-900'}`}>{team.name}</span>
                           <span style={{ whiteSpace: 'nowrap', lineHeight: '1.8' }}
                             className={`px-2 py-0.5 rounded-md text-[11px] font-bold border ${

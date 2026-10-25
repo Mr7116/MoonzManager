@@ -113,7 +113,10 @@ export default function CreateTeamModal({
                           : 'border-slate-800 bg-[#070b14] hover:border-slate-700 hover:bg-slate-900/60'
                       }`}
                     >
-                      <span className={`w-4 h-4 rounded-full ${c.dotClass} shrink-0 shadow-xs`} />
+                      <span
+                        style={{ backgroundColor: c.hex }}
+                        className="w-4 h-4 rounded-full shrink-0 shadow-xs inline-block"
+                      />
                       <span className="text-[11px] font-bold text-slate-200 truncate">
                         {c.name.split(' ')[0]}
                       </span>

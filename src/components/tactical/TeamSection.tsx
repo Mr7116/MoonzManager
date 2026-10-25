@@ -83,7 +83,10 @@ export default function TeamSection({
           {/* Team Name & Color */}
           <div className="flex items-center gap-2">
             {showTeamColor && (
-              <span className={`w-3.5 h-3.5 rounded-full ${colorCfg.dotClass} shadow-sm shrink-0`} />
+              <span
+                style={{ backgroundColor: colorCfg.hex }}
+                className="w-3.5 h-3.5 rounded-full shadow-sm shrink-0 inline-block"
+              />
             )}
             <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-wide">
               {team.name}
@@ -106,11 +109,14 @@ export default function TeamSection({
                 <button
                   type="button"
                   onClick={() => setShowColorPicker(!showColorPicker)}
-                  className="flex items-center gap-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/90 px-2 py-1 text-xs text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer"
+                  className="flex items-center gap-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/90 px-2.5 py-1 text-xs text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer"
                   title="เปลี่ยนสีทีม"
                 >
-                  <span className={`w-2.5 h-2.5 rounded-full ${colorCfg.dotClass}`} />
-                  <span className="hidden sm:inline">สีทีม</span>
+                  <span
+                    style={{ backgroundColor: colorCfg.hex }}
+                    className="w-3 h-3 rounded-full shrink-0 shadow-xs border border-white/40 inline-block"
+                  />
+                  <span>🎨 สีทีม</span>
                 </button>
 
                 {showColorPicker && (
@@ -119,7 +125,7 @@ export default function TeamSection({
                       className="fixed inset-0 z-40"
                       onClick={() => setShowColorPicker(false)}
                     />
-                    <div className="absolute left-0 top-full mt-1.5 z-50 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2.5 shadow-2xl flex items-center gap-1.5 min-w-[240px]">
+                    <div className="absolute left-0 top-full mt-1.5 z-50 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2.5 shadow-2xl flex items-center gap-2 min-w-[280px]">
                       {TEAM_COLOR_LIST.map((c) => {
                         const isCurrent = team.color === c.key;
                         return (
@@ -130,12 +136,13 @@ export default function TeamSection({
                               onChangeTeamColor(team.id, c.key);
                               setShowColorPicker(false);
                             }}
-                            className={`w-6 h-6 rounded-full ${c.dotClass} flex items-center justify-center transition cursor-pointer hover:scale-110 ${
-                              isCurrent ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-900 scale-105' : 'opacity-80 hover:opacity-100'
+                            style={{ backgroundColor: c.hex }}
+                            className={`w-6 h-6 rounded-full flex items-center justify-center transition cursor-pointer hover:scale-110 shadow-sm ${
+                              isCurrent ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-900 scale-105' : 'opacity-85 hover:opacity-100'
                             }`}
                             title={c.name}
                           >
-                            {isCurrent && <span className="text-[10px] text-white font-bold">✓</span>}
+                            {isCurrent && <span className="text-[10px] text-white font-bold drop-shadow">✓</span>}
                           </button>
                         );
                       })}

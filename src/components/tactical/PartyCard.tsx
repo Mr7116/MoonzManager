@@ -117,7 +117,10 @@ export const PartyCard: React.FC<PartyCardProps> = ({
               title={teamName}
               className={`px-2 py-0.5 rounded-md text-[11px] font-bold border truncate max-w-full flex items-center gap-1.5 ${teamColorCfg.badgeClass}`}
             >
-              <span className={`w-2 h-2 rounded-full ${teamColorCfg.dotClass} shrink-0`} />
+              <span
+                style={{ backgroundColor: teamColorCfg.hex }}
+                className="w-2 h-2 rounded-full shrink-0"
+              />
               <span className="truncate">{teamName}</span>
             </span>
           ) : (
