@@ -9,7 +9,6 @@ import { AuctionItem } from '@/types/auction';
 interface SelectedEntry {
   accessory: RedAccessory;
   count: number;
-  startPrice: number;
 }
 
 interface AddAuctionModalProps {
@@ -22,8 +21,6 @@ interface AddAuctionModalProps {
 
 export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAuctionModalProps) {
   const [search, setSearch] = useState('');
-  const [defaultPrice, setDefaultPrice] = useState<number>(5000);
-  const [minIncrement, setMinIncrement] = useState<number>(500);
   const [sourceNote, setSourceNote] = useState<string>('ดรอปจากกิลด์วอร์ (GVG)');
   const [selectedMap, setSelectedMap] = useState<Record<number, SelectedEntry>>({});
 
@@ -62,7 +59,6 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
           [acc.id]: {
             accessory: acc,
             count: 1,
-            startPrice: defaultPrice > 0 ? defaultPrice : 5000,
           },
         };
       }
@@ -86,17 +82,6 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
     });
   };
 
-  const handleUpdatePrice = (accId: number, price: number) => {
-    setSelectedMap((prev) => {
-      const existing = prev[accId];
-      if (!existing) return prev;
-      return {
-        ...prev,
-        [accId]: { ...existing, startPrice: price },
-      };
-    });
-  };
-
   const handleRemoveItem = (accId: number) => {
     setSelectedMap((prev) => {
       const copy = { ...prev };
@@ -107,18 +92,6 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
 
   const handleClearAll = () => {
     setSelectedMap({});
-  };
-
-  const handleApplyDefaultPriceToAll = () => {
-    if (defaultPrice <= 0) return;
-    setSelectedMap((prev) => {
-      const nextMap: Record<number, SelectedEntry> = {};
-      Object.keys(prev).forEach((idStr) => {
-        const id = Number(idStr);
-        nextMap[id] = { ...prev[id], startPrice: defaultPrice };
-      });
-      return nextMap;
-    });
   };
 
   const handleSubmit = (status: 'pending' | 'active') => {
@@ -132,7 +105,6 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
     > = [];
 
     for (const entry of selectedEntries) {
-      const price = entry.startPrice > 0 ? entry.startPrice : defaultPrice;
       for (let i = 0; i < entry.count; i++) {
         itemsToCreate.push({
           accessoryId: entry.accessory.id,
@@ -140,8 +112,8 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
           accessoryLevel: entry.accessory.level,
           accessoryIcon: entry.accessory.icon,
           accessoryStats: entry.accessory.stats || [],
-          startPrice: price,
-          minIncrement: minIncrement > 0 ? minIncrement : 500,
+          startPrice: 0,
+          minIncrement: 0,
           sourceNote: sourceNote.trim() || undefined,
           status,
         });
@@ -158,7 +130,7 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 p-3 sm:p-5 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-5xl rounded-3xl border border-rose-500/30 bg-[#0d121f] p-5 sm:p-6 shadow-2xl space-y-4 my-auto max-h-[92vh] flex flex-col">
+      <div className="relative w-full max-w-4xl rounded-3xl border border-rose-500/30 bg-[#0d121f] p-5 sm:p-6 shadow-2xl space-y-4 my-auto max-h-[92vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-800 pb-3 shrink-0">
           <div className="flex items-center gap-3">
@@ -167,13 +139,13 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
             </span>
             <div>
               <h3 className="text-lg font-extrabold text-white tracking-wide flex items-center gap-2">
-                <span>เพิ่มรายการประมูลเครื่องประดับ (Add Auction Items)</span>
+                <span>เพิ่มรายการของดรอปเพื่อเปิดสุ่ม (Add Drop Items)</span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 border border-rose-500/40 text-rose-300">
                   Lv.90 Red
                 </span>
               </h3>
               <p className="text-xs text-slate-400">
-                คลิกเลือกเครื่องประดับเพื่อเพิ่มเป็น List รายการรอประมูล แล้วกดเริ่มประมูลทีละชิ้นหรือพร้อมกันได้
+                คลิกเลือกเครื่องประดับเพื่อเพิ่มเป็น List รายการให้สมาชิกกิลด์ส่งรายชื่อเข้ามาสุ่มด้วยวงล้อ
               </p>
             </div>
           </div>
@@ -186,52 +158,16 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
           </button>
         </div>
 
-        {/* Global Options Bar */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 p-3 rounded-2xl border border-slate-800 bg-slate-950/60 shrink-0 text-xs">
-          <div>
-            <label className="text-slate-400 block mb-1 font-semibold">ราคาเริ่มต้นเริ่มต้นทุกชิ้น (Start Price):</label>
-            <div className="flex items-center gap-1.5">
-              <input
-                type="number"
-                min={100}
-                step={500}
-                value={defaultPrice}
-                onChange={(e) => setDefaultPrice(Number(e.target.value))}
-                className="w-full rounded-xl border border-slate-700 bg-[#080d1a] px-3 py-1.5 text-xs text-white font-mono focus:border-rose-500 focus:outline-none"
-              />
-              <button
-                type="button"
-                onClick={handleApplyDefaultPriceToAll}
-                title="ปรับใช้ราคานี้กับทุกชิ้นในรายการ"
-                className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-[11px] font-bold text-slate-300 whitespace-nowrap cursor-pointer transition"
-              >
-                ปรับใช้ทั้งหมด
-              </button>
-            </div>
-          </div>
-
-          <div>
-            <label className="text-slate-400 block mb-1 font-semibold">เคาะขั้นต่ำ (Min Increment):</label>
-            <input
-              type="number"
-              min={100}
-              step={100}
-              value={minIncrement}
-              onChange={(e) => setMinIncrement(Number(e.target.value))}
-              className="w-full rounded-xl border border-slate-700 bg-[#080d1a] px-3 py-1.5 text-xs text-white font-mono focus:border-rose-500 focus:outline-none"
-            />
-          </div>
-
-          <div>
-            <label className="text-slate-400 block mb-1 font-semibold">แหล่งที่มา / หมายเหตุ (Source):</label>
-            <input
-              type="text"
-              value={sourceNote}
-              onChange={(e) => setSourceNote(e.target.value)}
-              placeholder="เช่น ดรอปจาก GVG รอบวันอาทิตย์"
-              className="w-full rounded-xl border border-slate-700 bg-[#080d1a] px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:border-rose-500 focus:outline-none"
-            />
-          </div>
+        {/* Source Note Bar */}
+        <div className="p-3 rounded-2xl border border-slate-800 bg-slate-950/60 shrink-0 text-xs">
+          <label className="text-slate-400 block mb-1 font-semibold">แหล่งที่มา / หมายเหตุ (Source):</label>
+          <input
+            type="text"
+            value={sourceNote}
+            onChange={(e) => setSourceNote(e.target.value)}
+            placeholder="เช่น ดรอปจาก GVG รอบวันอาทิตย์ / Siege War"
+            className="w-full rounded-xl border border-slate-700 bg-[#080d1a] px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:border-rose-500 focus:outline-none"
+          />
         </div>
 
         {/* Middle Body */}
@@ -241,7 +177,7 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-rose-600 text-white text-[11px] font-bold">1</span>
-                <span>คลิกเลือกเครื่องประดับที่ต้องการประมูล (พบ {filteredAccessories.length} ชิ้น):</span>
+                <span>คลิกเลือกเครื่องประดับ (พบ {filteredAccessories.length} ชิ้น):</span>
               </label>
 
               <input
@@ -253,7 +189,7 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
               />
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2 max-h-44 overflow-y-auto p-2 rounded-2xl border border-slate-800 bg-slate-950/70 scrollbar-thin">
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2 max-h-48 overflow-y-auto p-2 rounded-2xl border border-slate-800 bg-slate-950/70 scrollbar-thin">
               {filteredAccessories.map((item) => {
                 const entry = selectedMap[item.id];
                 const isSelected = !!entry;
@@ -307,7 +243,7 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-white text-[11px] font-bold">2</span>
-                <span>รายการเครื่องประดับที่จะเพิ่ม (เตรียมไว้ {totalItemCount} ชิ้น):</span>
+                <span>รายการไอเทมที่จะเพิ่มเข้าสู่ List ({totalItemCount} ชิ้น):</span>
               </label>
               {selectedEntries.length > 0 && (
                 <button
@@ -323,14 +259,14 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
             {selectedEntries.length === 0 ? (
               <div className="p-8 text-center rounded-2xl border border-dashed border-slate-800 text-xs text-slate-500 space-y-1">
                 <p className="text-sm text-slate-400 font-semibold">ยังไม่มีเครื่องประดับในรายการ</p>
-                <p>คลิกที่ไอคอนเครื่องประดับด้านบนเพื่อเพิ่มเข้าสู่ List รายการเตรียมประมูล</p>
+                <p>คลิกที่ไอคอนเครื่องประดับด้านบนเพื่อเพิ่มเข้าสู่ List รายการเตรียมเปิดสุ่ม</p>
               </div>
             ) : (
-              <div className="space-y-2 max-h-52 overflow-y-auto pr-1 scrollbar-thin">
+              <div className="space-y-2 max-h-56 overflow-y-auto pr-1 scrollbar-thin">
                 {selectedEntries.map((entry) => (
                   <div
                     key={entry.accessory.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-2.5 rounded-2xl border border-slate-800 bg-[#090d18] hover:border-slate-700 transition"
+                    className="flex items-center justify-between gap-3 p-2.5 rounded-2xl border border-slate-800 bg-[#090d18] hover:border-slate-700 transition"
                   >
                     {/* Item Thumbnail & Name */}
                     <div className="flex items-center gap-3">
@@ -358,19 +294,11 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                             Red
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-400">
-                          ราคาเริ่มต้นชิ้นละ{' '}
-                          <span className="font-mono text-amber-400 font-bold">
-                            {entry.startPrice.toLocaleString()}
-                          </span>{' '}
-                          หน่วย
-                        </p>
                       </div>
                     </div>
 
-                    {/* Quantity & Custom Price Controls */}
-                    <div className="flex items-center gap-3 self-end sm:self-auto">
-                      {/* Quantity Stepper */}
+                    {/* Quantity Stepper & Remove */}
+                    <div className="flex items-center gap-3">
                       <div className="flex items-center gap-1 bg-slate-950 rounded-xl border border-slate-700 p-0.5">
                         <button
                           type="button"
@@ -389,19 +317,6 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                         >
                           +
                         </button>
-                      </div>
-
-                      {/* Custom Price Input */}
-                      <div className="flex items-center gap-1.5">
-                        <label className="text-[11px] text-slate-400 font-medium">ราคา:</label>
-                        <input
-                          type="number"
-                          min={100}
-                          step={500}
-                          value={entry.startPrice}
-                          onChange={(e) => handleUpdatePrice(entry.accessory.id, Number(e.target.value))}
-                          className="w-24 rounded-xl border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-white font-mono focus:border-rose-500 focus:outline-none"
-                        />
                       </div>
 
                       {/* Remove Button */}
@@ -426,17 +341,6 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
           <div className="text-xs text-slate-400">
             รวมทั้งหมด:{' '}
             <strong className="text-white font-mono text-sm">{totalItemCount}</strong> ชิ้น
-            {totalItemCount > 0 && (
-              <span className="ml-2 text-slate-500">
-                (มูลค่าเริ่มต้นรวม:{' '}
-                <span className="text-amber-400 font-mono font-semibold">
-                  {selectedEntries
-                    .reduce((sum, e) => sum + e.startPrice * e.count, 0)
-                    .toLocaleString()}
-                </span>{' '}
-                หน่วย)
-              </span>
-            )}
           </div>
 
           <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
@@ -448,7 +352,7 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
               ยกเลิก
             </button>
 
-            {/* Action 1: Add as Pending List (รอเริ่มประมูล) */}
+            {/* Action 1: Add as Pending List (รอเปิดสุ่ม) */}
             <button
               type="button"
               disabled={totalItemCount === 0}
@@ -456,7 +360,7 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
               className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 disabled:opacity-50 text-xs font-bold text-white shadow-lg shadow-amber-900/30 flex items-center justify-center gap-1.5 transition cursor-pointer"
             >
               <span>📋</span>
-              <span>เพิ่มเป็นรายการรอประมูล ({totalItemCount})</span>
+              <span>เพิ่มเป็นรายการรอเปิดสุ่ม ({totalItemCount})</span>
             </button>
 
             {/* Action 2: Add and Start Immediately */}
@@ -464,10 +368,10 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
               type="button"
               disabled={totalItemCount === 0}
               onClick={() => handleSubmit('active')}
-              className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 text-xs font-bold text-white shadow-lg shadow-emerald-900/30 flex items-center justify-center gap-1.5 transition cursor-pointer"
+              className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 text-xs font-bold text-white shadow-lg shadow-emerald-950/40 flex items-center justify-center gap-1.5 transition cursor-pointer"
             >
               <span>▶️</span>
-              <span>เริ่มประมูลทันที</span>
+              <span>เปิดรับรายชื่อทันที</span>
             </button>
           </div>
         </div>
