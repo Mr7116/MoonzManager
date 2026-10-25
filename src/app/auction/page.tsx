@@ -336,6 +336,11 @@ export default function AuctionPage() {
                           (e.target as HTMLImageElement).src = `https://roworlddb.com/media/images/item/${item.accessoryIcon}.webp`;
                         }}
                       />
+                      {item.accessoryLevel && (
+                        <span className="absolute bottom-0 right-0 px-1.5 py-0.2 rounded text-[9px] font-bold bg-black/90 border border-slate-700 text-amber-300 font-mono">
+                          Lv.{item.accessoryLevel}
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex-1 min-w-0">

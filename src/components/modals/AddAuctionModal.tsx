@@ -81,11 +81,11 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
               <h3 className="text-lg font-extrabold text-white tracking-wide flex items-center gap-2">
                 <span>เปิดประมูลเครื่องประดับใหม่</span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 border border-rose-500/40 text-rose-300">
-                  Accessory Quality = Red
+                  Accessory Quality = Red (Lv.90)
                 </span>
               </h3>
               <p className="text-xs text-slate-400">
-                เลือกเครื่องประดับระดับสีแดง ({RED_ACCESSORIES.length} ชิ้น) และกำหนดราคาเริ่มต้นเพื่อเปิดให้สมาชิกในกิลด์ร่วมประมูล
+                เลือกเครื่องประดับระดับสีแดง Lv.90 ({RED_ACCESSORIES.length} ชิ้น) และกำหนดราคาเริ่มต้นเพื่อเปิดให้สมาชิกในกิลด์ร่วมประมูล
               </p>
             </div>
           </div>
@@ -148,6 +148,9 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                           (e.target as HTMLImageElement).src = item.remoteIcon;
                         }}
                       />
+                      <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[9px] font-bold bg-black/80 border border-slate-700 text-amber-300 font-mono">
+                        Lv.{item.level}
+                      </span>
                     </div>
 
                     <span className="text-[11px] font-bold text-slate-200 line-clamp-1 w-full" title={item.name}>
@@ -192,6 +195,9 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                   <h4 className="font-extrabold text-sm sm:text-base text-white tracking-wide">
                     {selectedAccessory.name}
                   </h4>
+                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 font-mono">
+                    Lv.{selectedAccessory.level}
+                  </span>
                   <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
                     เกรดสีแดง (Quality: Red)
                   </span>
