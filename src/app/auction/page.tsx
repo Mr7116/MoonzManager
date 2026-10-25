@@ -231,7 +231,7 @@ export default function AuctionPage() {
         <div className="flex items-center gap-2">
           <input
             type="text"
-            placeholder="ค้นหาชื่อไอเทม, ผู้ชนะ, ออฟ..."
+            placeholder="ค้นหาชื่อไอเทม, ผู้ชนะ..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:border-rose-500 focus:outline-none w-56 sm:w-72"
@@ -352,18 +352,6 @@ export default function AuctionPage() {
                           🏷️ {item.sourceNote}
                         </p>
                       )}
-
-                      {/* Stats preview */}
-                      <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                        {item.accessoryStats.map((s, idx) => (
-                          <span
-                            key={idx}
-                            className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-emerald-950/40 border border-emerald-500/30 text-emerald-300"
-                          >
-                            {s}
-                          </span>
-                        ))}
-                      </div>
                     </div>
                   </div>
 

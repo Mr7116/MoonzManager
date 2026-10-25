@@ -112,7 +112,7 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
               <div className="flex items-center gap-2">
                 <input
                   type="text"
-                  placeholder="ค้นหาชื่อเครื่องประดับ, ออฟ..."
+                  placeholder="ค้นหาชื่อเครื่องประดับ..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:border-rose-500 focus:outline-none w-56 sm:w-72"
@@ -157,11 +157,6 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                       {item.name}
                     </span>
 
-                    {/* Stats summary snippet */}
-                    <span className="text-[9px] text-slate-400 truncate w-full mt-0.5">
-                      {item.stats.slice(0, 2).join(' • ')}
-                    </span>
-
                     {isSelected && (
                       <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-white text-[9px] font-bold shadow">
                         ✓
@@ -201,11 +196,6 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                   <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
                     เกรดสีแดง (Quality: Red)
                   </span>
-                </div>
-                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-3 gap-y-0.5 mt-1 text-xs text-emerald-400 font-medium">
-                  {selectedAccessory.stats.map((s, idx) => (
-                    <span key={idx}>✦ {s}</span>
-                  ))}
                 </div>
               </div>
             </div>
