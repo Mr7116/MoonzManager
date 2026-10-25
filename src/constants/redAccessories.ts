@@ -11,18 +11,6 @@ export interface RedAccessory {
 
 export const RED_ACCESSORIES: RedAccessory[] = [
   {
-    "id": 56009099,
-    "name": "Accessory อโพคาลิปส์ Lv.90",
-    "level": 90,
-    "icon": "icon_equip_jewelry_21",
-    "localIcon": "/images/accessories/icon_equip_jewelry_21.webp",
-    "remoteIcon": "https://roworlddb.com/media/images/item/icon_equip_jewelry_21.webp",
-    "stats": [
-      "Atk +1",
-      "M.ATK +1"
-    ]
-  },
-  {
     "id": 56009025,
     "name": "Royal - Bradium Brooch III",
     "level": 90,
