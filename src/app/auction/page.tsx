@@ -21,6 +21,7 @@ export default function AuctionPage() {
     activeRoundId,
     setActiveRoundId,
     createAuctionRound,
+    updateAuctionRound,
     completeAuctionRound,
     reopenAuctionRound,
     deleteAuctionRound,
@@ -451,6 +452,89 @@ export default function AuctionPage() {
             >
               <span>🎴</span>
               <span className="hidden sm:inline">การ์ด</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Round Title Header Bar (ชื่อรอบการประมูล ครอบรายการของประมูล) */}
+      <div className="rounded-2xl sm:rounded-3xl border border-rose-500/30 bg-gradient-to-r from-[#0d1424] via-[#0f172a] to-[#0c1220] p-4 sm:p-5 shadow-xl relative overflow-hidden">
+        {/* Subtle background glow */}
+        <div className="absolute top-0 right-0 w-80 h-full bg-rose-500/5 blur-3xl pointer-events-none" />
+
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 relative z-10">
+          {/* Left: Round Name & Status */}
+          <div className="space-y-1">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-rose-500/20 to-amber-500/20 text-base border border-rose-500/40 text-amber-300">
+                🎯
+              </span>
+
+              <h2 className="text-base sm:text-xl md:text-2xl font-black text-white tracking-wide flex items-center gap-2">
+                <span>{currentRound?.name || 'รอบการประมูลปัจจุบัน'}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!currentRound) return;
+                    const newName = window.prompt('แก้ไขชื่อรอบการประมูล:', currentRound.name);
+                    if (newName && newName.trim()) {
+                      updateAuctionRound(currentRound.id, { name: newName.trim() });
+                    }
+                  }}
+                  className="text-slate-400 hover:text-white p-1 text-xs transition cursor-pointer"
+                  title="แก้ไขชื่อรอบ"
+                >
+                  ✏️
+                </button>
+              </h2>
+
+              {/* Status Badge */}
+              {currentRound?.status === 'completed' ? (
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 flex items-center gap-1">
+                  <span>🏆</span>
+                  <span>จบการสุ่มรอบนี้แล้ว</span>
+                </span>
+              ) : (
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>กำลังเปิดสุ่ม</span>
+                </span>
+              )}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400 pt-0.5">
+              {currentRound?.date && (
+                <span className="flex items-center gap-1">
+                  <span>📅</span>
+                  <span>วันที่จัดรอบ: <strong className="text-slate-200">{currentRound.date}</strong></span>
+                </span>
+              )}
+              {currentRound?.note && (
+                <>
+                  <span>•</span>
+                  <span className="text-slate-400 italic">📝 {currentRound.note}</span>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Right: Round Item Stats Summary */}
+          <div className="flex flex-wrap items-center gap-2 self-start md:self-center">
+            <div className="flex items-center gap-2.5 text-xs font-semibold px-3 py-1.5 rounded-xl border border-slate-800 bg-[#070b14]/80">
+              <span className="text-slate-400">ไอเทมในรอบ:</span>
+              <strong className="text-amber-400 font-mono text-sm">{roundItems.length}</strong>
+              <span className="text-slate-600">|</span>
+              <span className="text-slate-400">ได้ผู้ชนะแล้ว:</span>
+              <strong className="text-emerald-400 font-mono text-sm">{stats.endedCount}/{roundItems.length}</strong>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsAddModalOpen(true)}
+              className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-xs font-bold text-white shadow-md shadow-rose-950/40 flex items-center gap-1.5 transition cursor-pointer"
+            >
+              <span>+</span>
+              <span>เพิ่มของในรอบนี้</span>
             </button>
           </div>
         </div>
