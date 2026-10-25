@@ -535,6 +535,7 @@ export default function SiegePage() {
         onClose={() => setImportPresetPartyId(null)}
         targetParty={siegeParties.find((p) => p.id === importPresetPartyId) || null}
         presetParties={presetParties}
+        currentParties={siegeParties}
         members={members}
         onConfirm={(presetPartyId) => {
           if (!importPresetPartyId) return;

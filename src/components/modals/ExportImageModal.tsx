@@ -374,7 +374,7 @@ export default function ExportImageModal({ isOpen, onClose, mode = 'gvg' }: Expo
         {isEightCols ? (
           <div className="space-y-1 pb-1">
             <div className="flex items-center justify-between text-[11px] gap-1">
-              <h3 style={{ whiteSpace: 'nowrap', lineHeight: '1.8' }} className={`font-extrabold text-xs sm:text-sm tracking-wide truncate max-w-[110px] ${
+              <h3 style={{ whiteSpace: 'nowrap', lineHeight: '2' }} className={`font-extrabold text-md tracking-wide truncate max-w-[110px] ${
                 isDarkPoster ? 'text-white' : 'text-slate-900'
               }`}>
                 {party.name}
@@ -512,7 +512,7 @@ export default function ExportImageModal({ isOpen, onClose, mode = 'gvg' }: Expo
                   background: isDarkPoster ? bgTint : `linear-gradient(${bgTint}, ${bgTint}), #ffffff`,
                   borderColor: borderTint,
                 }}
-                className={`h-12 rounded-xl border ${isEightCols ? 'px-2' : 'px-2.5'} flex items-center justify-between gap-2 shadow-sm overflow-hidden member-slot-card`}
+                className={`h-18 rounded-xl border ${isEightCols ? 'px-2' : 'px-2.5'} flex items-center justify-between gap-2 shadow-sm overflow-hidden member-slot-card`}
               >
                 <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
                   <div className="shrink-0 flex items-center justify-center">
@@ -520,8 +520,8 @@ export default function ExportImageModal({ isOpen, onClose, mode = 'gvg' }: Expo
                   </div>
                   <div className="min-w-0 flex-1 overflow-hidden">
                     <div
-                      style={{ whiteSpace: 'nowrap', lineHeight: '1.8' }}
-                      className={`truncate font-extrabold text-xs sm:text-sm ${
+                      style={{ whiteSpace: 'nowrap', lineHeight: '2' }}
+                      className={`truncate font-extrabold text-md ${
                         isDarkPoster ? 'text-white' : 'text-slate-900'
                       }`}
                     >
@@ -919,7 +919,7 @@ export default function ExportImageModal({ isOpen, onClose, mode = 'gvg' }: Expo
                                       className="w-2.5 h-2.5 rounded-full shrink-0 shadow-xs"
                                     />
                                   )}
-                                  <span style={{ whiteSpace: 'nowrap', lineHeight: '1.8' }} className="font-extrabold text-sm sm:text-base tracking-wide truncate">
+                                  <span style={{ whiteSpace: 'nowrap', lineHeight: '2' }} className="font-extrabold text-md tracking-wide truncate">
                                     {item.team.name}
                                   </span>
                                   <span

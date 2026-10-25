@@ -446,6 +446,7 @@ export default function GvgPage() {
         onClose={() => setImportPresetPartyId(null)}
         targetParty={gvgParties.find((p) => p.id === importPresetPartyId) || null}
         presetParties={presetParties}
+        currentParties={gvgParties}
         members={members}
         onConfirm={(presetPartyId) => {
           if (importPresetPartyId) {

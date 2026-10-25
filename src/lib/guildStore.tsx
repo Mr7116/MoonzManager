@@ -570,7 +570,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
         });
         return cleaned.map((p) => {
           if (p.id !== targetPartyId) return p;
-          return { ...p, slots: presetSlots };
+          return { ...p, slots: presetSlots, presetId: presetPartyId };
         });
       });
     } else if (mode === 'siege') {
@@ -584,7 +584,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
         });
         return cleaned.map((p) => {
           if (p.id !== targetPartyId) return p;
-          return { ...p, slots: presetSlots };
+          return { ...p, slots: presetSlots, presetId: presetPartyId };
         });
       });
     } else if (mode === 'polarity') {
@@ -598,7 +598,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
         });
         return cleaned.map((p) => {
           if (p.id !== targetPartyId) return p;
-          return { ...p, slots: presetSlots };
+          return { ...p, slots: presetSlots, presetId: presetPartyId };
         });
       });
     }
