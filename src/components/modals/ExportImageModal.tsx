@@ -374,7 +374,7 @@ export default function ExportImageModal({ isOpen, onClose, mode = 'gvg' }: Expo
         {isEightCols ? (
           <div className="space-y-1 pb-1">
             <div className="flex items-center justify-between text-[11px] gap-1">
-              <h3 style={{ whiteSpace: 'nowrap', lineHeight: '2' }} className={`font-extrabold text-md tracking-wide truncate max-w-[110px] ${
+              <h3 style={{ whiteSpace: 'nowrap', lineHeight: '2' }} className={`font-extrabold text-xl tracking-wide truncate max-w-[110px] ${
                 isDarkPoster ? 'text-white' : 'text-slate-900'
               }`}>
                 {party.name}
@@ -521,7 +521,7 @@ export default function ExportImageModal({ isOpen, onClose, mode = 'gvg' }: Expo
                   <div className="min-w-0 flex-1 overflow-hidden">
                     <div
                       style={{ whiteSpace: 'nowrap', lineHeight: '2' }}
-                      className={`truncate font-extrabold text-md ${
+                      className={`truncate font-extrabold text-xl ${
                         isDarkPoster ? 'text-white' : 'text-slate-900'
                       }`}
                     >
@@ -843,21 +843,16 @@ export default function ExportImageModal({ isOpen, onClose, mode = 'gvg' }: Expo
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">{modeConfig.icon}</span>
                   <div>
-                    <div className="flex items-center gap-2.5">
-                      <h2 className={`text-base sm:text-lg font-extrabold tracking-wide ${isDarkPoster ? 'text-white' : 'text-slate-900'}`}>
-                        {modeConfig.fieldTitle}
-                      </h2>
-                      <span className={`rounded-full ${modeConfig.badgeColor} px-2.5 py-0.5 text-xs font-extrabold text-white shadow-sm`}>
-                        ครอบคลุม {mainTeams.length} ทีม ({mainTeams.map((t) => t.name).join(', ')})
-                      </span>
-                    </div>
+                    <h2 className={`text-base sm:text-lg font-extrabold tracking-wide ${isDarkPoster ? 'text-white' : 'text-slate-900'}`}>
+                      {modeConfig.fieldTitle}
+                    </h2>
                     <p className={`text-xs mt-0.5 ${isDarkPoster ? 'text-slate-400' : 'text-slate-500'}`}>
                       {modeConfig.fieldSubtitle}
                     </p>
                   </div>
                 </div>
                 <div
-                  className={`flex items-center gap-3 text-xs px-4 py-2 rounded-xl border ${
+                  className={`flex items-center gap-3 text-xs px-4 py-2 rounded-xl border shrink-0 whitespace-nowrap ${
                     isDarkPoster
                       ? 'text-slate-300 bg-slate-950/80 border-slate-800'
                       : 'text-slate-700 bg-slate-50 border-slate-200 shadow-xs'
@@ -919,7 +914,7 @@ export default function ExportImageModal({ isOpen, onClose, mode = 'gvg' }: Expo
                                       className="w-2.5 h-2.5 rounded-full shrink-0 shadow-xs"
                                     />
                                   )}
-                                  <span style={{ whiteSpace: 'nowrap', lineHeight: '2' }} className="font-extrabold text-md tracking-wide truncate">
+                                  <span style={{ whiteSpace: 'nowrap', lineHeight: '2' }} className="font-extrabold text-xl tracking-wide truncate">
                                     {item.team.name}
                                   </span>
                                   <span
@@ -1031,21 +1026,16 @@ export default function ExportImageModal({ isOpen, onClose, mode = 'gvg' }: Expo
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">🚩</span>
                   <div>
-                    <div className="flex items-center gap-2.5">
-                      <h2 className={`text-base sm:text-lg font-extrabold tracking-wide ${isDarkPoster ? 'text-white' : 'text-slate-900'}`}>
-                        สนามรอง (Sub Field)
-                      </h2>
-                      <span className="rounded-full bg-cyan-600 px-2.5 py-0.5 text-xs font-extrabold text-white shadow-sm">
-                        ครอบคลุม {subTeams.length} ทีม ({subTeams.map((t) => t.name).join(', ')})
-                      </span>
-                    </div>
+                    <h2 className={`text-base sm:text-lg font-extrabold tracking-wide ${isDarkPoster ? 'text-white' : 'text-slate-900'}`}>
+                      สนามรอง (Sub Field)
+                    </h2>
                     <p className={`text-xs mt-0.5 ${isDarkPoster ? 'text-slate-400' : 'text-slate-500'}`}>
                       ทัพหนุนประจำสมรภูมิรอง
                     </p>
                   </div>
                 </div>
                 <div
-                  className={`flex items-center gap-3 text-xs px-4 py-2 rounded-xl border ${
+                  className={`flex items-center gap-3 text-xs px-4 py-2 rounded-xl border shrink-0 whitespace-nowrap ${
                     isDarkPoster
                       ? 'text-slate-300 bg-slate-950/80 border-slate-800'
                       : 'text-slate-700 bg-slate-50 border-slate-200 shadow-xs'

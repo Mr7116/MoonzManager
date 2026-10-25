@@ -38,7 +38,7 @@ export default function RootLayout({
             __html: `
               (function() {
                 try {
-                  var t = localStorage.getItem('moonz_theme');
+                  var t = localStorage.getItem('Moonz_theme');
                   var isDark = t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches) || !t;
                   if (t === 'light') isDark = false;
                   if (isDark) {

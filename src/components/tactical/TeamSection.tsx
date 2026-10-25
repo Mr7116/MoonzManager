@@ -210,53 +210,55 @@ export default function TeamSection({
         </div>
 
         {/* Right: Eye-friendly Action Buttons */}
-        <div className="flex flex-wrap items-center gap-2">
-          {onExportTeamImage && (
-            <button
-              type="button"
-              onClick={() => onExportTeamImage(team.id)}
-              className="flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700/70 bg-slate-100 dark:bg-slate-800/80 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700/80 hover:text-slate-900 dark:hover:text-white transition shadow-sm cursor-pointer"
-              title="ส่งออกรูปทีม"
-            >
-              <span>📷</span>
-              <span>รูป{team.name}</span>
-            </button>
-          )}
-
+        <div className="flex flex-col sm:items-end gap-1.5 shrink-0">
           {!isReadOnly && onAddParty && (
             <button
               type="button"
               onClick={() => onAddParty(team.id)}
-              className="flex items-center gap-1.5 rounded-xl border border-indigo-300 dark:border-indigo-500/40 bg-indigo-50 dark:bg-indigo-600/25 px-3 py-1.5 text-xs font-semibold text-indigo-700 dark:text-indigo-200 hover:bg-indigo-100 dark:hover:bg-indigo-600/40 hover:text-indigo-900 dark:hover:text-white transition shadow-sm cursor-pointer"
+              className="flex items-center justify-center gap-1.5 rounded-xl border border-indigo-300 dark:border-indigo-500/40 bg-indigo-50 dark:bg-indigo-600/25 px-3 py-1.5 text-xs font-semibold text-indigo-700 dark:text-indigo-200 hover:bg-indigo-100 dark:hover:bg-indigo-600/40 hover:text-indigo-900 dark:hover:text-white transition shadow-sm cursor-pointer w-full sm:w-auto"
             >
               <span>➕</span>
               <span>เพิ่มปาร์ตี้ใน {team.name}</span>
             </button>
           )}
 
-          {!isReadOnly && onRenumberParties && parties.length > 0 && (
-            <button
-              type="button"
-              onClick={() => onRenumberParties(team.id)}
-              className="flex items-center gap-1.5 rounded-xl border border-sky-300 dark:border-sky-600/30 bg-sky-50 dark:bg-sky-950/30 px-3 py-1.5 text-xs font-medium text-sky-700 dark:text-sky-200 hover:bg-sky-100 dark:hover:bg-sky-900/40 hover:text-sky-900 dark:hover:text-white transition shadow-sm cursor-pointer"
-              title="จัดเรียงเลขปาร์ตี้ใหม่ 1 ถึง N"
-            >
-              <span>🔢</span>
-              <span className="hidden sm:inline">รันเลขตี้ 1-N</span>
-            </button>
-          )}
+          <div className="flex flex-wrap items-center gap-1.5">
+            {onExportTeamImage && (
+              <button
+                type="button"
+                onClick={() => onExportTeamImage(team.id)}
+                className="flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700/70 bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700/80 hover:text-slate-900 dark:hover:text-white transition shadow-sm cursor-pointer"
+                title="ส่งออกรูปทีม"
+              >
+                <span>📷</span>
+                <span>รูป{team.name}</span>
+              </button>
+            )}
 
-          {!isReadOnly && onDeleteTeam && (
-            <button
-              type="button"
-              onClick={() => onDeleteTeam(team.id)}
-              className="flex items-center gap-1.5 rounded-xl border border-rose-300 dark:border-rose-600/30 bg-rose-50 dark:bg-rose-950/30 px-3 py-1.5 text-xs font-medium text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/40 hover:text-rose-900 dark:hover:text-white transition shadow-sm cursor-pointer"
-              title="ลบทีมนี้"
-            >
-              <span>🗑️</span>
-              <span className="hidden sm:inline">ลบทีม</span>
-            </button>
-          )}
+            {!isReadOnly && onRenumberParties && parties.length > 0 && (
+              <button
+                type="button"
+                onClick={() => onRenumberParties(team.id)}
+                className="flex items-center gap-1.5 rounded-xl border border-sky-300 dark:border-sky-600/30 bg-sky-50 dark:bg-sky-950/30 px-2.5 py-1 text-xs font-medium text-sky-700 dark:text-sky-200 hover:bg-sky-100 dark:hover:bg-sky-900/40 hover:text-sky-900 dark:hover:text-white transition shadow-sm cursor-pointer"
+                title="จัดเรียงเลขปาร์ตี้ใหม่ 1 ถึง N"
+              >
+                <span>🔢</span>
+                <span className="inline">รันเลขตี้ 1-N</span>
+              </button>
+            )}
+
+            {!isReadOnly && onDeleteTeam && (
+              <button
+                type="button"
+                onClick={() => onDeleteTeam(team.id)}
+                className="flex items-center gap-1.5 rounded-xl border border-rose-300 dark:border-rose-600/30 bg-rose-50 dark:bg-rose-950/30 px-2.5 py-1 text-xs font-medium text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/40 hover:text-rose-900 dark:hover:text-white transition shadow-sm cursor-pointer"
+                title="ลบทีมนี้"
+              >
+                <span>🗑️</span>
+                <span className="inline">ลบทีม</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
