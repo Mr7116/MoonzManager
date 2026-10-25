@@ -529,6 +529,20 @@ export default function AuctionPage() {
                 <span className="flex items-center gap-1">
                   <span>📅</span>
                   <span>วันที่จัดรอบ: <strong className="text-slate-200">{currentRound.date}</strong></span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!currentRound) return;
+                      const newDate = window.prompt('เปลี่ยนวันที่จัดรอบ (YYYY-MM-DD):', currentRound.date);
+                      if (newDate && newDate.trim()) {
+                        updateAuctionRound(currentRound.id, { date: newDate.trim() });
+                      }
+                    }}
+                    className="text-slate-400 hover:text-white p-0.5 text-[11px] transition cursor-pointer"
+                    title="แก้ไขวันที่จัดรอบ"
+                  >
+                    ✏️
+                  </button>
                 </span>
               )}
               {currentRound?.note && (

@@ -14,23 +14,56 @@ export default function CreateRoundModal({
   onClose,
   onCreateRound,
 }: CreateRoundModalProps) {
-  const todayStr = () => new Date().toISOString().split('T')[0];
-  const thaiDateStr = () => {
-    return new Date().toLocaleDateString('th-TH', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
+  // Helper to get local date in YYYY-MM-DD (not UTC)
+  const formatLocalDate = (d: Date = new Date()) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
-  const [name, setName] = useState<string>(`รอบ GVG ${thaiDateStr()}`);
-  const [date, setDate] = useState<string>(todayStr);
+  // Helper to format Thai date from YYYY-MM-DD
+  const formatThaiDate = (dateIsoStr: string) => {
+    if (!dateIsoStr) return '';
+    try {
+      const [y, m, d] = dateIsoStr.split('-').map(Number);
+      const dt = new Date(y, m - 1, d);
+      return dt.toLocaleDateString('th-TH', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      });
+    } catch {
+      return dateIsoStr;
+    }
+  };
+
+  const getLastDayOfWeek = (targetDay: number) => {
+    // 0 = Sunday, 6 = Saturday
+    const d = new Date();
+    const currentDay = d.getDay();
+    let diff = (currentDay - targetDay + 7) % 7;
+    if (diff === 0) diff = 7;
+    d.setDate(d.getDate() - diff);
+    return formatLocalDate(d);
+  };
+
+  const initialDate = formatLocalDate(new Date());
+  const [prefix, setPrefix] = useState<string>('รอบ GVG');
+  const [date, setDate] = useState<string>(initialDate);
+  const [name, setName] = useState<string>(`รอบ GVG ${formatThaiDate(initialDate)}`);
   const [note, setNote] = useState<string>('ดรอปจากกิลด์วอร์รอบหลัก');
 
   if (!isOpen) return null;
 
-  const handleQuickName = (title: string) => {
-    setName(`${title} ${thaiDateStr()}`);
+  const handleDateChange = (newDateIso: string) => {
+    setDate(newDateIso);
+    setName(`${prefix} ${formatThaiDate(newDateIso)}`);
+  };
+
+  const handleQuickPrefix = (newPrefix: string) => {
+    setPrefix(newPrefix);
+    setName(`${newPrefix} ${formatThaiDate(date)}`);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -41,6 +74,12 @@ export default function CreateRoundModal({
     }
     onCreateRound(name.trim(), date, note.trim() || undefined);
     onClose();
+  };
+
+  const yesterdayDate = () => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return formatLocalDate(d);
   };
 
   return createPortal(
@@ -75,29 +114,99 @@ export default function CreateRoundModal({
           {/* Quick presets */}
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-              เลือกชื่อรอบด่วน:
+              เลือกประเภทชื่อรอบด่วน:
             </label>
             <div className="flex flex-wrap items-center gap-1.5">
               <button
                 type="button"
-                onClick={() => handleQuickName('รอบ GVG')}
-                className="px-2.5 py-1 rounded-lg border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-[11px] font-bold text-slate-300 transition cursor-pointer"
+                onClick={() => handleQuickPrefix('รอบ GVG')}
+                className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold transition cursor-pointer ${
+                  prefix === 'รอบ GVG'
+                    ? 'border-rose-500/60 bg-rose-500/20 text-rose-300'
+                    : 'border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-300'
+                }`}
               >
                 ⚔️ รอบ GVG
               </button>
               <button
                 type="button"
-                onClick={() => handleQuickName('รอบ Siege War')}
-                className="px-2.5 py-1 rounded-lg border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-[11px] font-bold text-slate-300 transition cursor-pointer"
+                onClick={() => handleQuickPrefix('รอบ Siege War')}
+                className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold transition cursor-pointer ${
+                  prefix === 'รอบ Siege War'
+                    ? 'border-rose-500/60 bg-rose-500/20 text-rose-300'
+                    : 'border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-300'
+                }`}
               >
                 🏰 รอบ Siege War
               </button>
               <button
                 type="button"
-                onClick={() => handleQuickName('รอบศึกชิงปราสาท')}
-                className="px-2.5 py-1 rounded-lg border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-[11px] font-bold text-slate-300 transition cursor-pointer"
+                onClick={() => handleQuickPrefix('รอบศึกชิงปราสาท')}
+                className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold transition cursor-pointer ${
+                  prefix === 'รอบศึกชิงปราสาท'
+                    ? 'border-rose-500/60 bg-rose-500/20 text-rose-300'
+                    : 'border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-300'
+                }`}
               >
                 🛡️ รอบศึกชิงปราสาท
+              </button>
+            </div>
+          </div>
+
+          {/* Date Picker */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-semibold text-slate-300">
+                วันที่จัดรอบ:
+              </label>
+              <span className="text-[11px] font-mono text-amber-300">
+                {formatThaiDate(date)}
+              </span>
+            </div>
+
+            <div className="relative">
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => handleDateChange(e.target.value)}
+                onClick={(e) => {
+                  try {
+                    e.currentTarget.showPicker();
+                  } catch {}
+                }}
+                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm font-medium text-white focus:border-rose-500 focus:outline-none cursor-pointer [color-scheme:dark] transition hover:border-slate-600"
+              />
+            </div>
+
+            {/* Quick Date Presets */}
+            <div className="flex flex-wrap items-center gap-1.5 mt-2">
+              <button
+                type="button"
+                onClick={() => handleDateChange(formatLocalDate(new Date()))}
+                className="px-2 py-0.5 rounded-lg border border-slate-700 bg-slate-850 hover:bg-slate-700 text-[10px] font-bold text-slate-300 transition cursor-pointer"
+              >
+                📅 วันนี้
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDateChange(yesterdayDate())}
+                className="px-2 py-0.5 rounded-lg border border-slate-700 bg-slate-850 hover:bg-slate-700 text-[10px] font-bold text-slate-300 transition cursor-pointer"
+              >
+                📅 เมื่อวาน
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDateChange(getLastDayOfWeek(0))}
+                className="px-2 py-0.5 rounded-lg border border-slate-700 bg-slate-850 hover:bg-slate-700 text-[10px] font-bold text-slate-300 transition cursor-pointer"
+              >
+                📅 อาทิตย์ที่ผ่านมา
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDateChange(getLastDayOfWeek(6))}
+                className="px-2 py-0.5 rounded-lg border border-slate-700 bg-slate-850 hover:bg-slate-700 text-[10px] font-bold text-slate-300 transition cursor-pointer"
+              >
+                📅 เสาร์ที่ผ่านมา
               </button>
             </div>
           </div>
@@ -112,21 +221,8 @@ export default function CreateRoundModal({
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="เช่น รอบ GVG วันที่ 25 ต.ค. 2569"
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-rose-500 focus:outline-none"
-            />
-          </div>
-
-          {/* Date */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
-              วันที่จัดรอบ:
-            </label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white focus:border-rose-500 focus:outline-none"
+              placeholder="เช่น รอบ GVG วันที่ 26 ต.ค. 2569"
+              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-rose-500 focus:outline-none"
             />
           </div>
 
@@ -140,7 +236,7 @@ export default function CreateRoundModal({
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder="เช่น ดรอปจากบ้านปราสาท 1 / หลังจบวอร์"
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-rose-500 focus:outline-none"
+              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-rose-500 focus:outline-none"
             />
           </div>
 
@@ -167,4 +263,3 @@ export default function CreateRoundModal({
     document.body
   );
 }
-
