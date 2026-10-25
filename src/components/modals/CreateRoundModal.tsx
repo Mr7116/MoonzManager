@@ -174,7 +174,7 @@ export default function CreateRoundModal({
                     e.currentTarget.showPicker();
                   } catch {}
                 }}
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm font-medium text-white focus:border-rose-500 focus:outline-none cursor-pointer [color-scheme:dark] transition hover:border-slate-600"
+                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm font-medium text-white focus:border-rose-500 focus:outline-none cursor-pointer dark:[color-scheme:dark] transition hover:border-slate-600"
               />
             </div>
 

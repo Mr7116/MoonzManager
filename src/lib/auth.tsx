@@ -14,7 +14,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-const PUBLIC_ROUTES = ['/login', '/public', '/leave'];
+const PUBLIC_ROUTES = ['/login', '/public', '/leave', '/auctions'];
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);

@@ -80,49 +80,99 @@ export default function RegisterMembersModal({
         </div>
 
         {/* Item Summary Bar */}
-        <div className="flex items-center justify-between gap-3 p-3 rounded-2xl border border-rose-500/30 bg-rose-950/20 shadow-inner shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="relative w-12 h-12 shrink-0 rounded-xl border border-rose-500/40 bg-[#0c1220] flex items-center justify-center shadow">
-              <Image
-                src={`/images/accessories/${auction.accessoryIcon}.webp`}
-                alt={auction.accessoryName}
-                width={40}
-                height={40}
-                unoptimized
-                className="object-contain"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = `https://roworlddb.com/media/images/item/${auction.accessoryIcon}.webp`;
-                }}
-              />
-              {auction.accessoryLevel && (
-                <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[8px] font-bold bg-black/90 border border-slate-700 text-amber-300 font-mono">
-                  Lv.{auction.accessoryLevel}
-                </span>
+        {(() => {
+          const isCard = auction.itemCategory === 'card' || auction.cardQuality === 'Purple';
+          const isRelic = auction.itemCategory === 'relic' || auction.cardQuality === 'Sage';
+          const imageSrc = isRelic
+            ? `/images/relics/${auction.accessoryIcon}.webp`
+            : isCard
+            ? `/images/cards/${auction.accessoryIcon}.webp`
+            : `/images/accessories/${auction.accessoryIcon}.webp`;
+
+          return (
+            <div className={`flex items-center justify-between gap-3 p-3 rounded-2xl border shadow-inner shrink-0 ${
+              isRelic ? 'border-amber-500/30 bg-amber-950/20' : isCard ? 'border-purple-500/30 bg-purple-950/20' : 'border-rose-500/30 bg-rose-950/20'
+            }`}>
+              <div className="flex items-center gap-3">
+                <div className={`relative w-12 h-12 shrink-0 rounded-xl border flex items-center justify-center shadow ${
+                  isRelic ? 'border-amber-500/40 bg-[#0c1220]' : isCard ? 'border-purple-500/40 bg-[#0c1220]' : 'border-rose-500/40 bg-[#0c1220]'
+                }`}>
+                  <Image
+                    src={imageSrc}
+                    alt={auction.accessoryName}
+                    width={40}
+                    height={40}
+                    unoptimized
+                    className="object-contain"
+                    onError={(e) => {
+                      const fallback = isRelic
+                        ? `https://roworlddb.com/media/images/hallows/${auction.accessoryIcon}.webp`
+                        : `https://roworlddb.com/media/images/item/${auction.accessoryIcon}.webp`;
+                      (e.target as HTMLImageElement).src = fallback;
+                    }}
+                  />
+                  {isRelic ? (
+                    <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-amber-950/90 border border-amber-500/60 text-amber-200">
+                      Sage
+                    </span>
+                  ) : isCard ? (
+                    <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-purple-950/90 border border-purple-500/60 text-purple-200">
+                      {auction.cardSlot || 'MVP'}
+                    </span>
+                  ) : (
+                    auction.accessoryLevel && (
+                      <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[8px] font-bold bg-black/90 border border-slate-700 text-amber-300 font-mono">
+                        Lv.{auction.accessoryLevel}
+                      </span>
+                    )
+                  )}
+                </div>
+
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-extrabold text-sm sm:text-base text-white">{auction.accessoryName}</h4>
+                    {isRelic ? (
+                      <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                        🏺 Relic · {auction.cardSlot || 'Sage'}
+                      </span>
+                    ) : isCard ? (
+                      <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                        🃏 MVP ม่วง · {auction.cardSlot || 'การ์ด'}
+                      </span>
+                    ) : (
+                      <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                        💎 Red
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-400">
+                    {auction.sourceNote
+                      ? `🏷️ ${auction.sourceNote}`
+                      : isRelic
+                      ? `Relic ${auction.cardSlot || ''}`
+                      : isCard
+                      ? `การ์ด MVP ${auction.cardSlot || ''}`
+                      : 'ไอเทมระดับ Red Lv.90'}
+                  </p>
+                </div>
+              </div>
+
+              {entries.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onOpenWheel();
+                  }}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white text-xs font-bold shadow-md shadow-rose-950/40 flex items-center gap-1.5 transition cursor-pointer"
+                >
+                  <span>🎡</span>
+                  <span>ไปหมุนวงล้อสุ่ม ({entries.length}) ▶</span>
+                </button>
               )}
             </div>
-
-            <div>
-              <h4 className="font-extrabold text-sm sm:text-base text-white">{auction.accessoryName}</h4>
-              <p className="text-xs text-slate-400">
-                {auction.sourceNote ? `🏷️ ${auction.sourceNote}` : 'ไอเทมระดับ Red Lv.90'}
-              </p>
-            </div>
-          </div>
-
-          {entries.length > 0 && (
-            <button
-              type="button"
-              onClick={() => {
-                onClose();
-                onOpenWheel();
-              }}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white text-xs font-bold shadow-md shadow-rose-950/40 flex items-center gap-1.5 transition cursor-pointer"
-            >
-              <span>🎡</span>
-              <span>ไปหมุนวงล้อสุ่ม ({entries.length}) ▶</span>
-            </button>
-          )}
-        </div>
+          );
+        })()}
 
         {/* Two-Column Grid: Members Selector & Enrolled List */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 overflow-hidden min-h-[300px]">

@@ -121,48 +121,75 @@ export default function PlaceBidModal({
         </div>
 
         {/* Item Info Card */}
-        <div className="flex items-center gap-3 p-3 rounded-2xl border border-rose-500/30 bg-rose-950/20 shadow-inner">
-          <div className="relative w-14 h-14 shrink-0 rounded-xl border border-rose-500/40 bg-[#0c1220] flex items-center justify-center">
-            <Image
-              src={`/images/accessories/${auction.accessoryIcon}.webp`}
-              alt={auction.accessoryName}
-              width={48}
-              height={48}
-              unoptimized
-              className="object-contain"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = `https://roworlddb.com/media/images/item/${auction.accessoryIcon}.webp`;
-              }}
-            />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h4 className="font-extrabold text-sm text-white truncate">{auction.accessoryName}</h4>
-              {auction.accessoryLevel && (
-                <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 font-mono">
-                  Lv.{auction.accessoryLevel}
-                </span>
-              )}
+        {(() => {
+          const isCard = auction.itemCategory === 'card' || auction.cardQuality === 'Purple';
+          const isRelic = auction.itemCategory === 'relic' || auction.cardQuality === 'Sage';
+          const imageSrc = isRelic
+            ? `/images/relics/${auction.accessoryIcon}.webp`
+            : isCard
+            ? `/images/cards/${auction.accessoryIcon}.webp`
+            : `/images/accessories/${auction.accessoryIcon}.webp`;
+
+          return (
+            <div className={`flex items-center gap-3 p-3 rounded-2xl border shadow-inner ${
+              isRelic ? 'border-amber-500/30 bg-amber-950/20' : isCard ? 'border-purple-500/30 bg-purple-950/20' : 'border-rose-500/30 bg-rose-950/20'
+            }`}>
+              <div className={`relative w-14 h-14 shrink-0 rounded-xl border flex items-center justify-center ${
+                isRelic ? 'border-amber-500/40 bg-[#0c1220]' : isCard ? 'border-purple-500/40 bg-[#0c1220]' : 'border-rose-500/40 bg-[#0c1220]'
+              }`}>
+                <Image
+                  src={imageSrc}
+                  alt={auction.accessoryName}
+                  width={48}
+                  height={48}
+                  unoptimized
+                  className="object-contain"
+                  onError={(e) => {
+                    const fallback = isRelic
+                      ? `https://roworlddb.com/media/images/hallows/${auction.accessoryIcon}.webp`
+                      : `https://roworlddb.com/media/images/item/${auction.accessoryIcon}.webp`;
+                    (e.target as HTMLImageElement).src = fallback;
+                  }}
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h4 className="font-extrabold text-sm text-white truncate">{auction.accessoryName}</h4>
+                  {isRelic ? (
+                    <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                      🏺 Relic
+                    </span>
+                  ) : isCard ? (
+                    <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                      🃏 MVP ม่วง
+                    </span>
+                  ) : auction.accessoryLevel ? (
+                    <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 font-mono">
+                      Lv.{auction.accessoryLevel}
+                    </span>
+                  ) : null}
+                </div>
+                <div className="text-xs text-slate-400 mt-0.5">
+                  ราคาปัจจุบัน:{' '}
+                  <span className="text-amber-400 font-extrabold font-mono text-sm">
+                    {auction.currentPrice.toLocaleString()} หน่วย
+                  </span>
+                  {auction.winnerMemberName && (
+                    <span className="text-slate-300 ml-1">
+                      (โดย <strong className="text-white">{auction.winnerMemberName}</strong>)
+                    </span>
+                  )}
+                </div>
+                <div className="text-[11px] text-slate-500">
+                  เสนอขั้นต่ำถัดไป:{' '}
+                  <strong className="text-emerald-400 font-mono">
+                    {minNextBid.toLocaleString()} หน่วย
+                  </strong>
+                </div>
+              </div>
             </div>
-            <div className="text-xs text-slate-400 mt-0.5">
-              ราคาปัจจุบัน:{' '}
-              <span className="text-amber-400 font-extrabold font-mono text-sm">
-                {auction.currentPrice.toLocaleString()} หน่วย
-              </span>
-              {auction.winnerMemberName && (
-                <span className="text-slate-300 ml-1">
-                  (โดย <strong className="text-white">{auction.winnerMemberName}</strong>)
-                </span>
-              )}
-            </div>
-            <div className="text-[11px] text-slate-500">
-              เสนอขั้นต่ำถัดไป:{' '}
-              <strong className="text-emerald-400 font-mono">
-                {minNextBid.toLocaleString()} หน่วย
-              </strong>
-            </div>
-          </div>
-        </div>
+          );
+        })()}
 
         {/* Bid Form */}
         <form onSubmit={handleSubmit} className="space-y-4">

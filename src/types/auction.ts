@@ -29,6 +29,9 @@ export interface AuctionEntry {
 export interface AuctionItem {
   id: string;
   roundId?: string;
+  itemCategory?: 'accessory' | 'card' | 'relic';
+  cardSlot?: string;
+  cardQuality?: string;
   accessoryId: number;
   accessoryName: string;
   accessoryLevel?: number;

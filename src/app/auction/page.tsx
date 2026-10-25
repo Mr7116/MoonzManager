@@ -1,8 +1,11 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth';
 import { useGuildStore } from '@/lib/guildStore';
+import MemberAuctionView from '@/components/auction/MemberAuctionView';
 import { AuctionItem, AuctionRound } from '@/types/auction';
 import AddAuctionModal from '@/components/modals/AddAuctionModal';
 import RegisterMembersModal from '@/components/modals/RegisterMembersModal';
@@ -34,6 +37,9 @@ export default function AuctionPage() {
     resetAuctionWinner,
     deleteAuctionItem,
   } = useGuildStore();
+
+  const { isAuthenticated } = useAuth();
+  const [viewAsMember, setViewAsMember] = useState(false);
 
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'active' | 'ended'>('all');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
@@ -127,6 +133,11 @@ export default function AuctionPage() {
     }
   };
 
+  // If visitor is NOT logged in or toggled member view, render MemberAuctionView directly!
+  if (!isAuthenticated || viewAsMember) {
+    return <MemberAuctionView onSwitchToAdmin={() => setViewAsMember(false)} />;
+  }
+
   return (
     <div className="mx-auto max-w-[1600px] px-3 py-4 sm:px-6 space-y-4 sm:space-y-5">
       {/* Top Banner */}
@@ -150,6 +161,22 @@ export default function AuctionPage() {
         {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-2.5">
           <AutoSaveBadge />
+
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                const url = `${window.location.origin}/auctions`;
+                navigator.clipboard?.writeText(url);
+                alert('คัดลอกลิงก์หน้าลงชื่อประมูลสำหรับสมาชิก (/auctions) เรียบร้อยแล้ว!\n\n' + url);
+              }
+            }}
+            className="flex items-center gap-1.5 rounded-2xl border border-indigo-400 dark:border-indigo-500/40 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-950/50 px-3.5 py-2 text-xs font-bold text-indigo-700 dark:text-indigo-300 transition cursor-pointer"
+            title="คัดลอกลิงก์ /auctions สำหรับส่งให้สมาชิกใน Line/Discord"
+          >
+            <span>🔗</span>
+            <span>ลิงก์สำหรับสมาชิก (/auctions)</span>
+          </button>
 
           {currentRound && stats.pendingCount > 0 && currentRound.status === 'active' && (
             <button
@@ -176,22 +203,22 @@ export default function AuctionPage() {
       </div>
 
       {/* Round Selector Bar (ครอบรอบประมูล) */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-3.5 sm:p-4 rounded-3xl border border-slate-700 bg-gradient-to-r from-[#0d1322] via-[#0b101c] to-[#101728] shadow-lg">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-3.5 sm:p-4 rounded-3xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-gradient-to-r dark:from-[#0d1322] dark:via-[#0b101c] dark:to-[#101728] shadow-sm dark:shadow-lg">
         {/* Left: Round Dropdown Selector & Status Pill */}
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-500/20 text-xl border border-amber-500/30 text-amber-400 shrink-0">
+            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-500/20 text-xl border border-amber-500/30 text-amber-500 dark:text-amber-400 shrink-0">
               🎯
             </span>
             <div>
-              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 เลือกรอบการประมูล / สุ่มแจก (Round):
               </div>
               <select
                 value={currentRound?.id || ''}
                 onChange={(e) => setActiveRoundId(e.target.value)}
                 disabled={auctionRounds.length === 0}
-                className="bg-[#070b14] border border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold text-white focus:border-rose-500 focus:outline-none cursor-pointer max-w-[280px] sm:max-w-md mt-0.5 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="bg-slate-50 dark:bg-[#070b14] border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-white focus:border-rose-500 focus:outline-none cursor-pointer max-w-[280px] sm:max-w-md mt-0.5 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {auctionRounds.length === 0 ? (
                   <option value="">-- ยังไม่มีรอบประมูล (กดปุ่ม + สร้างรอบใหม่) --</option>
@@ -214,13 +241,13 @@ export default function AuctionPage() {
           {currentRound && (
             <div className="flex items-center gap-1.5 self-end mb-1">
               {currentRound.status === 'completed' ? (
-                <span className="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 flex items-center gap-1">
+                <span className="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/40 flex items-center gap-1">
                   <span>🏆</span>
                   <span>รอบนี้จบการประมูลแล้ว</span>
                 </span>
               ) : (
-                <span className="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   <span>กำลังดำเนินการ</span>
                 </span>
               )}
@@ -238,7 +265,7 @@ export default function AuctionPage() {
                   completeAuctionRound(currentRound.id);
                 }
               }}
-              className="px-3 py-1.5 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 text-indigo-300 text-xs font-bold transition cursor-pointer flex items-center gap-1"
+              className="px-3 py-1.5 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 text-indigo-700 dark:text-indigo-300 text-xs font-bold transition cursor-pointer flex items-center gap-1"
               title="บันทึกว่าจบการประมูลรอบนี้แล้ว"
             >
               <span>🔒</span>
@@ -249,7 +276,7 @@ export default function AuctionPage() {
           <button
             type="button"
             onClick={() => setIsRoundHistoryOpen(true)}
-            className="px-3 py-1.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition cursor-pointer flex items-center gap-1"
+            className="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition cursor-pointer flex items-center gap-1"
           >
             <span>📜</span>
             <span>ดูรอบย้อนหลัง ({auctionRounds.length})</span>
@@ -268,17 +295,17 @@ export default function AuctionPage() {
 
       {/* If No Round is Created Yet */}
       {!currentRound ? (
-        <div className="rounded-3xl border border-dashed border-slate-800 bg-gradient-to-b from-[#0b101d] to-[#070b14] p-10 sm:p-14 text-center space-y-4 shadow-inner">
+        <div className="rounded-3xl border border-dashed border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-gradient-to-b dark:from-[#0b101d] dark:to-[#070b14] p-10 sm:p-14 text-center space-y-4 shadow-inner">
           <div className="w-16 h-16 mx-auto rounded-3xl bg-gradient-to-br from-amber-500/20 via-rose-500/15 to-purple-500/20 border border-amber-500/30 flex items-center justify-center text-4xl shadow-lg shadow-amber-500/10">
             🎯
           </div>
 
           <div className="space-y-2 max-w-lg mx-auto">
-            <h3 className="text-lg sm:text-xl font-black text-white tracking-wide">
+            <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-wide">
               ยังไม่มีรอบการประมูล / สุ่มแจก
             </h3>
-            <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-              กรุณากดปุ่ม <strong className="text-amber-300 font-semibold">&ldquo;+ สร้างรอบใหม่&rdquo;</strong> ด้านบน เพื่อกำหนดรอบการประมูล (เช่น รอบกิลด์วอร์ประจำสัปดาห์) ก่อนที่จะเปิดรับรายชื่อและสุ่มวงล้อ
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              กรุณากดปุ่ม <strong className="text-amber-600 dark:text-amber-300 font-semibold">&ldquo;+ สร้างรอบใหม่&rdquo;</strong> ด้านบน เพื่อกำหนดรอบการประมูล (เช่น รอบกิลด์วอร์ประจำสัปดาห์) ก่อนที่จะเปิดรับรายชื่อและสุ่มวงล้อ
             </p>
           </div>
 
@@ -297,11 +324,11 @@ export default function AuctionPage() {
         <>
           {/* Historical Round Banner */}
       {currentRound && currentRound.status === 'completed' && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 p-3 rounded-2xl border border-indigo-500/40 bg-gradient-to-r from-indigo-950/40 via-purple-950/30 to-indigo-950/40 text-xs shadow-inner">
-          <div className="flex items-center gap-2 text-indigo-200">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 p-3 rounded-2xl border border-indigo-300 dark:border-indigo-500/40 bg-indigo-50 dark:bg-gradient-to-r dark:from-indigo-950/40 dark:via-purple-950/30 dark:to-indigo-950/40 text-xs shadow-inner">
+          <div className="flex items-center gap-2 text-indigo-900 dark:text-indigo-200">
             <span className="text-base">📜</span>
             <span>
-              คุณกำลังดูข้อมูลย้อนหลังของรอบ <strong className="text-white">&ldquo;{currentRound.name}&rdquo;</strong> (วันที่ {currentRound.date}) — บันทึกผลเสร็จสมบูรณ์แล้ว
+              คุณกำลังดูข้อมูลย้อนหลังของรอบ <strong className="text-slate-900 dark:text-white">&ldquo;{currentRound.name}&rdquo;</strong> (วันที่ {currentRound.date}) — บันทึกผลเสร็จสมบูรณ์แล้ว
             </span>
           </div>
 
@@ -312,7 +339,7 @@ export default function AuctionPage() {
                 const act = auctionRounds.find((r) => r.status === 'active');
                 if (act) setActiveRoundId(act.id);
               }}
-              className="text-xs font-bold text-amber-300 hover:text-amber-200 underline cursor-pointer shrink-0"
+              className="text-xs font-bold text-amber-600 dark:text-amber-300 hover:underline cursor-pointer shrink-0"
             >
               สลับไปรอบปัจจุบัน ▶
             </button>
@@ -323,53 +350,53 @@ export default function AuctionPage() {
       {/* Summary Stats Cards for Selected Round */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* 1. Pending */}
-        <div className="rounded-2xl border border-amber-500/30 bg-amber-950/15 p-3.5 sm:p-4 shadow-sm flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/20 text-xl border border-amber-500/40 text-amber-400 shrink-0">
+        <div className="rounded-2xl border border-amber-300 dark:border-amber-500/30 bg-amber-500/10 dark:bg-amber-950/15 p-3.5 sm:p-4 shadow-sm flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/20 text-xl border border-amber-500/40 text-amber-600 dark:text-amber-400 shrink-0">
             ⏳
           </span>
           <div>
-            <div className="text-[11px] font-semibold text-amber-400/90">รอเปิดรับรายชื่อ (Pending)</div>
-            <div className="text-xl sm:text-2xl font-extrabold font-mono text-amber-300">
-              {stats.pendingCount} <span className="text-xs font-sans text-slate-400">ชิ้น</span>
+            <div className="text-[11px] font-bold text-amber-800 dark:text-amber-400/90">รอเปิดรับรายชื่อ (Pending)</div>
+            <div className="text-xl sm:text-2xl font-extrabold font-mono text-amber-700 dark:text-amber-300">
+              {stats.pendingCount} <span className="text-xs font-sans text-slate-500 dark:text-slate-400">ชิ้น</span>
             </div>
           </div>
         </div>
 
         {/* 2. Active */}
-        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/15 p-3.5 sm:p-4 shadow-sm flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/20 text-xl border border-emerald-500/40 text-emerald-400 shrink-0">
+        <div className="rounded-2xl border border-emerald-300 dark:border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-950/15 p-3.5 sm:p-4 shadow-sm flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/20 text-xl border border-emerald-500/40 text-emerald-600 dark:text-emerald-400 shrink-0">
             🟢
           </span>
           <div>
-            <div className="text-[11px] font-semibold text-emerald-400/90">เปิดรับรายชื่อ / พร้อมสุ่ม</div>
-            <div className="text-xl sm:text-2xl font-extrabold font-mono text-emerald-300">
-              {stats.activeCount} <span className="text-xs font-sans text-slate-400">ชิ้น</span>
+            <div className="text-[11px] font-bold text-emerald-800 dark:text-emerald-400/90">เปิดรับรายชื่อ / พร้อมสุ่ม</div>
+            <div className="text-xl sm:text-2xl font-extrabold font-mono text-emerald-700 dark:text-emerald-300">
+              {stats.activeCount} <span className="text-xs font-sans text-slate-500 dark:text-slate-400">ชิ้น</span>
             </div>
           </div>
         </div>
 
         {/* 3. Ended */}
-        <div className="rounded-2xl border border-indigo-500/30 bg-indigo-950/15 p-3.5 sm:p-4 shadow-sm flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/20 text-xl border border-indigo-500/40 text-indigo-400 shrink-0">
+        <div className="rounded-2xl border border-indigo-300 dark:border-indigo-500/30 bg-indigo-500/10 dark:bg-indigo-950/15 p-3.5 sm:p-4 shadow-sm flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/20 text-xl border border-indigo-500/40 text-indigo-600 dark:text-indigo-400 shrink-0">
             🏆
           </span>
           <div>
-            <div className="text-[11px] font-semibold text-indigo-400/90">สุ่มได้ผู้ชนะแล้ว (Ended)</div>
-            <div className="text-xl sm:text-2xl font-extrabold font-mono text-indigo-300">
-              {stats.endedCount} <span className="text-xs font-sans text-slate-400">ชิ้น</span>
+            <div className="text-[11px] font-bold text-indigo-800 dark:text-indigo-400/90">สุ่มได้ผู้ชนะแล้ว (Ended)</div>
+            <div className="text-xl sm:text-2xl font-extrabold font-mono text-indigo-700 dark:text-indigo-300">
+              {stats.endedCount} <span className="text-xs font-sans text-slate-500 dark:text-slate-400">ชิ้น</span>
             </div>
           </div>
         </div>
 
         {/* 4. Total Registered Members */}
-        <div className="rounded-2xl border border-rose-500/30 bg-rose-950/15 p-3.5 sm:p-4 shadow-sm flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/20 text-xl border border-rose-500/40 text-rose-400 shrink-0">
+        <div className="rounded-2xl border border-rose-300 dark:border-rose-500/30 bg-rose-500/10 dark:bg-rose-950/15 p-3.5 sm:p-4 shadow-sm flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/20 text-xl border border-rose-500/40 text-rose-600 dark:text-rose-400 shrink-0">
             👥
           </span>
           <div>
-            <div className="text-[11px] font-semibold text-rose-400/90">ยอดคนลงชื่อในรอบนี้</div>
-            <div className="text-xl sm:text-2xl font-extrabold font-mono text-rose-300">
-              {stats.totalEntriesCount} <span className="text-xs font-sans text-slate-400">คน</span>
+            <div className="text-[11px] font-bold text-rose-800 dark:text-rose-400/90">ยอดคนลงชื่อในรอบนี้</div>
+            <div className="text-xl sm:text-2xl font-extrabold font-mono text-rose-700 dark:text-rose-300">
+              {stats.totalEntriesCount} <span className="text-xs font-sans text-slate-500 dark:text-slate-400">คน</span>
             </div>
           </div>
         </div>
@@ -385,7 +412,7 @@ export default function AuctionPage() {
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap ${
               activeTab === 'all'
                 ? 'bg-rose-600 text-white shadow-sm'
-                : 'text-slate-600 dark:text-slate-400 hover:text-white hover:bg-slate-800'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
             ทั้งหมดในรอบ ({roundItems.length})
@@ -397,11 +424,11 @@ export default function AuctionPage() {
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
               activeTab === 'pending'
                 ? 'bg-amber-600 text-white shadow-sm'
-                : 'text-slate-600 dark:text-slate-400 hover:text-amber-300 hover:bg-slate-800'
+                : 'text-slate-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-300 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
             <span>⏳ รอเปิดรับรายชื่อ</span>
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/30 font-mono">
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 dark:bg-black/30 font-mono">
               {stats.pendingCount}
             </span>
           </button>
@@ -412,11 +439,11 @@ export default function AuctionPage() {
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
               activeTab === 'active'
                 ? 'bg-emerald-600 text-white shadow-sm'
-                : 'text-slate-600 dark:text-slate-400 hover:text-emerald-300 hover:bg-slate-800'
+                : 'text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-300 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
             <span>🟢 เปิดรับรายชื่อ / พร้อมสุ่ม</span>
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/30 font-mono">
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 dark:bg-black/30 font-mono">
               {stats.activeCount}
             </span>
           </button>
@@ -427,11 +454,11 @@ export default function AuctionPage() {
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
               activeTab === 'ended'
                 ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-slate-600 dark:text-slate-400 hover:text-indigo-300 hover:bg-slate-800'
+                : 'text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-300 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
             <span>🏆 ได้ผู้ชนะแล้ว</span>
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/30 font-mono">
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 dark:bg-black/30 font-mono">
               {stats.endedCount}
             </span>
           </button>
@@ -455,7 +482,7 @@ export default function AuctionPage() {
               className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
                 viewMode === 'list'
                   ? 'bg-white dark:bg-slate-800 text-rose-500 dark:text-rose-300 shadow-sm'
-                  : 'text-slate-500 hover:text-white'
+                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
               }`}
               title="แสดงผลแบบรายการ (List)"
             >
@@ -468,7 +495,7 @@ export default function AuctionPage() {
               className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
                 viewMode === 'grid'
                   ? 'bg-white dark:bg-slate-800 text-rose-500 dark:text-rose-300 shadow-sm'
-                  : 'text-slate-500 hover:text-white'
+                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
               }`}
               title="แสดงผลแบบการ์ด (Grid)"
             >
@@ -480,7 +507,7 @@ export default function AuctionPage() {
       </div>
 
       {/* Round Title Header Bar (ชื่อรอบการประมูล ครอบรายการของประมูล) */}
-      <div className="rounded-2xl sm:rounded-3xl border border-rose-500/30 bg-gradient-to-r from-[#0d1424] via-[#0f172a] to-[#0c1220] p-4 sm:p-5 shadow-xl relative overflow-hidden">
+      <div className="rounded-2xl sm:rounded-3xl border border-rose-300 dark:border-rose-500/30 bg-white dark:bg-gradient-to-r dark:from-[#0d1424] dark:via-[#0f172a] dark:to-[#0c1220] p-4 sm:p-5 shadow-sm dark:shadow-xl relative overflow-hidden">
         {/* Subtle background glow */}
         <div className="absolute top-0 right-0 w-80 h-full bg-rose-500/5 blur-3xl pointer-events-none" />
 
@@ -488,11 +515,11 @@ export default function AuctionPage() {
           {/* Left: Round Name & Status */}
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2.5">
-              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-rose-500/20 to-amber-500/20 text-base border border-rose-500/40 text-amber-300">
+              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-rose-500/20 to-amber-500/20 text-base border border-rose-500/40 text-amber-500 dark:text-amber-300">
                 🎯
               </span>
 
-              <h2 className="text-base sm:text-xl md:text-2xl font-black text-white tracking-wide flex items-center gap-2">
+              <h2 className="text-base sm:text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-wide flex items-center gap-2">
                 <span>{currentRound?.name || 'รอบการประมูลปัจจุบัน'}</span>
                 <button
                   type="button"
@@ -503,7 +530,7 @@ export default function AuctionPage() {
                       updateAuctionRound(currentRound.id, { name: newName.trim() });
                     }
                   }}
-                  className="text-slate-400 hover:text-white p-1 text-xs transition cursor-pointer"
+                  className="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1 text-xs transition cursor-pointer"
                   title="แก้ไขชื่อรอบ"
                 >
                   ✏️
@@ -512,23 +539,23 @@ export default function AuctionPage() {
 
               {/* Status Badge */}
               {currentRound?.status === 'completed' ? (
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 flex items-center gap-1">
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/40 flex items-center gap-1">
                   <span>🏆</span>
                   <span>จบการสุ่มรอบนี้แล้ว</span>
                 </span>
               ) : (
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   <span>กำลังเปิดสุ่ม</span>
                 </span>
               )}
             </div>
 
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400 pt-0.5">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400 pt-0.5">
               {currentRound?.date && (
                 <span className="flex items-center gap-1">
                   <span>📅</span>
-                  <span>วันที่จัดรอบ: <strong className="text-slate-200">{currentRound.date}</strong></span>
+                  <span>วันที่จัดรอบ: <strong className="text-slate-800 dark:text-slate-200">{currentRound.date}</strong></span>
                   <button
                     type="button"
                     onClick={() => {
@@ -538,7 +565,7 @@ export default function AuctionPage() {
                         updateAuctionRound(currentRound.id, { date: newDate.trim() });
                       }
                     }}
-                    className="text-slate-400 hover:text-white p-0.5 text-[11px] transition cursor-pointer"
+                    className="text-slate-400 hover:text-slate-700 dark:hover:text-white p-0.5 text-[11px] transition cursor-pointer"
                     title="แก้ไขวันที่จัดรอบ"
                   >
                     ✏️
@@ -548,7 +575,7 @@ export default function AuctionPage() {
               {currentRound?.note && (
                 <>
                   <span>•</span>
-                  <span className="text-slate-400 italic">📝 {currentRound.note}</span>
+                  <span className="text-slate-500 dark:text-slate-400 italic">📝 {currentRound.note}</span>
                 </>
               )}
             </div>
@@ -556,12 +583,12 @@ export default function AuctionPage() {
 
           {/* Right: Round Item Stats Summary */}
           <div className="flex flex-wrap items-center gap-2 self-start md:self-center">
-            <div className="flex items-center gap-2.5 text-xs font-semibold px-3 py-1.5 rounded-xl border border-slate-800 bg-[#070b14]/80">
-              <span className="text-slate-400">ไอเทมในรอบ:</span>
-              <strong className="text-amber-400 font-mono text-sm">{roundItems.length}</strong>
-              <span className="text-slate-600">|</span>
-              <span className="text-slate-400">ได้ผู้ชนะแล้ว:</span>
-              <strong className="text-emerald-400 font-mono text-sm">{stats.endedCount}/{roundItems.length}</strong>
+            <div className="flex items-center gap-2.5 text-xs font-semibold px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-[#070b14]/80">
+              <span className="text-slate-600 dark:text-slate-400">ไอเทมในรอบ:</span>
+              <strong className="text-amber-600 dark:text-amber-400 font-mono text-sm">{roundItems.length}</strong>
+              <span className="text-slate-400 dark:text-slate-600">|</span>
+              <span className="text-slate-600 dark:text-slate-400">ได้ผู้ชนะแล้ว:</span>
+              <strong className="text-emerald-600 dark:text-emerald-400 font-mono text-sm">{stats.endedCount}/{roundItems.length}</strong>
             </div>
 
             <button
@@ -578,14 +605,14 @@ export default function AuctionPage() {
 
       {/* Auction Items List / Grid */}
       {filteredItems.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-slate-800 p-12 text-center space-y-3">
+        <div className="rounded-3xl border border-dashed border-slate-300 dark:border-slate-800 bg-white/40 dark:bg-transparent p-12 text-center space-y-3">
           <span className="text-4xl">🎡</span>
-          <h3 className="text-base font-bold text-slate-300">
+          <h3 className="text-base font-bold text-slate-800 dark:text-slate-300">
             {roundItems.length === 0
               ? `ยังไม่มีรายการไอเทมในรอบ "${currentRound?.name || 'รอบปัจจุบัน'}"`
               : 'ไม่พบรายการที่ตรงกับเงื่อนไขการค้นหา'}
           </h3>
-          <p className="text-xs text-slate-500 max-w-md mx-auto">
+          <p className="text-xs text-slate-600 dark:text-slate-500 max-w-md mx-auto">
             {roundItems.length === 0
               ? 'คลิกปุ่ม "+ เพิ่มของในรอบนี้ (เป็น List)" ด้านบนเพื่อเริ่มเลือกเครื่องประดับใส่ในรอบนี้'
               : 'ลองเปลี่ยนคำค้นหาหรือแท็บตัวกรองด้านบนเพื่อดูรายการอื่นๆ'}
@@ -607,17 +634,24 @@ export default function AuctionPage() {
             const isPending = item.status === 'pending';
             const isActive = item.status === 'active';
             const isEnded = item.status === 'ended';
+            const isCard = item.itemCategory === 'card' || item.cardQuality === 'Purple';
+            const isRelic = item.itemCategory === 'relic' || item.cardQuality === 'Sage';
             const entryCount = (item.entries || []).length;
+            const imageSrc = isRelic
+              ? `/images/relics/${item.accessoryIcon}.webp`
+              : isCard
+              ? `/images/cards/${item.accessoryIcon}.webp`
+              : `/images/accessories/${item.accessoryIcon}.webp`;
 
             return (
               <div
                 key={item.id}
                 className={`rounded-2xl border p-3 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 transition shadow-sm ${
                   isActive
-                    ? 'border-emerald-500/40 bg-gradient-to-r from-[#0d1527] to-[#0c1a24] hover:border-emerald-500/70'
+                    ? 'border-emerald-500/50 bg-emerald-50/50 dark:bg-gradient-to-r dark:from-[#0d1527] dark:to-[#0c1a24] hover:border-emerald-500/70'
                     : isPending
-                    ? 'border-amber-500/30 bg-[#0d121f] hover:border-amber-500/60'
-                    : 'border-slate-800 bg-[#0a0e18]/80 opacity-90'
+                    ? 'border-amber-400/50 bg-amber-50/50 dark:bg-[#0d121f] hover:border-amber-500/60'
+                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0a0e18]/80'
                 }`}
               >
                 {/* Left: Thumbnail & Item Info */}
@@ -626,46 +660,80 @@ export default function AuctionPage() {
                     {index + 1}.
                   </span>
 
-                  <div className="relative w-13 h-13 shrink-0 rounded-xl border border-rose-500/40 bg-[#080d19] flex items-center justify-center shadow-md">
+                  <div className={`relative w-13 h-13 shrink-0 rounded-xl border flex items-center justify-center shadow-md ${
+                    isRelic
+                      ? 'border-amber-500/50 bg-amber-950/20'
+                      : isCard
+                      ? 'border-purple-500/50 bg-purple-950/20'
+                      : 'border-rose-500/40 bg-slate-100 dark:bg-[#080d19]'
+                  }`}>
                     <Image
-                      src={`/images/accessories/${item.accessoryIcon}.webp`}
+                      src={imageSrc}
                       alt={item.accessoryName}
                       width={44}
                       height={44}
                       unoptimized
                       className="object-contain"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = `https://roworlddb.com/media/images/item/${item.accessoryIcon}.webp`;
+                        const fallback = isRelic
+                          ? `https://roworlddb.com/media/images/hallows/${item.accessoryIcon}.webp`
+                          : `https://roworlddb.com/media/images/item/${item.accessoryIcon}.webp`;
+                        (e.target as HTMLImageElement).src = fallback;
                       }}
                     />
-                    {item.accessoryLevel && (
-                      <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[8px] font-bold bg-black/90 border border-slate-700 text-amber-300 font-mono">
-                        Lv.{item.accessoryLevel}
+                    {isRelic ? (
+                      <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-amber-950/90 border border-amber-500/60 text-amber-200">
+                        Sage
                       </span>
+                    ) : isCard ? (
+                      <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-purple-950/90 border border-purple-500/60 text-purple-200">
+                        {item.cardSlot || 'MVP'}
+                      </span>
+                    ) : (
+                      item.accessoryLevel && (
+                        <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[8px] font-bold bg-black/90 border border-slate-700 text-amber-300 font-mono">
+                          Lv.{item.accessoryLevel}
+                        </span>
+                      )
                     )}
                   </div>
 
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h4 className="font-extrabold text-sm sm:text-base text-white tracking-wide truncate">
+                      <h4 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white tracking-wide truncate">
                         {item.accessoryName}
                       </h4>
 
+                      {isRelic ? (
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40 flex items-center gap-1">
+                          <span>🏺</span>
+                          <span>Relic</span>
+                        </span>
+                      ) : isCard ? (
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/40">
+                          🃏 MVP ม่วง · {item.cardSlot || 'การ์ด'}
+                        </span>
+                      ) : (
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-500/15 text-rose-600 dark:text-rose-300 border border-rose-500/30">
+                          Red Lv.90
+                        </span>
+                      )}
+
                       {/* Status Badge */}
                       {isPending && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40 flex items-center gap-1">
                           <span>⏳</span>
                           <span>รอเปิดรับรายชื่อ</span>
                         </span>
                       )}
                       {isActive && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/40 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                           <span>เปิดรับรายชื่อ / พร้อมหมุน</span>
                         </span>
                       )}
                       {isEnded && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 flex items-center gap-1">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/40 flex items-center gap-1">
                           <span>🏆</span>
                           <span>ได้ผู้ชนะแล้ว</span>
                         </span>
@@ -728,7 +796,7 @@ export default function AuctionPage() {
                 </div>
 
                 {/* Right: Actions */}
-                <div className="flex items-center gap-2 justify-end shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-800">
+                <div className="flex items-center gap-2 justify-end shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-200 dark:border-slate-800">
                   {/* Action 1: START (เมื่อเป็น pending) */}
                   {isPending && (
                     <button
@@ -746,7 +814,7 @@ export default function AuctionPage() {
                     <button
                       type="button"
                       onClick={() => setRegisterAuctionId(item.id)}
-                      className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold border border-slate-700 flex items-center gap-1.5 transition cursor-pointer"
+                      className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-white text-xs font-bold border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 transition cursor-pointer"
                     >
                       <span>👥</span>
                       <span>ลงชื่อ ({entryCount})</span>
@@ -771,7 +839,7 @@ export default function AuctionPage() {
                       <button
                         type="button"
                         onClick={() => setWheelAuctionId(item.id)}
-                        className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition cursor-pointer flex items-center gap-1"
+                        className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition cursor-pointer flex items-center gap-1"
                       >
                         <span>🎡</span>
                         <span>ดูวงล้อ</span>
@@ -780,7 +848,7 @@ export default function AuctionPage() {
                       <button
                         type="button"
                         onClick={() => handleResetWinnerPrompt(item)}
-                        className="px-2.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-bold transition cursor-pointer"
+                        className="px-2.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-600 dark:text-amber-300 text-xs font-bold transition cursor-pointer"
                         title="รีเซ็ตผู้ชนะเพื่อสุ่มใหม่"
                       >
                         🔄 สุ่มใหม่
@@ -792,7 +860,7 @@ export default function AuctionPage() {
                   <button
                     type="button"
                     onClick={() => handleDeletePrompt(item)}
-                    className="p-1.5 rounded-xl hover:bg-rose-500/10 text-slate-500 hover:text-rose-400 text-xs transition cursor-pointer"
+                    className="p-1.5 rounded-xl hover:bg-rose-500/10 text-slate-400 hover:text-rose-500 text-xs transition cursor-pointer"
                     title="ลบรายการนี้"
                   >
                     🗑️
@@ -809,46 +877,63 @@ export default function AuctionPage() {
             const isPending = item.status === 'pending';
             const isActive = item.status === 'active';
             const isEnded = item.status === 'ended';
+            const isCard = item.itemCategory === 'card' || item.cardQuality === 'Purple';
+            const isRelic = item.itemCategory === 'relic' || item.cardQuality === 'Sage';
             const entryCount = (item.entries || []).length;
+            const imageSrc = isRelic
+              ? `/images/relics/${item.accessoryIcon}.webp`
+              : isCard
+              ? `/images/cards/${item.accessoryIcon}.webp`
+              : `/images/accessories/${item.accessoryIcon}.webp`;
 
             return (
               <div
                 key={item.id}
                 className={`rounded-3xl border p-4 sm:p-5 flex flex-col justify-between transition-all shadow-md relative overflow-hidden group ${
                   isActive
-                    ? 'border-emerald-500/40 bg-[#0d121f] hover:border-emerald-500/70 hover:shadow-emerald-500/10'
+                    ? 'border-emerald-500/50 bg-emerald-50/40 dark:bg-[#0d121f] hover:border-emerald-500/70 hover:shadow-emerald-500/10'
                     : isPending
-                    ? 'border-amber-500/30 bg-[#0d121f] hover:border-amber-500/60'
-                    : 'border-slate-800 bg-[#0a0e18]/80 opacity-90'
+                    ? 'border-amber-400/50 bg-amber-50/40 dark:bg-[#0d121f] hover:border-amber-500/60'
+                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0a0e18]/80'
                 }`}
               >
                 {/* Top: Status Badge + Delete Button */}
-                <div className="flex items-center justify-between pb-3 border-b border-slate-800/80 gap-2">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800/80 gap-2">
                   <div className="flex items-center gap-1.5">
                     {isPending ? (
-                      <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                      <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
                         <span>⏳</span>
                         <span>รอเปิดรับรายชื่อ</span>
                       </span>
                     ) : isActive ? (
-                      <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                         <span>เปิดรับรายชื่อ / พร้อมสุ่ม</span>
                       </span>
                     ) : isEnded ? (
-                      <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
+                      <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30">
                         <span>🏆</span>
                         <span>ได้ผู้ชนะแล้ว</span>
                       </span>
                     ) : (
-                      <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-800 text-slate-400 border border-slate-700">
+                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700">
                         ยกเลิก
                       </span>
                     )}
 
-                    <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-500/15 text-rose-300 border border-rose-500/30">
-                      Red
-                    </span>
+                    {isRelic ? (
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                        Relic
+                      </span>
+                    ) : isCard ? (
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30">
+                        MVP ม่วง
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-500/15 text-rose-600 dark:text-rose-300 border border-rose-500/30">
+                        Red Lv.90
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-1">
@@ -856,7 +941,7 @@ export default function AuctionPage() {
                       <button
                         type="button"
                         onClick={() => handleResetWinnerPrompt(item)}
-                        className="px-2 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-[10px] font-bold transition cursor-pointer"
+                        className="px-2 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/25 border border-amber-500/30 text-amber-600 dark:text-amber-300 text-[10px] font-bold transition cursor-pointer"
                         title="รีเซ็ตผู้ชนะเพื่อสุ่มใหม่"
                       >
                         🔄 สุ่มใหม่
@@ -865,7 +950,7 @@ export default function AuctionPage() {
                     <button
                       type="button"
                       onClick={() => handleDeletePrompt(item)}
-                      className="text-slate-500 hover:text-rose-400 p-1 text-xs transition cursor-pointer"
+                      className="text-slate-400 hover:text-rose-500 p-1 text-xs transition cursor-pointer"
                       title="ลบรายการนี้"
                     >
                       🗑️
@@ -876,31 +961,59 @@ export default function AuctionPage() {
                 {/* Middle: Item Details */}
                 <div className="py-3.5 space-y-3 flex-1">
                   <div className="flex items-start gap-3">
-                    <div className="relative w-16 h-16 shrink-0 rounded-2xl border border-rose-500/50 bg-[#080d19] flex items-center justify-center shadow-lg shadow-rose-500/15 group-hover:scale-105 transition">
+                    <div className={`relative w-16 h-16 shrink-0 rounded-2xl border flex items-center justify-center shadow-lg group-hover:scale-105 transition ${
+                      isRelic
+                        ? 'border-amber-500/50 bg-amber-950/20 shadow-amber-500/15'
+                        : isCard
+                        ? 'border-purple-500/50 bg-purple-950/20 shadow-purple-500/15'
+                        : 'border-rose-500/50 bg-slate-100 dark:bg-[#080d19] shadow-rose-500/15'
+                    }`}>
                       <Image
-                        src={`/images/accessories/${item.accessoryIcon}.webp`}
+                        src={imageSrc}
                         alt={item.accessoryName}
                         width={54}
                         height={54}
                         unoptimized
                         className="object-contain drop-shadow"
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = `https://roworlddb.com/media/images/item/${item.accessoryIcon}.webp`;
+                          const fallback = isRelic
+                            ? `https://roworlddb.com/media/images/hallows/${item.accessoryIcon}.webp`
+                            : `https://roworlddb.com/media/images/item/${item.accessoryIcon}.webp`;
+                          (e.target as HTMLImageElement).src = fallback;
                         }}
                       />
-                      {item.accessoryLevel && (
-                        <span className="absolute bottom-0 right-0 px-1.5 py-0.2 rounded text-[9px] font-bold bg-black/90 border border-slate-700 text-amber-300 font-mono">
-                          Lv.{item.accessoryLevel}
+                      {isRelic ? (
+                        <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-amber-950/90 border border-amber-500/60 text-amber-200">
+                          Sage
                         </span>
+                      ) : isCard ? (
+                        <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-purple-950/90 border border-purple-500/60 text-purple-200">
+                          {item.cardSlot || 'MVP'}
+                        </span>
+                      ) : (
+                        item.accessoryLevel && (
+                          <span className="absolute bottom-0 right-0 px-1.5 py-0.2 rounded text-[9px] font-bold bg-black/90 border border-slate-700 text-amber-300 font-mono">
+                            Lv.{item.accessoryLevel}
+                          </span>
+                        )
                       )}
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-extrabold text-base text-white tracking-wide truncate" title={item.accessoryName}>
+                      <h4 className="font-extrabold text-base text-slate-900 dark:text-white tracking-wide truncate" title={item.accessoryName}>
                         {item.accessoryName}
                       </h4>
+                      {isRelic ? (
+                        <div className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 mt-0.5">
+                          🏺 {item.cardSlot || 'Relic'}
+                        </div>
+                      ) : isCard ? (
+                        <div className="text-[11px] font-semibold text-purple-600 dark:text-purple-400 mt-0.5">
+                          ช่อง: {item.cardSlot || 'การ์ด MVP'}
+                        </div>
+                      ) : null}
                       {item.sourceNote && (
-                        <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
                           🏷️ {item.sourceNote}
                         </p>
                       )}
@@ -908,22 +1021,22 @@ export default function AuctionPage() {
                   </div>
 
                   {/* Registered Info Box */}
-                  <div className="p-3 rounded-2xl border border-slate-800 bg-[#080d19]/90 space-y-1.5">
+                  <div className="p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#080d19]/90 space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-semibold text-slate-400">
+                      <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">
                         {isEnded ? 'ผู้ชนะจากการสุ่มวงล้อ:' : 'สมาชิกที่ส่งรายชื่อเข้ามา:'}
                       </span>
-                      <span className="text-base font-extrabold font-mono text-amber-400">
-                        {entryCount} <span className="text-xs font-sans text-slate-400 font-normal">คน</span>
+                      <span className="text-base font-extrabold font-mono text-amber-600 dark:text-amber-400">
+                        {entryCount} <span className="text-xs font-sans text-slate-500 dark:text-slate-400 font-normal">คน</span>
                       </span>
                     </div>
 
                     {/* Winner or Participants summary */}
-                    <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-800/60">
+                    <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200 dark:border-slate-800/60">
                       {isEnded && item.winnerMemberName ? (
-                        <span className="flex items-center gap-1.5 font-bold text-white w-full justify-between">
-                          <span className="text-slate-400">ผู้ชนะ:</span>
-                          <span className="flex items-center gap-1 text-emerald-300 font-bold">
+                        <span className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-white w-full justify-between">
+                          <span className="text-slate-500 dark:text-slate-400">ผู้ชนะ:</span>
+                          <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-300 font-bold">
                             {item.winnerMemberJob && (
                               <JobEmblem job={item.winnerMemberJob} size={18} />
                             )}
@@ -933,16 +1046,16 @@ export default function AuctionPage() {
                       ) : isPending ? (
                         <span className="text-slate-500 font-medium">รอเปิดรับรายชื่อ</span>
                       ) : entryCount > 0 ? (
-                        <span className="text-emerald-400 font-medium">พร้อมหมุนวงล้อสุ่ม 🎡</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-medium">พร้อมหมุนวงล้อสุ่ม 🎡</span>
                       ) : (
-                        <span className="text-slate-500 font-medium">ยังไม่มีผู้ส่งรายชื่อ</span>
+                        <span className="text-slate-400 font-medium">ยังไม่มีผู้ส่งรายชื่อ</span>
                       )}
                     </div>
                   </div>
                 </div>
 
                 {/* Bottom Actions */}
-                <div className="pt-3 border-t border-slate-800/80 flex items-center gap-2">
+                <div className="pt-3 border-t border-slate-200 dark:border-slate-800/80 flex items-center gap-2">
                   {isPending ? (
                     <button
                       type="button"
@@ -957,7 +1070,7 @@ export default function AuctionPage() {
                       <button
                         type="button"
                         onClick={() => setRegisterAuctionId(item.id)}
-                        className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold border border-slate-700 flex items-center justify-center gap-1.5 transition cursor-pointer"
+                        className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-white text-xs font-bold border border-slate-300 dark:border-slate-700 flex items-center justify-center gap-1.5 transition cursor-pointer"
                       >
                         <span>👥</span>
                         <span>ลงชื่อ ({entryCount})</span>
@@ -976,7 +1089,7 @@ export default function AuctionPage() {
                     <button
                       type="button"
                       onClick={() => setWheelAuctionId(item.id)}
-                      className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer border border-slate-300 dark:border-slate-700"
                     >
                       <span>🎡</span>
                       <span>ดูวงล้อ / ผลสุ่ม ({entryCount} คน)</span>
