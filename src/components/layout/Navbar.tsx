@@ -20,6 +20,7 @@ const navItems: NavItem[] = [
   { label: 'ตี้ประจำ (Squads)', href: '/squads', icon: '👥' },
   { label: 'จัดการสมาชิก', href: '/roster', icon: '🛡️' },
   { label: 'กิจกรรมประจำสัปดาห์', href: '/events', icon: '📅' },
+  { label: 'ประมูลไอเทม', href: '/auction', icon: '💎' },
 ];
 
 export default function Navbar() {
