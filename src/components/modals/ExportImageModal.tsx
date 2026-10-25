@@ -885,6 +885,7 @@ export default function ExportImageModal({ isOpen, onClose, mode = 'gvg' }: Expo
                         >
                           {/* Row 1: Team Headers spanning their parties */}
                           {group.teams.map((item) => {
+                            const isSiege = mode === 'siege';
                             const itemColorCfg = getTeamColorConfig(item.team.color);
                             return (
                               <div
@@ -892,25 +893,37 @@ export default function ExportImageModal({ isOpen, onClose, mode = 'gvg' }: Expo
                                 style={{
                                   gridColumn: `span ${item.parties.length}`,
                                   borderLeft: `4px solid ${itemColorCfg.hex}`,
+                                  borderColor: isSiege
+                                    ? (isDarkPoster ? `${itemColorCfg.hex}55` : `${itemColorCfg.hex}65`)
+                                    : (isDarkPoster ? '#334155' : '#cbd5e1'),
+                                  background: isSiege
+                                    ? (isDarkPoster
+                                        ? `linear-gradient(90deg, ${itemColorCfg.hex}33 0%, ${itemColorCfg.hex}15 100%)`
+                                        : `linear-gradient(90deg, ${itemColorCfg.hex}22 0%, ${itemColorCfg.hex}0a 100%)`)
+                                    : (isDarkPoster ? 'rgba(30, 41, 59, 0.9)' : '#f1f5f9'),
                                 }}
-                                className={`rounded-xl px-3 py-2 flex items-center justify-between border ${
-                                  isDarkPoster
-                                    ? 'bg-slate-800/90 border-slate-700 text-white shadow-sm'
-                                    : 'bg-slate-100 border-slate-300 text-slate-900 shadow-xs'
+                                className={`rounded-xl px-3 py-2 flex items-center justify-between border shadow-sm ${
+                                  isDarkPoster ? 'text-white' : 'text-slate-900'
                                 }`}
                               >
                                 <div className="flex items-center gap-2 min-w-0">
-                                  <span className={`w-2.5 h-2.5 rounded-full ${itemColorCfg.dotClass} shrink-0`} />
+                                  {isSiege && <span className={`w-2.5 h-2.5 rounded-full ${itemColorCfg.dotClass} shrink-0`} />}
                                   <span style={{ whiteSpace: 'nowrap', lineHeight: '1.8' }} className="font-extrabold text-sm sm:text-base tracking-wide truncate">
                                     {item.team.name}
                                   </span>
                                   <span
-                                    className={`px-2 py-0.5 rounded-md text-[10px] font-bold border shrink-0 ${itemColorCfg.badgeClass}`}
+                                    className={`px-2 py-0.5 rounded-md text-[10px] font-bold border shrink-0 ${
+                                      isSiege
+                                        ? itemColorCfg.badgeClass
+                                        : isDarkPoster
+                                        ? 'bg-slate-800 text-slate-300 border-slate-700'
+                                        : 'bg-slate-100 text-slate-700 border-slate-200'
+                                    }`}
                                   >
                                     {item.parties.length} ตี้
                                   </span>
                                 </div>
-                                <div className={`text-xs shrink-0 ${isDarkPoster ? 'text-slate-400' : 'text-slate-500'}`}>
+                                <div className={`text-xs shrink-0 ${isDarkPoster ? 'text-slate-300' : 'text-slate-600'}`}>
                                   สมาชิก: <strong className={isDarkPoster ? 'text-emerald-400 font-bold' : 'text-emerald-700 font-bold'}>{item.teamFilled}/{item.parties.length * 5} คน</strong>
                                 </div>
                               </div>
@@ -941,7 +954,21 @@ export default function ExportImageModal({ isOpen, onClose, mode = 'gvg' }: Expo
                         isDarkPoster ? 'border-slate-800 bg-[#0c1220] shadow-inner' : 'border-slate-200 bg-white shadow-sm'
                       }`}
                     >
-                      <div className="flex items-center justify-between text-xs pb-1">
+                      <div
+                        style={isSiege ? {
+                          borderLeft: `4px solid ${teamColorCfg.hex}`,
+                          borderColor: isDarkPoster ? `${teamColorCfg.hex}55` : `${teamColorCfg.hex}65`,
+                          background: isDarkPoster
+                            ? `linear-gradient(90deg, ${teamColorCfg.hex}33 0%, ${teamColorCfg.hex}15 100%)`
+                            : `linear-gradient(90deg, ${teamColorCfg.hex}22 0%, ${teamColorCfg.hex}0a 100%)`,
+                        } : undefined}
+                        className={isSiege
+                          ? `rounded-xl px-3.5 py-2 flex items-center justify-between border shadow-sm ${
+                              isDarkPoster ? 'text-white' : 'text-slate-900'
+                            }`
+                          : 'flex items-center justify-between text-xs pb-1'
+                        }
+                      >
                         <div className="flex items-center gap-2.5">
                           {isSiege && <span className={`w-3 h-3 rounded-full ${teamColorCfg.dotClass} shrink-0`} />}
                           <span style={{ whiteSpace: 'nowrap', lineHeight: '1.8' }} className={`font-extrabold text-base tracking-wide ${isDarkPoster ? 'text-white' : 'text-slate-900'}`}>{team.name}</span>
@@ -957,7 +984,7 @@ export default function ExportImageModal({ isOpen, onClose, mode = 'gvg' }: Expo
                             {mode === 'gvg' ? 'สนามหลัก' : modeConfig.fieldTitle}
                           </span>
                         </div>
-                        <div className={`text-xs ${isDarkPoster ? 'text-slate-400' : 'text-slate-500'}`}>
+                        <div className={`text-xs ${isDarkPoster ? 'text-slate-300' : 'text-slate-600'}`}>
                           จำนวนปาร์ตี้: <span className={`font-bold ${isDarkPoster ? 'text-slate-200' : 'text-slate-900'}`}>{parties.length} ตี้</span> • สมาชิกในทีม: <span className={`font-bold ${isDarkPoster ? 'text-emerald-400' : 'text-emerald-700'}`}>{teamFilled}/{parties.length * 5} คน</span>
                         </div>
                       </div>

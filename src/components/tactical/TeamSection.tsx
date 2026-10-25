@@ -71,7 +71,13 @@ export default function TeamSection({
   return (
     <section className={`rounded-3xl border border-slate-200 dark:border-slate-800/90 ${showTeamColor ? `border-l-4 ${colorCfg.borderLeftClass}` : ''} bg-white dark:bg-[#0d121f]/90 p-4 sm:p-5 shadow-md dark:shadow-xl transition-all`}>
       {/* Team Header */}
-      <div className="flex flex-col gap-3 pb-4 mb-4 border-b border-slate-200 dark:border-slate-800/80 lg:flex-row lg:items-center lg:justify-between">
+      <div
+        style={showTeamColor ? {
+          background: `linear-gradient(90deg, ${colorCfg.hex}18 0%, transparent 100%)`,
+          borderColor: `${colorCfg.hex}35`,
+        } : undefined}
+        className={`flex flex-col gap-3 pb-4 mb-4 border-b ${showTeamColor ? 'p-3 rounded-2xl border' : 'border-slate-200 dark:border-slate-800/80'} lg:flex-row lg:items-center lg:justify-between`}
+      >
         {/* Left: Team Name, Color, Field Switcher & Stats */}
         <div className="flex flex-wrap items-center gap-3">
           {/* Team Name & Color */}
