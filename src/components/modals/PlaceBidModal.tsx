@@ -136,12 +136,7 @@ export default function PlaceBidModal({
             />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h4 className="font-extrabold text-sm text-white truncate">{auction.accessoryName}</h4>
-              <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 font-mono">
-                Lv.{auction.accessoryLevel}
-              </span>
-            </div>
+            <h4 className="font-extrabold text-sm text-white truncate">{auction.accessoryName}</h4>
             <div className="text-xs text-slate-400 mt-0.5">
               ราคาปัจจุบัน:{' '}
               <span className="text-amber-400 font-extrabold font-mono text-sm">
@@ -275,3 +270,4 @@ export default function PlaceBidModal({
     document.body
   );
 }
+

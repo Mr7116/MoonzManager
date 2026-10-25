@@ -9,8 +9,6 @@ import PlaceBidModal from '@/components/modals/PlaceBidModal';
 import BidHistoryModal from '@/components/modals/BidHistoryModal';
 import AutoSaveBadge from '@/components/common/AutoSaveBadge';
 import JobEmblem from '@/components/tactical/JobEmblem';
-import { RED_ACCESSORY_LEVELS } from '@/constants/redAccessories';
-
 export default function AuctionPage() {
   const {
     guildName,
@@ -26,7 +24,6 @@ export default function AuctionPage() {
 
   const [activeTab, setActiveTab] = useState<'all' | 'active' | 'ended'>('all');
   const [search, setSearch] = useState('');
-  const [levelFilter, setLevelFilter] = useState<number | 'all'>('all');
 
   // Modals state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -38,7 +35,6 @@ export default function AuctionPage() {
     return auctionItems.filter((item) => {
       if (activeTab === 'active' && item.status !== 'active') return false;
       if (activeTab === 'ended' && item.status !== 'ended') return false;
-      if (levelFilter !== 'all' && item.accessoryLevel !== levelFilter) return false;
 
       if (search.trim()) {
         const q = search.trim().toLowerCase();
@@ -50,7 +46,7 @@ export default function AuctionPage() {
       }
       return true;
     });
-  }, [auctionItems, activeTab, search, levelFilter]);
+  }, [auctionItems, activeTab, search]);
 
   // Statistics
   const stats = useMemo(() => {
@@ -231,28 +227,15 @@ export default function AuctionPage() {
           </button>
         </div>
 
-        {/* Search & Level Filter */}
+        {/* Search */}
         <div className="flex items-center gap-2">
           <input
             type="text"
             placeholder="ค้นหาชื่อไอเทม, ผู้ชนะ, ออฟ..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:border-rose-500 focus:outline-none w-48 sm:w-64"
+            className="rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:border-rose-500 focus:outline-none w-56 sm:w-72"
           />
-
-          <select
-            value={levelFilter}
-            onChange={(e) => setLevelFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-            className="rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-2.5 py-1.5 text-xs text-slate-900 dark:text-white focus:border-rose-500 focus:outline-none cursor-pointer"
-          >
-            <option value="all">ทุกเลเวล</option>
-            {RED_ACCESSORY_LEVELS.map((lvl) => (
-              <option key={lvl} value={lvl}>
-                Lv.{lvl}
-              </option>
-            ))}
-          </select>
         </div>
       </div>
 
@@ -353,9 +336,6 @@ export default function AuctionPage() {
                           (e.target as HTMLImageElement).src = `https://roworlddb.com/media/images/item/${item.accessoryIcon}.webp`;
                         }}
                       />
-                      <span className="absolute bottom-0 right-0 px-1.5 py-0.2 rounded text-[9px] font-bold bg-black/90 border border-slate-700 text-amber-300 font-mono">
-                        Lv.{item.accessoryLevel}
-                      </span>
                     </div>
 
                     <div className="flex-1 min-w-0">
@@ -465,3 +445,4 @@ export default function AuctionPage() {
     </div>
   );
 }
+

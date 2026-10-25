@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
-import { RED_ACCESSORIES, RED_ACCESSORY_LEVELS, RedAccessory } from '@/constants/redAccessories';
+import { RED_ACCESSORIES, RedAccessory } from '@/constants/redAccessories';
 import { AuctionItem } from '@/types/auction';
 
 interface AddAuctionModalProps {
@@ -14,7 +14,6 @@ interface AddAuctionModalProps {
 
 export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAuctionModalProps) {
   const [search, setSearch] = useState('');
-  const [levelFilter, setLevelFilter] = useState<number | 'all'>('all');
   const [selectedAccessory, setSelectedAccessory] = useState<RedAccessory | null>(null);
 
   const [startPrice, setStartPrice] = useState<number>(5000);
@@ -29,18 +28,14 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
 
   // Filtered accessories
   const filteredAccessories = useMemo(() => {
+    if (!search.trim()) return RED_ACCESSORIES;
+    const query = search.trim().toLowerCase();
     return RED_ACCESSORIES.filter((item) => {
-      if (levelFilter !== 'all' && item.level !== levelFilter) return false;
-      if (search.trim()) {
-        const query = search.trim().toLowerCase();
-        const matchName = item.name.toLowerCase().includes(query);
-        const matchStats = item.stats.some((s) => s.toLowerCase().includes(query));
-        const matchLevel = String(item.level).includes(query);
-        if (!matchName && !matchStats && !matchLevel) return false;
-      }
-      return true;
+      const matchName = item.name.toLowerCase().includes(query);
+      const matchStats = item.stats.some((s) => s.toLowerCase().includes(query));
+      return matchName || matchStats;
     });
-  }, [search, levelFilter]);
+  }, [search]);
 
   if (!isOpen) return null;
 
@@ -70,7 +65,6 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
     // Reset & Close
     setSelectedAccessory(null);
     setSearch('');
-    setLevelFilter('all');
     onClose();
   };
 
@@ -91,7 +85,7 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                 </span>
               </h3>
               <p className="text-xs text-slate-400">
-                เลือกเครื่องประดับระดับสีแดง (75 ชิ้น) และกำหนดราคาเริ่มต้นเพื่อเปิดให้สมาชิกในกิลด์ร่วมประมูล
+                เลือกเครื่องประดับระดับสีแดง ({RED_ACCESSORIES.length} ชิ้น) และกำหนดราคาเริ่มต้นเพื่อเปิดให้สมาชิกในกิลด์ร่วมประมูล
               </p>
             </div>
           </div>
@@ -118,23 +112,11 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
               <div className="flex items-center gap-2">
                 <input
                   type="text"
-                  placeholder="ค้นหาชื่อ, เลเวล, ออฟ..."
+                  placeholder="ค้นหาชื่อเครื่องประดับ, ออฟ..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:border-rose-500 focus:outline-none w-44 sm:w-56"
+                  className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:border-rose-500 focus:outline-none w-56 sm:w-72"
                 />
-                <select
-                  value={levelFilter}
-                  onChange={(e) => setLevelFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-                  className="rounded-xl border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-white focus:border-rose-500 focus:outline-none cursor-pointer"
-                >
-                  <option value="all">ทุกเลเวล ({RED_ACCESSORIES.length})</option>
-                  {RED_ACCESSORY_LEVELS.map((lvl) => (
-                    <option key={lvl} value={lvl}>
-                      Lv.{lvl}
-                    </option>
-                  ))}
-                </select>
               </div>
             </div>
 
@@ -166,9 +148,6 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                           (e.target as HTMLImageElement).src = item.remoteIcon;
                         }}
                       />
-                      <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[9px] font-bold bg-black/80 border border-slate-700 text-amber-300 font-mono">
-                        Lv.{item.level}
-                      </span>
                     </div>
 
                     <span className="text-[11px] font-bold text-slate-200 line-clamp-1 w-full" title={item.name}>
@@ -213,9 +192,6 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                   <h4 className="font-extrabold text-sm sm:text-base text-white tracking-wide">
                     {selectedAccessory.name}
                   </h4>
-                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                    Lv.{selectedAccessory.level}
-                  </span>
                   <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
                     เกรดสีแดง (Quality: Red)
                   </span>
@@ -350,3 +326,4 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
     document.body
   );
 }
+

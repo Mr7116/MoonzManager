@@ -12,7 +12,7 @@ export interface AuctionItem {
   id: string;
   accessoryId: number;
   accessoryName: string;
-  accessoryLevel: number;
+  accessoryLevel?: number;
   accessoryIcon: string;
   accessoryStats: string[];
 
@@ -38,3 +38,4 @@ export interface AuctionItem {
   // Bids
   bids: BidRecord[];
 }
+
