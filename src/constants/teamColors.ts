@@ -128,3 +128,4 @@ export function getTeamColorConfig(colorKey?: string): TeamColorConfig {
   }
   return TEAM_COLORS.sky;
 }
+

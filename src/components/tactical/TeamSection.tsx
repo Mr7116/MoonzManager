@@ -23,6 +23,7 @@ interface TeamSectionProps {
   onChangeTeam?: (partyId: string, targetTeamId: string) => void;
   onImportPreset?: (partyId: string) => void;
   onRenameTeam?: (teamId: string) => void;
+  showTeamColor?: boolean;
   onChangeTeamColor?: (teamId: string, color: string) => void;
   onChangeTeamField?: (teamId: string, field: FieldZoneKey) => void;
   onAddParty?: (teamId: string) => void;
@@ -49,6 +50,7 @@ export default function TeamSection({
   onChangeTeam,
   onImportPreset,
   onRenameTeam,
+  showTeamColor = false,
   onChangeTeamColor,
   onChangeTeamField,
   onAddParty,
@@ -67,14 +69,16 @@ export default function TeamSection({
   }, 0);
 
   return (
-    <section className={`rounded-3xl border border-slate-200 dark:border-slate-800/90 border-l-4 ${colorCfg.borderLeftClass} bg-white dark:bg-[#0d121f]/90 p-4 sm:p-5 shadow-md dark:shadow-xl transition-all`}>
+    <section className={`rounded-3xl border border-slate-200 dark:border-slate-800/90 ${showTeamColor ? `border-l-4 ${colorCfg.borderLeftClass}` : ''} bg-white dark:bg-[#0d121f]/90 p-4 sm:p-5 shadow-md dark:shadow-xl transition-all`}>
       {/* Team Header */}
       <div className="flex flex-col gap-3 pb-4 mb-4 border-b border-slate-200 dark:border-slate-800/80 lg:flex-row lg:items-center lg:justify-between">
         {/* Left: Team Name, Color, Field Switcher & Stats */}
         <div className="flex flex-wrap items-center gap-3">
           {/* Team Name & Color */}
           <div className="flex items-center gap-2">
-            <span className={`w-3.5 h-3.5 rounded-full ${colorCfg.dotClass} shadow-sm shrink-0`} />
+            {showTeamColor && (
+              <span className={`w-3.5 h-3.5 rounded-full ${colorCfg.dotClass} shadow-sm shrink-0`} />
+            )}
             <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-wide">
               {team.name}
             </h2>
@@ -91,7 +95,7 @@ export default function TeamSection({
             )}
 
             {/* Color Picker Popover */}
-            {!isReadOnly && onChangeTeamColor && (
+            {!isReadOnly && showTeamColor && onChangeTeamColor && (
               <div className="relative">
                 <button
                   type="button"
@@ -265,7 +269,8 @@ export default function TeamSection({
               key={party.id}
               party={party}
               teamName={team.name}
-              teamColor={team.color}
+              teamColor={showTeamColor ? team.color : undefined}
+              showTeamColor={showTeamColor}
               members={members}
               allTeams={allTeams}
               selectedSlot={selectedSlot}

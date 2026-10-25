@@ -491,6 +491,7 @@ export default function SiegePage() {
                 allTeams={effectiveTeams}
                 selectedSlot={selectedSlot}
                 showLane={false}
+                showTeamColor={true}
                 onSlotClick={handleSlotClick}
                 onRemoveMember={handleRemoveMember}
                 onClearParty={handleClearParty}

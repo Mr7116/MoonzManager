@@ -10,6 +10,7 @@ interface CreateTeamModalProps {
   onClose: () => void;
   nextLetter: string;
   defaultColor?: string;
+  showColorSelector?: boolean;
   showFieldSelector?: boolean;
   title?: string;
   onCreateTeam: (teamName: string, field: FieldZoneKey, color: string) => void;
@@ -20,6 +21,7 @@ export default function CreateTeamModal({
   onClose,
   nextLetter,
   defaultColor = 'rose',
+  showColorSelector = true,
   showFieldSelector = true,
   title = 'สร้างทีมใหม่เข้าสนามรบ',
   onCreateTeam,
@@ -92,33 +94,35 @@ export default function CreateTeamModal({
           </div>
 
           {/* Color Selector */}
-          <div className="space-y-2">
-            <label className="block text-xs font-medium text-slate-400">
-              เลือกสีประจำทีม (Team Color):
-            </label>
-            <div className="grid grid-cols-4 gap-2">
-              {TEAM_COLOR_LIST.map((c) => {
-                const isSelected = selectedColor === c.key;
-                return (
-                  <button
-                    key={c.key}
-                    type="button"
-                    onClick={() => setSelectedColor(c.key)}
-                    className={`flex items-center gap-2 p-2 rounded-xl border transition cursor-pointer ${
-                      isSelected
-                        ? 'border-white/80 bg-slate-800/90 ring-2 ring-indigo-400 shadow-sm'
-                        : 'border-slate-800 bg-[#070b14] hover:border-slate-700 hover:bg-slate-900/60'
-                    }`}
-                  >
-                    <span className={`w-4 h-4 rounded-full ${c.dotClass} shrink-0 shadow-xs`} />
-                    <span className="text-[11px] font-bold text-slate-200 truncate">
-                      {c.name.split(' ')[0]}
-                    </span>
-                  </button>
-                );
-              })}
+          {showColorSelector && (
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-400">
+                เลือกสีประจำทีม (Team Color):
+              </label>
+              <div className="grid grid-cols-4 gap-2">
+                {TEAM_COLOR_LIST.map((c) => {
+                  const isSelected = selectedColor === c.key;
+                  return (
+                    <button
+                      key={c.key}
+                      type="button"
+                      onClick={() => setSelectedColor(c.key)}
+                      className={`flex items-center gap-2 p-2 rounded-xl border transition cursor-pointer ${
+                        isSelected
+                          ? 'border-white/80 bg-slate-800/90 ring-2 ring-indigo-400 shadow-sm'
+                          : 'border-slate-800 bg-[#070b14] hover:border-slate-700 hover:bg-slate-900/60'
+                      }`}
+                    >
+                      <span className={`w-4 h-4 rounded-full ${c.dotClass} shrink-0 shadow-xs`} />
+                      <span className="text-[11px] font-bold text-slate-200 truncate">
+                        {c.name.split(' ')[0]}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Field Selector (Optional) */}
           {showFieldSelector && (

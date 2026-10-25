@@ -358,6 +358,7 @@ export default function ExportImageModal({ isOpen, onClose, mode = 'gvg' }: Expo
   const renderPartyCard = (party: any, team: any, isEightCols: boolean) => {
     const laneMeta = getGvgLane(party.lane);
     const filledCount = party.slots?.filter(Boolean).length || 0;
+    const isSiegeColor = mode === 'siege';
     const teamColorCfg = getTeamColorConfig(team?.color);
 
     return (
@@ -389,12 +390,22 @@ export default function ExportImageModal({ isOpen, onClose, mode = 'gvg' }: Expo
               </span>
             </div>
             <div className="flex items-center gap-1 text-[10px] pt-0.5 overflow-hidden">
-              <span
-                className={`px-1.5 py-0.5 rounded font-bold text-[9px] whitespace-nowrap shrink-0 border flex items-center gap-1 ${teamColorCfg.badgeClass}`}
-              >
-                <span className={`w-1.5 h-1.5 rounded-full ${teamColorCfg.dotClass} shrink-0`} />
-                <span>{team.name}</span>
-              </span>
+              {isSiegeColor ? (
+                <span
+                  className={`px-1.5 py-0.5 rounded font-bold text-[9px] whitespace-nowrap shrink-0 border flex items-center gap-1 ${teamColorCfg.badgeClass}`}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${teamColorCfg.dotClass} shrink-0`} />
+                  <span>{team.name}</span>
+                </span>
+              ) : (
+                <span
+                  className={`px-1.5 py-0.5 rounded font-bold text-[9px] whitespace-nowrap shrink-0 border ${
+                    isDarkPoster ? 'bg-slate-800 text-slate-300 border-slate-700' : 'bg-slate-200 text-slate-700 border-slate-300'
+                  }`}
+                >
+                  {team.name}
+                </span>
+              )}
               {modeConfig.showLane && (
                 <span
                   style={{ borderColor: `${laneMeta.hexAccent}90`, color: isDarkPoster ? laneMeta.hexAccent : '#0f172a', lineHeight: '1.8' }}
@@ -412,12 +423,22 @@ export default function ExportImageModal({ isOpen, onClose, mode = 'gvg' }: Expo
           <div className="space-y-1.5 pb-1">
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span
-                  className={`px-2 py-0.5 rounded font-bold text-xs whitespace-nowrap border flex items-center gap-1.5 ${teamColorCfg.badgeClass}`}
-                >
-                  <span className={`w-2 h-2 rounded-full ${teamColorCfg.dotClass} shrink-0`} />
-                  <span>{team.name}</span>
-                </span>
+                {isSiegeColor ? (
+                  <span
+                    className={`px-2 py-0.5 rounded font-bold text-xs whitespace-nowrap border flex items-center gap-1.5 ${teamColorCfg.badgeClass}`}
+                  >
+                    <span className={`w-2 h-2 rounded-full ${teamColorCfg.dotClass} shrink-0`} />
+                    <span>{team.name}</span>
+                  </span>
+                ) : (
+                  <span
+                    className={`px-2 py-0.5 rounded font-bold text-xs whitespace-nowrap border ${
+                      isDarkPoster ? 'bg-slate-800 text-slate-300 border-slate-700' : 'bg-slate-200 text-slate-700 border-slate-300'
+                    }`}
+                  >
+                    {team.name}
+                  </span>
+                )}
                 {modeConfig.showLane && (
                   <span
                     style={{ borderColor: `${laneMeta.hexAccent}90`, color: isDarkPoster ? laneMeta.hexAccent : '#0f172a', lineHeight: '1.8' }}
@@ -907,6 +928,7 @@ export default function ExportImageModal({ isOpen, onClose, mode = 'gvg' }: Expo
 
                   /* Standard per-team box layout when a team cannot pair into an exact 8-party row */
                   const { team, parties, teamFilled } = group.teams[0];
+                  const isSiege = mode === 'siege';
                   const teamColorCfg = getTeamColorConfig(team.color);
                   const gridColsClass = parties.length <= 4 ? 'grid-cols-4' : rowLayout === '8' ? 'grid-cols-8' : 'grid-cols-4';
                   const isEightCols = gridColsClass === 'grid-cols-8';
@@ -914,19 +936,25 @@ export default function ExportImageModal({ isOpen, onClose, mode = 'gvg' }: Expo
                   return (
                     <div
                       key={team.id}
-                      style={{ borderLeft: `4px solid ${teamColorCfg.hex}` }}
+                      style={isSiege ? { borderLeft: `4px solid ${teamColorCfg.hex}` } : undefined}
                       className={`rounded-2xl border p-4 space-y-3 ${
                         isDarkPoster ? 'border-slate-800 bg-[#0c1220] shadow-inner' : 'border-slate-200 bg-white shadow-sm'
                       }`}
                     >
                       <div className="flex items-center justify-between text-xs pb-1">
                         <div className="flex items-center gap-2.5">
-                          <span className={`w-3 h-3 rounded-full ${teamColorCfg.dotClass} shrink-0`} />
+                          {isSiege && <span className={`w-3 h-3 rounded-full ${teamColorCfg.dotClass} shrink-0`} />}
                           <span style={{ whiteSpace: 'nowrap', lineHeight: '1.8' }} className={`font-extrabold text-base tracking-wide ${isDarkPoster ? 'text-white' : 'text-slate-900'}`}>{team.name}</span>
                           <span style={{ whiteSpace: 'nowrap', lineHeight: '1.8' }}
-                            className={`px-2 py-0.5 rounded-md text-[11px] font-bold border ${teamColorCfg.badgeClass}`}
+                            className={`px-2 py-0.5 rounded-md text-[11px] font-bold border ${
+                              isSiege
+                                ? teamColorCfg.badgeClass
+                                : isDarkPoster
+                                ? 'bg-slate-800 text-slate-300 border-slate-700'
+                                : 'bg-slate-100 text-slate-700 border-slate-200'
+                            }`}
                           >
-                            {mode === 'gvg' ? (team.field === 'sub' ? 'สนามรอง' : 'สนามหลัก') : modeConfig.fieldTitle}
+                            {mode === 'gvg' ? 'สนามหลัก' : modeConfig.fieldTitle}
                           </span>
                         </div>
                         <div className={`text-xs ${isDarkPoster ? 'text-slate-400' : 'text-slate-500'}`}>
@@ -996,21 +1024,22 @@ export default function ExportImageModal({ isOpen, onClose, mode = 'gvg' }: Expo
                   const gridColsClass = parties.length <= 4 ? 'grid-cols-4' : rowLayout === '8' ? 'grid-cols-8' : 'grid-cols-4';
                   const isEightCols = gridColsClass === 'grid-cols-8';
 
-                  const teamColorCfg = getTeamColorConfig(team.color);
                   return (
                     <div
                       key={team.id}
-                      style={{ borderLeft: `4px solid ${teamColorCfg.hex}` }}
                       className={`rounded-2xl border p-4 space-y-3 ${
                         isDarkPoster ? 'border-slate-800 bg-[#0c1220] shadow-inner' : 'border-slate-200 bg-white shadow-sm'
                       }`}
                     >
                       <div className="flex items-center justify-between text-xs pb-1">
                         <div className="flex items-center gap-2.5">
-                          <span className={`w-3 h-3 rounded-full ${teamColorCfg.dotClass} shrink-0`} />
                           <span style={{ whiteSpace: 'nowrap', lineHeight: '1.8' }} className={`font-extrabold text-base tracking-wide ${isDarkPoster ? 'text-white' : 'text-slate-900'}`}>{team.name}</span>
                           <span style={{ whiteSpace: 'nowrap', lineHeight: '1.8' }}
-                            className={`px-2 py-0.5 rounded-md text-[11px] font-bold border ${teamColorCfg.badgeClass}`}
+                            className={`px-2 py-0.5 rounded-md text-[11px] font-bold border ${
+                              isDarkPoster
+                                ? 'bg-slate-800 text-slate-300 border-slate-700'
+                                : 'bg-slate-100 text-slate-700 border-slate-200'
+                            }`}
                           >
                             สนามรอง
                           </span>

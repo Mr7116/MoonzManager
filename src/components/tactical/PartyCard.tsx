@@ -9,6 +9,7 @@ interface PartyCardProps {
   party: Party;
   teamName: string;
   teamColor?: string;
+  showTeamColor?: boolean;
   members: Member[];
   allTeams?: Team[];
   selectedSlot?: { partyId: string; slotIndex: number } | null;
@@ -29,6 +30,7 @@ export const PartyCard: React.FC<PartyCardProps> = ({
   party,
   teamName,
   teamColor,
+  showTeamColor = false,
   members,
   allTeams = [],
   selectedSlot = null,
@@ -110,13 +112,22 @@ export const PartyCard: React.FC<PartyCardProps> = ({
 
         {/* Line 2: Team Identity */}
         <div className="flex items-center justify-between gap-2 min-w-0">
-          <span
-            title={teamName}
-            className={`px-2 py-0.5 rounded-md text-[11px] font-bold border truncate max-w-full flex items-center gap-1.5 ${teamColorCfg.badgeClass}`}
-          >
-            <span className={`w-2 h-2 rounded-full ${teamColorCfg.dotClass} shrink-0`} />
-            <span className="truncate">{teamName}</span>
-          </span>
+          {showTeamColor ? (
+            <span
+              title={teamName}
+              className={`px-2 py-0.5 rounded-md text-[11px] font-bold border truncate max-w-full flex items-center gap-1.5 ${teamColorCfg.badgeClass}`}
+            >
+              <span className={`w-2 h-2 rounded-full ${teamColorCfg.dotClass} shrink-0`} />
+              <span className="truncate">{teamName}</span>
+            </span>
+          ) : (
+            <span
+              title={teamName}
+              className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300/70 dark:border-slate-700 truncate max-w-full"
+            >
+              {teamName}
+            </span>
+          )}
         </div>
 
         {/* Line 3: Move Team Dropdown (New Row) */}
