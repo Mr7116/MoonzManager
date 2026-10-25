@@ -21,7 +21,7 @@ export interface AuctionItem {
   minIncrement: number;
   currentPrice: number;
 
-  status: 'active' | 'ended' | 'cancelled';
+  status: 'pending' | 'active' | 'ended' | 'cancelled';
 
   // Winner Information
   winnerMemberId?: string;
@@ -32,6 +32,7 @@ export interface AuctionItem {
   // Metadata
   sourceNote?: string;
   createdAt: string;
+  startedAt?: string;
   endsAt?: string;
   closedAt?: string;
 

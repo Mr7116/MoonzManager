@@ -61,7 +61,10 @@ export interface GuildState {
   applyPresetToParty: (mode: 'gvg' | 'siege' | 'polarity', targetPartyId: string, presetPartyId: string) => void;
 
   // Auction Operations
-  addAuctionItem: (item: Omit<AuctionItem, 'id' | 'createdAt' | 'currentPrice' | 'bids' | 'status'>) => void;
+  addAuctionItem: (item: Omit<AuctionItem, 'id' | 'createdAt' | 'currentPrice' | 'bids' | 'status'> & { status?: 'pending' | 'active' }) => void;
+  addAuctionItems: (items: Array<Omit<AuctionItem, 'id' | 'createdAt' | 'currentPrice' | 'bids' | 'status'> & { status?: 'pending' | 'active' }>) => void;
+  startAuction: (auctionId: string) => void;
+  startAllPendingAuctions: () => void;
   placeBid: (auctionId: string, memberId: string, memberName: string, memberJob: string | undefined, amount: number, note?: string) => { success: boolean; message: string };
   closeAuction: (auctionId: string, winnerMemberId?: string) => void;
   deleteAuctionItem: (auctionId: string) => void;
@@ -650,16 +653,56 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const addAuctionItem = (itemData: Omit<AuctionItem, 'id' | 'createdAt' | 'currentPrice' | 'bids' | 'status'>) => {
-    const newItem: AuctionItem = {
+  const addAuctionItems = (
+    itemsData: Array<Omit<AuctionItem, 'id' | 'createdAt' | 'currentPrice' | 'bids' | 'status'> & { status?: 'pending' | 'active' }>
+  ) => {
+    const now = new Date().toISOString();
+    const newItems: AuctionItem[] = itemsData.map((itemData, index) => ({
       ...itemData,
-      id: `auc_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      id: `auc_${Date.now()}_${index}_${Math.random().toString(36).substring(2, 6)}`,
       currentPrice: itemData.startPrice,
-      status: 'active',
-      createdAt: new Date().toISOString(),
+      status: itemData.status || 'pending',
+      createdAt: now,
       bids: [],
-    };
-    setAuctionItems((prev) => [newItem, ...prev]);
+    }));
+    setAuctionItems((prev) => [...newItems, ...prev]);
+    triggerAutoSave();
+  };
+
+  const addAuctionItem = (
+    itemData: Omit<AuctionItem, 'id' | 'createdAt' | 'currentPrice' | 'bids' | 'status'> & { status?: 'pending' | 'active' }
+  ) => {
+    addAuctionItems([itemData]);
+  };
+
+  const startAuction = (auctionId: string) => {
+    setAuctionItems((prev) =>
+      prev.map((item) =>
+        item.id === auctionId
+          ? {
+              ...item,
+              status: 'active',
+              startedAt: new Date().toISOString(),
+            }
+          : item
+      )
+    );
+    triggerAutoSave();
+  };
+
+  const startAllPendingAuctions = () => {
+    const now = new Date().toISOString();
+    setAuctionItems((prev) =>
+      prev.map((item) =>
+        item.status === 'pending'
+          ? {
+              ...item,
+              status: 'active',
+              startedAt: now,
+            }
+          : item
+      )
+    );
     triggerAutoSave();
   };
 
@@ -801,6 +844,9 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
         swapSlots,
         applyPresetToParty,
         addAuctionItem,
+        addAuctionItems,
+        startAuction,
+        startAllPendingAuctions,
         placeBid,
         closeAuction,
         deleteAuctionItem,

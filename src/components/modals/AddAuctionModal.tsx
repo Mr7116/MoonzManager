@@ -6,71 +6,159 @@ import Image from 'next/image';
 import { RED_ACCESSORIES, RedAccessory } from '@/constants/redAccessories';
 import { AuctionItem } from '@/types/auction';
 
+interface SelectedEntry {
+  accessory: RedAccessory;
+  count: number;
+  startPrice: number;
+}
+
 interface AddAuctionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (item: Omit<AuctionItem, 'id' | 'createdAt' | 'currentPrice' | 'bids' | 'status'>) => void;
+  onConfirm: (
+    items: Array<Omit<AuctionItem, 'id' | 'createdAt' | 'currentPrice' | 'bids' | 'status'> & { status?: 'pending' | 'active' }>
+  ) => void;
 }
 
 export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAuctionModalProps) {
   const [search, setSearch] = useState('');
-  const [selectedAccessory, setSelectedAccessory] = useState<RedAccessory | null>(null);
-
-  const [startPrice, setStartPrice] = useState<number>(5000);
+  const [defaultPrice, setDefaultPrice] = useState<number>(5000);
   const [minIncrement, setMinIncrement] = useState<number>(500);
   const [sourceNote, setSourceNote] = useState<string>('ดรอปจากกิลด์วอร์ (GVG)');
-  const [hasEndDate, setHasEndDate] = useState<boolean>(false);
-  const [endDate, setEndDate] = useState<string>(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 3);
-    return d.toISOString().slice(0, 16);
-  });
+  const [selectedMap, setSelectedMap] = useState<Record<number, SelectedEntry>>({});
 
   // Filtered accessories
   const filteredAccessories = useMemo(() => {
     if (!search.trim()) return RED_ACCESSORIES;
     const query = search.trim().toLowerCase();
     return RED_ACCESSORIES.filter((item) => {
-      const matchName = item.name.toLowerCase().includes(query);
-      const matchStats = item.stats.some((s) => s.toLowerCase().includes(query));
-      return matchName || matchStats;
+      return item.name.toLowerCase().includes(query);
     });
   }, [search]);
 
+  // Selected entries array
+  const selectedEntries = useMemo(() => Object.values(selectedMap), [selectedMap]);
+
+  const totalItemCount = useMemo(() => {
+    return selectedEntries.reduce((sum, entry) => sum + entry.count, 0);
+  }, [selectedEntries]);
+
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedAccessory) {
-      alert('กรุณาเลือกเครื่องประดับระดับแดง (Accessory Quality=Red) ที่ต้องการนำมาประมูล');
-      return;
-    }
-    if (startPrice <= 0) {
-      alert('กรุณาระบุราคาเริ่มต้นที่มากกว่า 0');
+  const handleToggleItem = (acc: RedAccessory) => {
+    setSelectedMap((prev) => {
+      const existing = prev[acc.id];
+      if (existing) {
+        return {
+          ...prev,
+          [acc.id]: {
+            ...existing,
+            count: existing.count + 1,
+          },
+        };
+      } else {
+        return {
+          ...prev,
+          [acc.id]: {
+            accessory: acc,
+            count: 1,
+            startPrice: defaultPrice > 0 ? defaultPrice : 5000,
+          },
+        };
+      }
+    });
+  };
+
+  const handleUpdateCount = (accId: number, delta: number) => {
+    setSelectedMap((prev) => {
+      const existing = prev[accId];
+      if (!existing) return prev;
+      const newCount = existing.count + delta;
+      if (newCount <= 0) {
+        const copy = { ...prev };
+        delete copy[accId];
+        return copy;
+      }
+      return {
+        ...prev,
+        [accId]: { ...existing, count: newCount },
+      };
+    });
+  };
+
+  const handleUpdatePrice = (accId: number, price: number) => {
+    setSelectedMap((prev) => {
+      const existing = prev[accId];
+      if (!existing) return prev;
+      return {
+        ...prev,
+        [accId]: { ...existing, startPrice: price },
+      };
+    });
+  };
+
+  const handleRemoveItem = (accId: number) => {
+    setSelectedMap((prev) => {
+      const copy = { ...prev };
+      delete copy[accId];
+      return copy;
+    });
+  };
+
+  const handleClearAll = () => {
+    setSelectedMap({});
+  };
+
+  const handleApplyDefaultPriceToAll = () => {
+    if (defaultPrice <= 0) return;
+    setSelectedMap((prev) => {
+      const nextMap: Record<number, SelectedEntry> = {};
+      Object.keys(prev).forEach((idStr) => {
+        const id = Number(idStr);
+        nextMap[id] = { ...prev[id], startPrice: defaultPrice };
+      });
+      return nextMap;
+    });
+  };
+
+  const handleSubmit = (status: 'pending' | 'active') => {
+    if (selectedEntries.length === 0) {
+      alert('กรุณาคลิกเลือกเครื่องประดับอย่างน้อย 1 ชิ้นเพื่อเพิ่มเข้าสู่รายการ');
       return;
     }
 
-    onConfirm({
-      accessoryId: selectedAccessory.id,
-      accessoryName: selectedAccessory.name,
-      accessoryLevel: selectedAccessory.level,
-      accessoryIcon: selectedAccessory.icon,
-      accessoryStats: selectedAccessory.stats,
-      startPrice,
-      minIncrement: minIncrement > 0 ? minIncrement : 500,
-      sourceNote: sourceNote.trim() || undefined,
-      endsAt: hasEndDate && endDate ? new Date(endDate).toISOString() : undefined,
-    });
+    const itemsToCreate: Array<
+      Omit<AuctionItem, 'id' | 'createdAt' | 'currentPrice' | 'bids' | 'status'> & { status?: 'pending' | 'active' }
+    > = [];
+
+    for (const entry of selectedEntries) {
+      const price = entry.startPrice > 0 ? entry.startPrice : defaultPrice;
+      for (let i = 0; i < entry.count; i++) {
+        itemsToCreate.push({
+          accessoryId: entry.accessory.id,
+          accessoryName: entry.accessory.name,
+          accessoryLevel: entry.accessory.level,
+          accessoryIcon: entry.accessory.icon,
+          accessoryStats: entry.accessory.stats || [],
+          startPrice: price,
+          minIncrement: minIncrement > 0 ? minIncrement : 500,
+          sourceNote: sourceNote.trim() || undefined,
+          status,
+        });
+      }
+    }
+
+    onConfirm(itemsToCreate);
 
     // Reset & Close
-    setSelectedAccessory(null);
+    setSelectedMap({});
     setSearch('');
     onClose();
   };
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 p-3 sm:p-5 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-4xl rounded-3xl border border-rose-500/30 bg-[#0d121f] p-5 sm:p-6 shadow-2xl space-y-5 my-auto max-h-[90vh] flex flex-col">
+      <div className="relative w-full max-w-5xl rounded-3xl border border-rose-500/30 bg-[#0d121f] p-5 sm:p-6 shadow-2xl space-y-4 my-auto max-h-[92vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-800 pb-3 shrink-0">
           <div className="flex items-center gap-3">
@@ -79,13 +167,13 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
             </span>
             <div>
               <h3 className="text-lg font-extrabold text-white tracking-wide flex items-center gap-2">
-                <span>เปิดประมูลเครื่องประดับใหม่</span>
+                <span>เพิ่มรายการประมูลเครื่องประดับ (Add Auction Items)</span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 border border-rose-500/40 text-rose-300">
-                  Accessory Quality = Red (Lv.90)
+                  Lv.90 Red
                 </span>
               </h3>
               <p className="text-xs text-slate-400">
-                เลือกเครื่องประดับระดับสีแดง Lv.90 ({RED_ACCESSORIES.length} ชิ้น) และกำหนดราคาเริ่มต้นเพื่อเปิดให้สมาชิกในกิลด์ร่วมประมูล
+                คลิกเลือกเครื่องประดับเพื่อเพิ่มเป็น List รายการรอประมูล แล้วกดเริ่มประมูลทีละชิ้นหรือพร้อมกันได้
               </p>
             </div>
           </div>
@@ -98,44 +186,91 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
           </button>
         </div>
 
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="space-y-4 overflow-y-auto flex-1 pr-1 scrollbar-thin">
-          {/* Step 1: Select Accessory */}
-          <div className="space-y-2.5">
+        {/* Global Options Bar */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 p-3 rounded-2xl border border-slate-800 bg-slate-950/60 shrink-0 text-xs">
+          <div>
+            <label className="text-slate-400 block mb-1 font-semibold">ราคาเริ่มต้นเริ่มต้นทุกชิ้น (Start Price):</label>
+            <div className="flex items-center gap-1.5">
+              <input
+                type="number"
+                min={100}
+                step={500}
+                value={defaultPrice}
+                onChange={(e) => setDefaultPrice(Number(e.target.value))}
+                className="w-full rounded-xl border border-slate-700 bg-[#080d1a] px-3 py-1.5 text-xs text-white font-mono focus:border-rose-500 focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={handleApplyDefaultPriceToAll}
+                title="ปรับใช้ราคานี้กับทุกชิ้นในรายการ"
+                className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-[11px] font-bold text-slate-300 whitespace-nowrap cursor-pointer transition"
+              >
+                ปรับใช้ทั้งหมด
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-slate-400 block mb-1 font-semibold">เคาะขั้นต่ำ (Min Increment):</label>
+            <input
+              type="number"
+              min={100}
+              step={100}
+              value={minIncrement}
+              onChange={(e) => setMinIncrement(Number(e.target.value))}
+              className="w-full rounded-xl border border-slate-700 bg-[#080d1a] px-3 py-1.5 text-xs text-white font-mono focus:border-rose-500 focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="text-slate-400 block mb-1 font-semibold">แหล่งที่มา / หมายเหตุ (Source):</label>
+            <input
+              type="text"
+              value={sourceNote}
+              onChange={(e) => setSourceNote(e.target.value)}
+              placeholder="เช่น ดรอปจาก GVG รอบวันอาทิตย์"
+              className="w-full rounded-xl border border-slate-700 bg-[#080d1a] px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:border-rose-500 focus:outline-none"
+            />
+          </div>
+        </div>
+
+        {/* Middle Body */}
+        <div className="flex-1 overflow-y-auto space-y-4 pr-1 scrollbar-thin">
+          {/* Step 1: Accessory Selector Grid */}
+          <div className="space-y-2">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-rose-600 text-white text-[11px] font-bold">1</span>
-                <span>เลือกเครื่องประดับระดับแดง (พบ {filteredAccessories.length} ชิ้น):</span>
+                <span>คลิกเลือกเครื่องประดับที่ต้องการประมูล (พบ {filteredAccessories.length} ชิ้น):</span>
               </label>
 
-              {/* Filters */}
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  placeholder="ค้นหาชื่อเครื่องประดับ..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:border-rose-500 focus:outline-none w-56 sm:w-72"
-                />
-              </div>
+              <input
+                type="text"
+                placeholder="ค้นหาชื่อเครื่องประดับ..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-1 text-xs text-white placeholder-slate-500 focus:border-rose-500 focus:outline-none w-56 sm:w-64"
+              />
             </div>
 
-            {/* Accessory Selector Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 max-h-56 overflow-y-auto p-2 rounded-2xl border border-slate-800 bg-slate-950/70 scrollbar-thin">
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2 max-h-44 overflow-y-auto p-2 rounded-2xl border border-slate-800 bg-slate-950/70 scrollbar-thin">
               {filteredAccessories.map((item) => {
-                const isSelected = selectedAccessory?.id === item.id;
+                const entry = selectedMap[item.id];
+                const isSelected = !!entry;
+                const count = entry?.count || 0;
+
                 return (
                   <button
                     key={item.id}
                     type="button"
-                    onClick={() => setSelectedAccessory(item)}
+                    onClick={() => handleToggleItem(item)}
                     className={`flex flex-col items-center p-2 rounded-xl border text-center transition cursor-pointer relative group ${
                       isSelected
-                        ? 'border-rose-400 bg-rose-950/50 ring-2 ring-rose-500 shadow-lg shadow-rose-500/20'
+                        ? 'border-rose-400 bg-rose-950/40 ring-1 ring-rose-500 shadow-md shadow-rose-500/20'
                         : 'border-slate-800 bg-[#0b101c] hover:border-slate-700 hover:bg-slate-900/80'
                     }`}
                   >
-                    <div className="relative w-12 h-12 mb-1.5 flex items-center justify-center">
+                    <div className="relative w-12 h-12 mb-1 flex items-center justify-center">
                       <Image
                         src={item.localIcon}
                         alt={item.name}
@@ -144,7 +279,6 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                         unoptimized
                         className="object-contain drop-shadow"
                         onError={(e) => {
-                          // Fallback to remote roworlddb image
                           (e.target as HTMLImageElement).src = item.remoteIcon;
                         }}
                       />
@@ -158,8 +292,8 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                     </span>
 
                     {isSelected && (
-                      <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-white text-[9px] font-bold shadow">
-                        ✓
+                      <span className="absolute top-1 right-1 flex items-center justify-center px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[10px] font-bold shadow">
+                        x{count}
                       </span>
                     )}
                   </button>
@@ -168,158 +302,177 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
             </div>
           </div>
 
-          {/* Selected Item Preview Bar */}
-          {selectedAccessory ? (
-            <div className="flex flex-col sm:flex-row items-center gap-3 p-3 rounded-2xl border border-rose-500/40 bg-gradient-to-r from-rose-950/40 to-slate-900/60 shadow-md">
-              <div className="relative w-14 h-14 shrink-0 rounded-xl border border-rose-500/50 bg-[#0c1220] flex items-center justify-center shadow-inner">
-                <Image
-                  src={selectedAccessory.localIcon}
-                  alt={selectedAccessory.name}
-                  width={48}
-                  height={48}
-                  unoptimized
-                  className="object-contain"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = selectedAccessory.remoteIcon;
-                  }}
-                />
-              </div>
-
-              <div className="flex-1 min-w-0 text-center sm:text-left">
-                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                  <h4 className="font-extrabold text-sm sm:text-base text-white tracking-wide">
-                    {selectedAccessory.name}
-                  </h4>
-                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 font-mono">
-                    Lv.{selectedAccessory.level}
-                  </span>
-                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
-                    เกรดสีแดง (Quality: Red)
-                  </span>
-                </div>
-              </div>
+          {/* Step 2: Selected Items List */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-white text-[11px] font-bold">2</span>
+                <span>รายการเครื่องประดับที่จะเพิ่ม (เตรียมไว้ {totalItemCount} ชิ้น):</span>
+              </label>
+              {selectedEntries.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleClearAll}
+                  className="text-xs text-rose-400 hover:text-rose-300 transition cursor-pointer"
+                >
+                  ล้างรายการทั้งหมด
+                </button>
+              )}
             </div>
-          ) : (
-            <div className="p-3 text-center rounded-xl border border-dashed border-slate-800 text-xs text-slate-500">
-              กรุณาคลิกเลือกเครื่องประดับจากรายการด้านบน
-            </div>
-          )}
 
-          {/* Step 2: Auction Settings */}
-          <div className="space-y-3 pt-2 border-t border-slate-800">
-            <label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-rose-600 text-white text-[11px] font-bold">2</span>
-              <span>ตั้งค่าราคาและเงื่อนไขการประมูล:</span>
-            </label>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {/* Start Price */}
-              <div className="space-y-1">
-                <label className="block text-[11px] font-semibold text-slate-300">
-                  ราคาเริ่มต้น (Starting Price):
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-2 text-xs text-slate-400">💰</span>
-                  <input
-                    type="number"
-                    min="1"
-                    step="100"
-                    value={startPrice}
-                    onChange={(e) => setStartPrice(Math.max(1, parseInt(e.target.value) || 0))}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 pl-8 pr-3 py-2 text-xs text-white font-mono font-bold focus:border-rose-500 focus:outline-none"
-                    placeholder="5000"
-                    required
-                  />
-                </div>
+            {selectedEntries.length === 0 ? (
+              <div className="p-8 text-center rounded-2xl border border-dashed border-slate-800 text-xs text-slate-500 space-y-1">
+                <p className="text-sm text-slate-400 font-semibold">ยังไม่มีเครื่องประดับในรายการ</p>
+                <p>คลิกที่ไอคอนเครื่องประดับด้านบนเพื่อเพิ่มเข้าสู่ List รายการเตรียมประมูล</p>
               </div>
+            ) : (
+              <div className="space-y-2 max-h-52 overflow-y-auto pr-1 scrollbar-thin">
+                {selectedEntries.map((entry) => (
+                  <div
+                    key={entry.accessory.id}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-2.5 rounded-2xl border border-slate-800 bg-[#090d18] hover:border-slate-700 transition"
+                  >
+                    {/* Item Thumbnail & Name */}
+                    <div className="flex items-center gap-3">
+                      <div className="relative w-11 h-11 shrink-0 rounded-xl border border-rose-500/30 bg-[#0d121f] flex items-center justify-center">
+                        <Image
+                          src={entry.accessory.localIcon}
+                          alt={entry.accessory.name}
+                          width={36}
+                          height={36}
+                          unoptimized
+                          className="object-contain"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = entry.accessory.remoteIcon;
+                          }}
+                        />
+                        <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[8px] font-bold bg-black/80 border border-slate-700 text-amber-300 font-mono">
+                          Lv.{entry.accessory.level}
+                        </span>
+                      </div>
 
-              {/* Min Increment */}
-              <div className="space-y-1">
-                <label className="block text-[11px] font-semibold text-slate-300">
-                  ขั้นต่ำการเคาะราคาเพิ่มแต่ละครั้ง (Min Increment):
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-2 text-xs text-slate-400">📈</span>
-                  <input
-                    type="number"
-                    min="100"
-                    step="100"
-                    value={minIncrement}
-                    onChange={(e) => setMinIncrement(Math.max(100, parseInt(e.target.value) || 0))}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 pl-8 pr-3 py-2 text-xs text-white font-mono font-bold focus:border-rose-500 focus:outline-none"
-                    placeholder="500"
-                    required
-                  />
-                </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-extrabold text-sm text-white">{entry.accessory.name}</h4>
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                            Red
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-400">
+                          ราคาเริ่มต้นชิ้นละ{' '}
+                          <span className="font-mono text-amber-400 font-bold">
+                            {entry.startPrice.toLocaleString()}
+                          </span>{' '}
+                          หน่วย
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Quantity & Custom Price Controls */}
+                    <div className="flex items-center gap-3 self-end sm:self-auto">
+                      {/* Quantity Stepper */}
+                      <div className="flex items-center gap-1 bg-slate-950 rounded-xl border border-slate-700 p-0.5">
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateCount(entry.accessory.id, -1)}
+                          className="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-center transition cursor-pointer"
+                        >
+                          -
+                        </button>
+                        <span className="w-8 text-center text-xs font-mono font-bold text-white">
+                          {entry.count}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateCount(entry.accessory.id, 1)}
+                          className="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-center transition cursor-pointer"
+                        >
+                          +
+                        </button>
+                      </div>
+
+                      {/* Custom Price Input */}
+                      <div className="flex items-center gap-1.5">
+                        <label className="text-[11px] text-slate-400 font-medium">ราคา:</label>
+                        <input
+                          type="number"
+                          min={100}
+                          step={500}
+                          value={entry.startPrice}
+                          onChange={(e) => handleUpdatePrice(entry.accessory.id, Number(e.target.value))}
+                          className="w-24 rounded-xl border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-white font-mono focus:border-rose-500 focus:outline-none"
+                        />
+                      </div>
+
+                      {/* Remove Button */}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveItem(entry.accessory.id)}
+                        className="text-slate-500 hover:text-rose-400 p-1 text-sm transition cursor-pointer"
+                        title="ลบชิ้นนี้ออกจากรายการ"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
+            )}
+          </div>
+        </div>
 
-              {/* Source Note */}
-              <div className="space-y-1 sm:col-span-2">
-                <label className="block text-[11px] font-semibold text-slate-300">
-                  แหล่งที่มา / หมายเหตุ (Source / Note):
-                </label>
-                <input
-                  type="text"
-                  value={sourceNote}
-                  onChange={(e) => setSourceNote(e.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-white focus:border-rose-500 focus:outline-none"
-                  placeholder="เช่น ดรอปจาก GVG ปราสาท 1 ประจำสัปดาห์, บอสกิลด์"
-                />
-              </div>
-
-              {/* Deadline (Optional) */}
-              <div className="space-y-1 sm:col-span-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-semibold text-slate-300 flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={hasEndDate}
-                      onChange={(e) => setHasEndDate(e.target.checked)}
-                      className="rounded border-slate-700 text-rose-600 focus:ring-0 cursor-pointer"
-                    />
-                    <span>กำหนดเวลาสิ้นสุดการประมูลอัตโนมัติ</span>
-                  </label>
-                  {!hasEndDate && (
-                    <span className="text-[10px] text-slate-500">
-                      (ไม่มีกำหนดเวลา — แอดมินสามารถกด &quot;ปิดประมูล&quot; ได้ตลอดเวลา)
-                    </span>
-                  )}
-                </div>
-
-                {hasEndDate && (
-                  <input
-                    type="datetime-local"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-white font-mono focus:border-rose-500 focus:outline-none cursor-pointer mt-1"
-                  />
-                )}
-              </div>
-            </div>
+        {/* Footer Actions */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-800 shrink-0">
+          <div className="text-xs text-slate-400">
+            รวมทั้งหมด:{' '}
+            <strong className="text-white font-mono text-sm">{totalItemCount}</strong> ชิ้น
+            {totalItemCount > 0 && (
+              <span className="ml-2 text-slate-500">
+                (มูลค่าเริ่มต้นรวม:{' '}
+                <span className="text-amber-400 font-mono font-semibold">
+                  {selectedEntries
+                    .reduce((sum, e) => sum + e.startPrice * e.count, 0)
+                    .toLocaleString()}
+                </span>{' '}
+                หน่วย)
+              </span>
+            )}
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800 shrink-0">
+          <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition cursor-pointer"
+              className="px-4 py-2 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-xs font-bold text-slate-300 transition cursor-pointer"
             >
               ยกเลิก
             </button>
+
+            {/* Action 1: Add as Pending List (รอเริ่มประมูล) */}
             <button
-              type="submit"
-              disabled={!selectedAccessory}
-              className="px-5 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 disabled:opacity-50 text-white text-xs font-bold transition flex items-center gap-2 shadow-lg shadow-rose-600/30 cursor-pointer"
+              type="button"
+              disabled={totalItemCount === 0}
+              onClick={() => handleSubmit('pending')}
+              className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 disabled:opacity-50 text-xs font-bold text-white shadow-lg shadow-amber-900/30 flex items-center justify-center gap-1.5 transition cursor-pointer"
             >
-              <span>🏛️</span>
-              <span>เปิดการประมูลไอเทมนี้</span>
+              <span>📋</span>
+              <span>เพิ่มเป็นรายการรอประมูล ({totalItemCount})</span>
+            </button>
+
+            {/* Action 2: Add and Start Immediately */}
+            <button
+              type="button"
+              disabled={totalItemCount === 0}
+              onClick={() => handleSubmit('active')}
+              className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 text-xs font-bold text-white shadow-lg shadow-emerald-900/30 flex items-center justify-center gap-1.5 transition cursor-pointer"
+            >
+              <span>▶️</span>
+              <span>เริ่มประมูลทันที</span>
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>,
     document.body
   );
 }
-
