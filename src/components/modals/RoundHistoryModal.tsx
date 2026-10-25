@@ -12,7 +12,7 @@ interface RoundHistoryModalProps {
   auctionItems: AuctionItem[];
   onSelectRound: (roundId: string) => void;
   onCompleteRound: (roundId: string) => void;
-  onReopenRound: (roundId: string) => void;
+  onReopenRound?: (roundId: string) => void;
   onDeleteRound: (roundId: string) => void;
 }
 
@@ -139,16 +139,7 @@ export default function RoundHistoryModal({
                       </button>
                     )}
 
-                    {isCompleted ? (
-                      <button
-                        type="button"
-                        onClick={() => onReopenRound(round.id)}
-                        className="px-2.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-bold transition cursor-pointer"
-                        title="เปิดรอบนี้ใหม่อีกครั้ง"
-                      >
-                        🔄 เปิดรอบใหม่
-                      </button>
-                    ) : (
+                    {!isCompleted && (
                       <button
                         type="button"
                         onClick={() => onCompleteRound(round.id)}

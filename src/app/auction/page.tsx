@@ -139,10 +139,7 @@ export default function AuctionPage() {
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-wide">
                 สุ่มแจกไอเทมกิลด์ (Lucky Wheel Raffle) — {guildName}
-              </h1>
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-500/15 border border-rose-500/40 text-rose-700 dark:text-rose-300">
-                💎 Accessory Quality = Red (Lv.90)
-              </span>
+              </h1>             
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               จัดกลุ่มของดรอปเป็นรอบ (Rounds) เพื่อเปิดรับรายชื่อ สุ่มด้วยวงล้อ และเก็บบันทึกประวัติย้อนหลังได้ทุกสัปดาห์
@@ -246,17 +243,6 @@ export default function AuctionPage() {
             >
               <span>🔒</span>
               <span>ปิดรอบนี้</span>
-            </button>
-          )}
-
-          {currentRound && currentRound.status === 'completed' && (
-            <button
-              type="button"
-              onClick={() => reopenAuctionRound(currentRound.id)}
-              className="px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-xs font-bold transition cursor-pointer flex items-center gap-1"
-            >
-              <span>🔄</span>
-              <span>เปิดรอบนี้ใหม่</span>
             </button>
           )}
 
