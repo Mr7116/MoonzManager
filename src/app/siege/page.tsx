@@ -8,9 +8,11 @@ import AutoSaveBadge from '@/components/common/AutoSaveBadge';
 import DonateCard from '@/components/common/DonateCard';
 import TeamSection from '@/components/tactical/TeamSection';
 import ExportImageModal from '@/components/modals/ExportImageModal';
+import CreateTeamModal from '@/components/modals/CreateTeamModal';
 import { ImportPresetModal } from '@/components/modals/ImportPresetModal';
-import { Party, Team } from '@/types/party';
+import { Party, Team, FieldZoneKey } from '@/types/party';
 import { JOB_LOOKUP } from '@/constants/jobs';
+import { TEAM_COLOR_KEYS } from '@/constants/teamColors';
 
 export default function SiegePage() {
   const {
@@ -27,12 +29,14 @@ export default function SiegePage() {
     isLoading,
     isSaving,
     saveToCloud,
+    setTeamColor,
   } = useGuildStore();
 
   const [selectedSlot, setSelectedSlot] = useState<{ partyId: string; slotIndex: number } | null>(null);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [selectedFamily, setSelectedFamily] = useState<string | null>(null);
   const [isExportImageModalOpen, setIsExportImageModalOpen] = useState(false);
+  const [isCreateTeamModalOpen, setIsCreateTeamModalOpen] = useState(false);
   const [importPresetPartyId, setImportPresetPartyId] = useState<string | null>(null);
 
   // Fallback to default team if siegeTeams is empty
@@ -60,7 +64,7 @@ export default function SiegePage() {
       const recoveredTeams: Team[] = unrecordedTeamIds.map((tid, idx) => ({
         id: tid!,
         name: `ทีมปราสาท ${siegeTeams.length + idx + 1}`,
-        color: 'sky',
+        color: TEAM_COLOR_KEYS[(siegeTeams.length + idx) % TEAM_COLOR_KEYS.length],
         field: 'main',
       }));
       setSiegeTeams((prev) => [...prev, ...recoveredTeams]);
@@ -189,16 +193,15 @@ export default function SiegePage() {
     );
   };
 
-  const handleCreateTeam = () => {
-    const nextNum = effectiveTeams.length + 1;
-    const name = prompt('กรุณาใส่ชื่อทีมใหม่:', `ทีมปราสาท ${nextNum}`);
-    if (!name || !name.trim()) return;
-
+  const handleCreateTeamConfirm = (teamName: string, _field: FieldZoneKey, color?: string) => {
     const newTeamId = `siege_team_${Date.now()}`;
+    const colors = TEAM_COLOR_KEYS;
+    const finalColor = color || colors[effectiveTeams.length % colors.length];
+
     const newTeam: Team = {
       id: newTeamId,
-      name: name.trim(),
-      color: 'sky',
+      name: teamName,
+      color: finalColor,
       field: 'main',
     };
 
@@ -390,7 +393,7 @@ export default function SiegePage() {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={handleCreateTeam}
+              onClick={() => setIsCreateTeamModalOpen(true)}
               className="flex items-center gap-1.5 rounded-xl border border-sky-400 bg-sky-600 hover:bg-sky-500 px-3.5 py-1.5 text-xs font-bold text-white transition shadow-sm cursor-pointer whitespace-nowrap"
               title="สร้างทีมปราสาทใหม่"
             >
@@ -496,6 +499,7 @@ export default function SiegePage() {
                 onChangeTeam={handleChangeTeam}
                 onImportPreset={(pId) => setImportPresetPartyId(pId)}
                 onRenameTeam={handleRenameTeam}
+                onChangeTeamColor={(teamId, color) => setTeamColor(teamId, color)}
                 onAddParty={handleAddParty}
                 onRenumberParties={handleRenumberParties}
                 onDeleteTeam={handleDeleteTeam}
@@ -511,6 +515,17 @@ export default function SiegePage() {
         isOpen={isExportImageModalOpen}
         onClose={() => setIsExportImageModalOpen(false)}
         mode="siege"
+      />
+
+      {/* Create Team Modal */}
+      <CreateTeamModal
+        isOpen={isCreateTeamModalOpen}
+        onClose={() => setIsCreateTeamModalOpen(false)}
+        nextLetter={String(effectiveTeams.length + 1)}
+        defaultColor={TEAM_COLOR_KEYS[effectiveTeams.length % TEAM_COLOR_KEYS.length]}
+        showFieldSelector={false}
+        title="สร้างทีมปราสาทใหม่ (Siege Team)"
+        onCreateTeam={handleCreateTeamConfirm}
       />
 
       {/* Import Preset Squad Modal */}

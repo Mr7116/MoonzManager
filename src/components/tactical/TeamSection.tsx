@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Team, Party, LaneKey, FieldZoneKey } from '@/types/party';
 import { Member } from '@/types/member';
 import { PartyCard } from './PartyCard';
+import { getTeamColorConfig, TEAM_COLOR_LIST } from '@/constants/teamColors';
 
 interface TeamSectionProps {
   team: Team;
@@ -22,6 +23,7 @@ interface TeamSectionProps {
   onChangeTeam?: (partyId: string, targetTeamId: string) => void;
   onImportPreset?: (partyId: string) => void;
   onRenameTeam?: (teamId: string) => void;
+  onChangeTeamColor?: (teamId: string, color: string) => void;
   onChangeTeamField?: (teamId: string, field: FieldZoneKey) => void;
   onAddParty?: (teamId: string) => void;
   onRenumberParties?: (teamId: string) => void;
@@ -47,6 +49,7 @@ export default function TeamSection({
   onChangeTeam,
   onImportPreset,
   onRenameTeam,
+  onChangeTeamColor,
   onChangeTeamField,
   onAddParty,
   onRenumberParties,
@@ -54,6 +57,9 @@ export default function TeamSection({
   onExportTeamImage,
   onDropMemberToSlot,
 }: TeamSectionProps) {
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  const colorCfg = getTeamColorConfig(team.color);
+
   // Count total members in this team
   const totalSlots = parties.length * 5;
   const occupiedSlots = parties.reduce((sum, p) => {
@@ -61,13 +67,14 @@ export default function TeamSection({
   }, 0);
 
   return (
-    <section className="rounded-3xl border border-slate-200 dark:border-slate-800/90 bg-white dark:bg-[#0d121f]/90 p-4 sm:p-5 shadow-md dark:shadow-xl transition-all">
+    <section className={`rounded-3xl border border-slate-200 dark:border-slate-800/90 border-l-4 ${colorCfg.borderLeftClass} bg-white dark:bg-[#0d121f]/90 p-4 sm:p-5 shadow-md dark:shadow-xl transition-all`}>
       {/* Team Header */}
       <div className="flex flex-col gap-3 pb-4 mb-4 border-b border-slate-200 dark:border-slate-800/80 lg:flex-row lg:items-center lg:justify-between">
-        {/* Left: Team Name, Field Switcher & Stats */}
+        {/* Left: Team Name, Color, Field Switcher & Stats */}
         <div className="flex flex-wrap items-center gap-3">
-          {/* Team Name */}
+          {/* Team Name & Color */}
           <div className="flex items-center gap-2">
+            <span className={`w-3.5 h-3.5 rounded-full ${colorCfg.dotClass} shadow-sm shrink-0`} />
             <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-wide">
               {team.name}
             </h2>
@@ -81,6 +88,51 @@ export default function TeamSection({
                 <span>✏️</span>
                 <span className="hidden sm:inline">เปลี่ยนชื่อ</span>
               </button>
+            )}
+
+            {/* Color Picker Popover */}
+            {!isReadOnly && onChangeTeamColor && (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowColorPicker(!showColorPicker)}
+                  className="flex items-center gap-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/90 px-2 py-1 text-xs text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer"
+                  title="เปลี่ยนสีทีม"
+                >
+                  <span className={`w-2.5 h-2.5 rounded-full ${colorCfg.dotClass}`} />
+                  <span className="hidden sm:inline">สีทีม</span>
+                </button>
+
+                {showColorPicker && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setShowColorPicker(false)}
+                    />
+                    <div className="absolute left-0 top-full mt-1.5 z-50 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2.5 shadow-2xl flex items-center gap-1.5 min-w-[240px]">
+                      {TEAM_COLOR_LIST.map((c) => {
+                        const isCurrent = team.color === c.key;
+                        return (
+                          <button
+                            key={c.key}
+                            type="button"
+                            onClick={() => {
+                              onChangeTeamColor(team.id, c.key);
+                              setShowColorPicker(false);
+                            }}
+                            className={`w-6 h-6 rounded-full ${c.dotClass} flex items-center justify-center transition cursor-pointer hover:scale-110 ${
+                              isCurrent ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-900 scale-105' : 'opacity-80 hover:opacity-100'
+                            }`}
+                            title={c.name}
+                          >
+                            {isCurrent && <span className="text-[10px] text-white font-bold">✓</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
             )}
           </div>
 
@@ -213,6 +265,7 @@ export default function TeamSection({
               key={party.id}
               party={party}
               teamName={team.name}
+              teamColor={team.color}
               members={members}
               allTeams={allTeams}
               selectedSlot={selectedSlot}

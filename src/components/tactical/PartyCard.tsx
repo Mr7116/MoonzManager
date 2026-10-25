@@ -3,10 +3,12 @@ import { Party, Team, LaneKey } from '@/types/party';
 import { Member } from '@/types/member';
 import { GVG_LANES, getGvgLane } from '@/constants/lanes';
 import { MemberSlot } from './MemberSlot';
+import { getTeamColorConfig } from '@/constants/teamColors';
 
 interface PartyCardProps {
   party: Party;
   teamName: string;
+  teamColor?: string;
   members: Member[];
   allTeams?: Team[];
   selectedSlot?: { partyId: string; slotIndex: number } | null;
@@ -26,6 +28,7 @@ interface PartyCardProps {
 export const PartyCard: React.FC<PartyCardProps> = ({
   party,
   teamName,
+  teamColor,
   members,
   allTeams = [],
   selectedSlot = null,
@@ -44,6 +47,8 @@ export const PartyCard: React.FC<PartyCardProps> = ({
   const partySlots = party.slots || [null, null, null, null, null];
   const filledMembers = partySlots.map(id => (id ? members.find(m => m.id === id) : null)).filter(Boolean);
   const laneMeta = getGvgLane(party.lane);
+  const currentTeam = allTeams.find((t) => t.id === party.teamId);
+  const teamColorCfg = getTeamColorConfig(currentTeam?.color || teamColor);
 
   return (
     <div className="bg-white dark:bg-slate-950/90 border border-slate-200 dark:border-slate-800/80 rounded-2xl p-3 flex flex-col gap-2.5 shadow-md dark:shadow-lg overflow-hidden">
@@ -107,9 +112,10 @@ export const PartyCard: React.FC<PartyCardProps> = ({
         <div className="flex items-center justify-between gap-2 min-w-0">
           <span
             title={teamName}
-            className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300/70 dark:border-slate-700 truncate max-w-full"
+            className={`px-2 py-0.5 rounded-md text-[11px] font-bold border truncate max-w-full flex items-center gap-1.5 ${teamColorCfg.badgeClass}`}
           >
-            {teamName}
+            <span className={`w-2 h-2 rounded-full ${teamColorCfg.dotClass} shrink-0`} />
+            <span className="truncate">{teamName}</span>
           </span>
         </div>
 

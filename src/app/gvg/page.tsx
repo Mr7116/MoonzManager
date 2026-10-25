@@ -12,6 +12,7 @@ import ExportImageModal from '@/components/modals/ExportImageModal';
 import { ImportPresetModal } from '@/components/modals/ImportPresetModal';
 import { Party, LaneKey, FieldZoneKey } from '@/types/party';
 import { JOB_LOOKUP } from '@/constants/jobs';
+import { TEAM_COLOR_KEYS } from '@/constants/teamColors';
 
 export default function GvgPage() {
   const {
@@ -39,6 +40,7 @@ export default function GvgPage() {
     renumberTeamParties,
     setTeamField,
     renameTeam,
+    setTeamColor,
     removeMemberFromSlot,
     placeMemberInSlot,
     swapSlots,
@@ -147,16 +149,16 @@ export default function GvgPage() {
   };
 
   // Add new Team Modal Confirm
-  const handleCreateTeamConfirm = (teamName: string, field: FieldZoneKey) => {
+  const handleCreateTeamConfirm = (teamName: string, field: FieldZoneKey, color?: string) => {
     const newTeamId = `team_${Date.now()}`;
-    const colors = ['rose', 'sky', 'amber', 'purple', 'emerald', 'indigo', 'orange'];
-    const color = colors[gvgTeams.length % colors.length];
+    const colors = TEAM_COLOR_KEYS;
+    const finalColor = color || colors[gvgTeams.length % colors.length];
 
     const newTeam = {
       id: newTeamId,
       name: teamName,
       field,
-      color,
+      color: finalColor,
     };
 
     const defaultLanes: LaneKey[] =
@@ -350,6 +352,7 @@ export default function GvgPage() {
                       const name = prompt('เปลี่ยนชื่อทีม:', cur?.name);
                       if (name && name.trim()) renameTeam(teamId, name.trim());
                     }}
+                    onChangeTeamColor={(teamId, color) => setTeamColor(teamId, color)}
                     onChangeTeamField={(teamId, field: FieldZoneKey) => setTeamField(teamId, field)}
                     onAddParty={(teamId) => addPartyToTeam(teamId)}
                     onRenumberParties={(teamId) => renumberTeamParties(teamId)}
@@ -409,6 +412,7 @@ export default function GvgPage() {
                       const name = prompt('เปลี่ยนชื่อทีม:', cur?.name);
                       if (name && name.trim()) renameTeam(teamId, name.trim());
                     }}
+                    onChangeTeamColor={(teamId, color) => setTeamColor(teamId, color)}
                     onChangeTeamField={(teamId, field: FieldZoneKey) => setTeamField(teamId, field)}
                     onAddParty={(teamId) => addPartyToTeam(teamId)}
                     onRenumberParties={(teamId) => renumberTeamParties(teamId)}
@@ -427,6 +431,7 @@ export default function GvgPage() {
         isOpen={isCreateTeamModalOpen}
         onClose={() => setIsCreateTeamModalOpen(false)}
         nextLetter={String.fromCharCode(65 + gvgTeams.length)}
+        defaultColor={TEAM_COLOR_KEYS[gvgTeams.length % TEAM_COLOR_KEYS.length]}
         onCreateTeam={handleCreateTeamConfirm}
       />
 
