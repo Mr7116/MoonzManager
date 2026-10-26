@@ -373,27 +373,7 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
             <div>
               <h3 className="text-lg font-extrabold text-white tracking-wide flex items-center gap-2 flex-wrap">
                 <span>เพิ่มรายการของดรอปเพื่อเปิดสุ่ม (Add Drop Items)</span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center gap-1">
-                  <PetSvgIcon className="w-3.5 h-3.5" variant="gold" />
-                  <span>สัตว์เลี้ยง ({PET_ITEMS.length})</span>
-                </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center gap-1">
-                  <TitleSvgIcon className="w-3.5 h-3.5" />
-                  <span>ไอเทม Title</span>
-                </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 border border-amber-500/40 text-amber-300">
-                  Relic (27 สาย)
-                </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 border border-purple-500/40 text-purple-300">
-                  MVP ม่วง
-                </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 border border-rose-500/40 text-rose-300">
-                  Lv.90 Red
-                </span>
-              </h3>
-              <p className="text-xs text-slate-400">
-                คลิกเลือกสัตว์เลี้ยง, ไอเทม Title, หีบ Pack, Relic, เครื่องประดับ หรือการ์ดม่วง MVP เพื่อเพิ่มเป็น List รายการให้สมาชิกกิลด์ส่งรายชื่อเข้ามาสุ่มด้วยวงล้อ
-              </p>
+              </h3>             
             </div>
           </div>
           <button
@@ -550,7 +530,7 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                 }`}
               >
                 <PetSvgIcon className="w-4 h-4 shrink-0" variant="gold" />
-                <span>🐾 สัตว์เลี้ยง (Pet)</span>
+                <span> สัตว์เลี้ยง (Pet)</span>
                 <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/40 text-amber-300">
                   {PET_ITEMS.length}
                 </span>
@@ -566,7 +546,7 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                 }`}
               >
                 <TitleSvgIcon className="w-4 h-4 shrink-0" />
-                <span>🎖️ ไอเทม Title</span>
+                <span> Title</span>
                 <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/40 text-amber-300">
                   {TITLE_ITEMS.length}
                 </span>
@@ -582,7 +562,7 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                 }`}
               >
                 <TitleChestSvgIcon className="w-4 h-4 shrink-0" />
-                <span>🎁 กล่อง / หีบสมบัติ (Pack)</span>
+                <span> กล่อง / หีบสมบัติ (Pack)</span>
                 <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/40 text-purple-300">
                   {CHEST_ITEMS.length}
                 </span>
@@ -598,7 +578,7 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                 }`}
               >
                 <RelicSvgIcon className="w-4 h-4 shrink-0" />
-                <span>🏺 GVG Relic (8 ชิ้น · 27 สาย)</span>
+                <span>🏺Relic (8 ชิ้น · 27 สาย)</span>
                 <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/40 text-amber-300">
                   {GVG_BASE_RELICS.length}
                 </span>
@@ -613,7 +593,7 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                     : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
                 }`}
               >
-                <span>🃏 การ์ดม่วง MVP</span>
+                <span> การ์ดม่วง MVP</span>
                 <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/40">
                   {PURPLE_MVP_CARDS.length}
                 </span>
@@ -628,7 +608,7 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                     : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
                 }`}
               >
-                <span>💎 เครื่องประดับแดง</span>
+                <span> เครื่องประดับแดง</span>
                 <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/40">
                   {RED_ACCESSORIES.length}
                 </span>
