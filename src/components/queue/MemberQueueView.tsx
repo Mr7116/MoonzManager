@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/auth';
 import JobEmblem from '@/components/tactical/JobEmblem';
 import ThemeToggle from '@/components/layout/ThemeToggle';
 import AutoSaveBadge from '@/components/common/AutoSaveBadge';
+import LiveClock from '@/components/common/LiveClock';
 import { QueueList, formatQueueTime } from '@/types/queue';
 import { getQueuePreset } from '@/constants/queuePresets';
 
@@ -144,6 +145,7 @@ export default function MemberQueueView({ onSwitchToAdmin }: MemberQueueViewProp
 
         {/* Quick Actions */}
         <div className="flex items-center gap-2 self-start sm:self-center flex-wrap">
+          <LiveClock variant="compact" />
           <AutoSaveBadge />
           <ThemeToggle />
 

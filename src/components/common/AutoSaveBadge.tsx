@@ -40,7 +40,7 @@ export default function AutoSaveBadge({ className = '' }: { className?: string }
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
           <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
         </span>
-        <span>Realtime Sync ({lastSavedAt})</span>
+        <span>Sync ({lastSavedAt})</span>
       </div>
     );
   }
@@ -51,7 +51,7 @@ export default function AutoSaveBadge({ className = '' }: { className?: string }
         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
         <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
       </span>
-      <span>Realtime Active</span>
+      <span>Active</span>
     </div>
   );
 }

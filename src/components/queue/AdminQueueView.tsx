@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useGuildStore } from '@/lib/guildStore';
 import JobEmblem from '@/components/tactical/JobEmblem';
 import AutoSaveBadge from '@/components/common/AutoSaveBadge';
+import LiveClock from '@/components/common/LiveClock';
 import ThemeToggle from '@/components/layout/ThemeToggle';
 import { QueueList, QueueEntry, formatQueueTime } from '@/types/queue';
 import { getQueuePreset } from '@/constants/queuePresets';
@@ -156,6 +157,7 @@ export default function AdminQueueView({ onSwitchToMember }: AdminQueueViewProps
 
         {/* Action Controls */}
         <div className="flex flex-wrap items-center gap-2 self-start md:self-center">
+          <LiveClock variant="compact" />
           <AutoSaveBadge />
           <ThemeToggle />
 
