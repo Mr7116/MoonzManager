@@ -84,7 +84,6 @@ export default function AdminQueueView({ onSwitchToMember }: AdminQueueViewProps
   // Copy list formatted for Discord / Line
   const handleCopyQueueList = (queue: QueueList) => {
     const entries = queue.entries || [];
-    const partySize = queue.maxPartySize || 5;
     const lines: string[] = [];
     lines.push(`📋 [คิว] ${queue.title} (${entries.length} คน)`);
     if (queue.note) lines.push(`💬 หมายเหตุ: ${queue.note}`);
@@ -93,16 +92,10 @@ export default function AdminQueueView({ onSwitchToMember }: AdminQueueViewProps
     if (entries.length === 0) {
       lines.push('ยังไม่มีผู้ลงชื่อในคิว');
     } else {
-      const partiesCount = Math.ceil(entries.length / partySize);
-      for (let p = 0; p < partiesCount; p++) {
-        lines.push(`🛡️ ปาร์ตี้ที่ ${p + 1}:`);
-        const partySlice = entries.slice(p * partySize, (p + 1) * partySize);
-        partySlice.forEach((e, idx) => {
-          const num = p * partySize + idx + 1;
-          const time = formatQueueTime(e.joinedAt);
-          lines.push(`  ${num}. ${e.memberName} (${e.memberJob || 'ไม่ระบุ'}) ${time ? `[${time}]` : ''}`);
-        });
-      }
+      entries.forEach((e, idx) => {
+        const time = formatQueueTime(e.joinedAt);
+        lines.push(`${idx + 1}. ${e.memberName} (${e.memberJob || 'ไม่ระบุ'})${time ? ` - ${time}` : ''}`);
+      });
     }
 
     navigator.clipboard.writeText(lines.join('\n'));
@@ -209,9 +202,9 @@ export default function AdminQueueView({ onSwitchToMember }: AdminQueueViewProps
         </div>
 
         <div className="p-3.5 rounded-2xl border border-purple-500/30 bg-purple-50/40 dark:bg-purple-950/20 shadow-sm">
-          <span className="text-[11px] font-bold text-purple-600 dark:text-purple-400 block">ปาร์ตี้ที่จัดได้รวม</span>
+          <span className="text-[11px] font-bold text-purple-600 dark:text-purple-400 block">กำลังลงดันเจี้ยน</span>
           <span className="text-2xl font-black text-purple-600 dark:text-purple-300 font-mono mt-0.5 block">
-            {Math.floor(totalQueuedMembers / 5)} <span className="text-xs font-normal text-slate-400">ตี้ (5คน)</span>
+            {queueLists.filter((q) => q.status === 'in_progress').length} <span className="text-xs font-normal text-slate-400">รายการ</span>
           </span>
         </div>
       </div>
@@ -340,9 +333,8 @@ export default function AdminQueueView({ onSwitchToMember }: AdminQueueViewProps
 
                       {/* Meta info */}
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400 mt-1">
-                        <span>👥 ปาร์ตี้ละ <strong>{partySize}</strong> คน</span>
                         <span>
-                          คิวปัจจุบัน: <strong className="text-indigo-400 font-mono">{entries.length}</strong>
+                          👥 จำนวนในคิว: <strong className="text-indigo-400 font-mono">{entries.length}</strong>
                           {queue.maxCapacity ? `/${queue.maxCapacity}` : ''} คน
                         </span>
                         {queue.note && <span>💬 <strong>{queue.note}</strong></span>}
@@ -402,109 +394,107 @@ export default function AdminQueueView({ onSwitchToMember }: AdminQueueViewProps
                   </div>
                 </div>
 
-                {/* ENTRIES LIST WITH AUTO PARTY BREAKDOWN */}
+                {/* QUEUE ENTRIES AS A CLEAN LIST */}
                 {entries.length === 0 ? (
                   <div className="p-6 text-center text-xs text-slate-400 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
                     ยังไม่มีคนกดต่อคิวในรายการนี้ (สามารถกดปุ่ม &ldquo;👤+ เพิ่มสมาชิกแทน&rdquo; หรือรอสมาชิกกดเข้ามา)
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    {Array.from({ length: partiesCount }).map((_, pIdx) => {
-                      const startIdx = pIdx * partySize;
-                      const partyEntries = entries.slice(startIdx, startIdx + partySize);
-                      const isPartyFull = partyEntries.length === partySize;
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-xs font-bold text-slate-600 dark:text-slate-400 px-1 pb-1">
+                      <span className="flex items-center gap-1.5">
+                        <span>📋</span>
+                        <span>รายชื่อในคิว ({entries.length} คน)</span>
+                      </span>
+                      <span className="text-[11px] font-normal text-slate-500">
+                        เรียงตามลำดับเวลาที่กดเข้าร่วม · ปรับลำดับได้ด้วยปุ่ม ▲ ▼
+                      </span>
+                    </div>
 
-                      return (
-                        <div
-                          key={pIdx}
-                          className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-[#090d18] p-3 space-y-2"
-                        >
-                          <div className="flex items-center justify-between text-xs font-bold">
-                            <span className="text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                              <span className="text-base">🛡️</span>
-                              <span>ปาร์ตี้ที่ {pIdx + 1}</span>
-                              <span className="text-[11px] font-mono font-semibold text-slate-400">
-                                ({partyEntries.length}/{partySize} คน)
+                    <div className="space-y-1.5 max-h-[460px] overflow-y-auto pr-1 scrollbar-thin">
+                      {entries.map((entry, idx) => {
+                        const timeStr = formatQueueTime(entry.joinedAt);
+
+                        return (
+                          <div
+                            key={entry.id}
+                            className="p-2.5 sm:p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 flex items-center justify-between gap-3 text-xs sm:text-sm hover:border-slate-300 dark:hover:border-slate-700 transition"
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <span
+                                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center font-mono font-black text-xs shrink-0 ${
+                                  idx === 0
+                                    ? 'bg-amber-500/20 text-amber-500 border border-amber-500/40'
+                                    : idx === 1
+                                    ? 'bg-slate-300/30 text-slate-400 border border-slate-400/40'
+                                    : idx === 2
+                                    ? 'bg-amber-700/20 text-amber-600 border border-amber-700/40'
+                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
+                                }`}
+                              >
+                                #{idx + 1}
                               </span>
-                            </span>
-                            {isPartyFull ? (
-                              <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 font-bold border border-emerald-500/30">
-                                ✓ ปาร์ตี้เต็ม (พร้อมลุย)
-                              </span>
-                            ) : (
-                              <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-600 dark:text-amber-300 font-bold border border-amber-500/30">
-                                ว่างอีก {partySize - partyEntries.length} คน
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Member Slots */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2">
-                            {partyEntries.map((entry, subIdx) => {
-                              const overallIdx = startIdx + subIdx;
-                              const timeStr = formatQueueTime(entry.joinedAt);
-
-                              return (
-                                <div
-                                  key={entry.id}
-                                  className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between gap-1.5 text-xs shadow-sm hover:border-slate-700 transition"
-                                >
-                                  <div className="flex items-center gap-2 min-w-0">
-                                    <span className="w-5 text-right font-mono font-black text-slate-400 shrink-0">
-                                      #{overallIdx + 1}
-                                    </span>
-                                    {entry.memberJob && (
-                                      <JobEmblem job={entry.memberJob} size={20} />
-                                    )}
-                                    <div className="min-w-0">
-                                      <div className="font-bold truncate text-slate-900 dark:text-white" title={entry.memberName}>
-                                        {entry.memberName}
-                                      </div>
-                                      {timeStr && (
-                                        <div className="text-[10px] text-slate-400 font-mono flex items-center gap-0.5">
-                                          <span>🕒</span>
-                                          <span>{timeStr}</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  {/* Entry Controls: Move / Delete */}
-                                  <div className="flex items-center gap-0.5 shrink-0">
-                                    <button
-                                      type="button"
-                                      disabled={overallIdx === 0}
-                                      onClick={() => handleMoveEntry(queue.id, overallIdx, 'up')}
-                                      className="p-1 text-[10px] text-slate-400 hover:text-white disabled:opacity-20 cursor-pointer"
-                                      title="เลื่อนคิวขึ้น"
-                                    >
-                                      ▲
-                                    </button>
-                                    <button
-                                      type="button"
-                                      disabled={overallIdx === entries.length - 1}
-                                      onClick={() => handleMoveEntry(queue.id, overallIdx, 'down')}
-                                      className="p-1 text-[10px] text-slate-400 hover:text-white disabled:opacity-20 cursor-pointer"
-                                      title="เลื่อนคิวลง"
-                                    >
-                                      ▼
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => removeMemberFromQueue(queue.id, entry.id)}
-                                      className="p-1 text-xs text-slate-400 hover:text-rose-400 cursor-pointer"
-                                      title="ลบออกจากคิว"
-                                    >
-                                      ✕
-                                    </button>
-                                  </div>
+                              {entry.memberJob && (
+                                <JobEmblem job={entry.memberJob} size={26} />
+                              )}
+                              <div className="min-w-0">
+                                <div className="font-bold truncate text-slate-900 dark:text-white" title={entry.memberName}>
+                                  {entry.memberName}
                                 </div>
-                              );
-                            })}
+                                {entry.memberJob && (
+                                  <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                                    {entry.memberJob}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 shrink-0">
+                              {timeStr && (
+                                <span className="text-xs text-slate-500 dark:text-slate-400 font-mono flex items-center gap-1 bg-slate-100 dark:bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-200 dark:border-slate-800">
+                                  <span>🕒</span>
+                                  <span>{timeStr}</span>
+                                </span>
+                              )}
+
+                              {/* Entry Controls: Move / Delete */}
+                              <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
+                                <button
+                                  type="button"
+                                  disabled={idx === 0}
+                                  onClick={() => handleMoveEntry(queue.id, idx, 'up')}
+                                  className="w-6 h-6 rounded-lg text-xs font-bold text-slate-500 hover:text-white hover:bg-slate-800 disabled:opacity-20 cursor-pointer flex items-center justify-center transition"
+                                  title="เลื่อนคิวขึ้น"
+                                >
+                                  ▲
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={idx === entries.length - 1}
+                                  onClick={() => handleMoveEntry(queue.id, idx, 'down')}
+                                  className="w-6 h-6 rounded-lg text-xs font-bold text-slate-500 hover:text-white hover:bg-slate-800 disabled:opacity-20 cursor-pointer flex items-center justify-center transition"
+                                  title="เลื่อนคิวลง"
+                                >
+                                  ▼
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (window.confirm(`นำ "${entry.memberName}" ออกจากคิวใช่หรือไม่?`)) {
+                                      removeMemberFromQueue(queue.id, entry.id);
+                                    }
+                                  }}
+                                  className="w-6 h-6 rounded-lg text-xs font-bold text-slate-500 hover:text-rose-400 hover:bg-rose-950/40 cursor-pointer flex items-center justify-center transition ml-1"
+                                  title="ลบออกจากคิว"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>

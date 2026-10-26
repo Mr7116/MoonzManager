@@ -104,3 +104,4 @@ export const QUEUE_PRESETS: QueuePreset[] = [
 export function getQueuePreset(id: QueueDungeonType): QueuePreset | undefined {
   return QUEUE_PRESETS.find((p) => p.id === id);
 }
+

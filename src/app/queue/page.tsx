@@ -26,3 +26,4 @@ export default function QueuePage() {
 
   return <AdminQueueView onSwitchToMember={() => setViewAsMember(true)} />;
 }
+

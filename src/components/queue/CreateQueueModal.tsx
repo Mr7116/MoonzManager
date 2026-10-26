@@ -169,77 +169,52 @@ export default function CreateQueueModal({ isOpen, onClose, onCreate }: CreateQu
               />
             </div>
 
-            {/* Grid Settings: Party Size & Max Queue Capacity */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-bold text-slate-300 block mb-1 flex items-center justify-between">
-                  <span>ขนาดปาร์ตี้ (Party Size):</span>
-                  <span className="text-indigo-400 font-mono font-bold">{maxPartySize} คน/ตี้</span>
-                </label>
-                <div className="flex items-center gap-1.5">
-                  {[4, 5, 6].map((size) => (
-                    <button
-                      key={size}
-                      type="button"
-                      onClick={() => setMaxPartySize(size)}
-                      className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
-                        maxPartySize === size
-                          ? 'bg-indigo-600/30 border-indigo-500 text-white ring-1 ring-indigo-500'
-                          : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      {size} คน {size === 5 ? '(มาตรฐาน)' : ''}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-slate-300 block mb-1 flex items-center justify-between">
-                  <span>จำกัดคิวสูงสุด (Max Capacity):</span>
-                  <span className="text-amber-400 font-mono font-bold">
-                    {maxCapacity ? `${maxCapacity} คน` : 'ไม่จำกัด'}
-                  </span>
-                </label>
-                <div className="flex items-center gap-1.5">
+            {/* Max Queue Capacity */}
+            <div>
+              <label className="text-xs font-bold text-slate-300 block mb-1 flex items-center justify-between">
+                <span>3. จำกัดจำนวนคนในคิวสูงสุด (Max Capacity):</span>
+                <span className="text-amber-400 font-mono font-bold">
+                  {maxCapacity ? `${maxCapacity} คน` : 'ไม่จำกัด'}
+                </span>
+              </label>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setMaxCapacity(undefined)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
+                    maxCapacity === undefined
+                      ? 'bg-emerald-600/30 border-emerald-500 text-emerald-300 ring-1 ring-emerald-500'
+                      : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  ไม่จำกัด
+                </button>
+                {[5, 10, 15, 20, 25].map((cap) => (
                   <button
+                    key={cap}
                     type="button"
-                    onClick={() => setMaxCapacity(undefined)}
+                    onClick={() => setMaxCapacity(cap)}
                     className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
-                      maxCapacity === undefined
-                        ? 'bg-emerald-600/30 border-emerald-500 text-emerald-300 ring-1 ring-emerald-500'
+                      maxCapacity === cap
+                        ? 'bg-amber-600/30 border-amber-500 text-amber-300 ring-1 ring-amber-500'
                         : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-white'
                     }`}
                   >
-                    ไม่จำกัด
+                    {cap} คน
                   </button>
-                  {[10, 15, 20].map((cap) => (
-                    <button
-                      key={cap}
-                      type="button"
-                      onClick={() => setMaxCapacity(cap)}
-                      className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
-                        maxCapacity === cap
-                          ? 'bg-amber-600/30 border-amber-500 text-amber-300 ring-1 ring-amber-500'
-                          : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      {cap} คน
-                    </button>
-                  ))}
-                  <input
-                    type="number"
-                    min={1}
-                    placeholder="ระบุ"
-                    value={maxCapacity && ![10, 15, 20].includes(maxCapacity) ? maxCapacity : ''}
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value, 10);
-                      setMaxCapacity(isNaN(val) || val <= 0 ? undefined : val);
-                    }}
-                    className="w-14 text-center rounded-xl border border-slate-700 bg-slate-950 px-2 py-1.5 text-xs text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
-                    title="ระบุจำนวนคนสูงสุด"
-                  />
-                </div>
+                ))}
+                <input
+                  type="number"
+                  min={1}
+                  placeholder="ระบุเอง"
+                  value={maxCapacity && ![5, 10, 15, 20, 25].includes(maxCapacity) ? maxCapacity : ''}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10);
+                    setMaxCapacity(isNaN(val) || val <= 0 ? undefined : val);
+                  }}
+                  className="w-20 text-center rounded-xl border border-slate-700 bg-slate-950 px-2 py-1.5 text-xs text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+                  title="ระบุจำนวนคนสูงสุด"
+                />
               </div>
             </div>
 
@@ -281,3 +256,4 @@ export default function CreateQueueModal({ isOpen, onClose, onCreate }: CreateQu
     document.body
   );
 }
+
