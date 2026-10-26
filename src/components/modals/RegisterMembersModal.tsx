@@ -7,7 +7,6 @@ import { AuctionItem } from '@/types/auction';
 import { Member } from '@/types/member';
 import JobEmblem from '@/components/tactical/JobEmblem';
 import TitleSvgIcon from '@/components/icons/TitleSvgIcon';
-import TitleItemSvg from '@/components/icons/TitleItemSvg';
 import RelicSvgIcon from '@/components/icons/RelicSvgIcon';
 
 interface RegisterMembersModalProps {
@@ -103,24 +102,22 @@ export default function RegisterMembersModal({
                 <div className={`relative w-12 h-12 shrink-0 rounded-xl border flex items-center justify-center shadow ${
                   isTitle ? 'border-amber-500/40 bg-[#0c1220]' : isRelic ? 'border-amber-500/40 bg-[#0c1220]' : isCard ? 'border-purple-500/40 bg-[#0c1220]' : 'border-rose-500/40 bg-[#0c1220]'
                 }`}>
-                  {isTitle ? (
-                    <TitleItemSvg itemKey={auction.accessoryIcon} className="w-9 h-9 object-contain drop-shadow" />
-                  ) : (
-                    <Image
-                      src={imageSrc}
-                      alt={auction.accessoryName}
-                      width={40}
-                      height={40}
-                      unoptimized
-                      className="object-contain"
-                      onError={(e) => {
-                        const fallback = isRelic
-                          ? `https://roworlddb.com/media/images/hallows/${auction.accessoryIcon}.webp`
-                          : `https://roworlddb.com/media/images/item/${auction.accessoryIcon}.webp`;
-                        (e.target as HTMLImageElement).src = fallback;
-                      }}
-                    />
-                  )}
+                  <Image
+                    src={imageSrc}
+                    alt={auction.accessoryName}
+                    width={40}
+                    height={40}
+                    unoptimized
+                    className="object-contain"
+                    onError={(e) => {
+                      const fallback = isTitle
+                        ? `https://roworlddb.com/media/images/item/${auction.accessoryIcon}.webp`
+                        : isRelic
+                        ? `https://roworlddb.com/media/images/hallows/${auction.accessoryIcon}.webp`
+                        : `https://roworlddb.com/media/images/item/${auction.accessoryIcon}.webp`;
+                      (e.target as HTMLImageElement).src = fallback;
+                    }}
+                  />
                   {isTitle ? (
                     <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-amber-950/90 border border-amber-500/60 text-amber-200">
                       Title

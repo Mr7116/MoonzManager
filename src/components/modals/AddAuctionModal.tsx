@@ -10,7 +10,6 @@ import { RELIC_AFFIXES, RelicAffix } from '@/constants/relicAffixes';
 import { TITLE_ITEMS, TitleItem } from '@/constants/titleItems';
 import RelicSvgIcon from '@/components/icons/RelicSvgIcon';
 import TitleSvgIcon from '@/components/icons/TitleSvgIcon';
-import TitleItemSvg from '@/components/icons/TitleItemSvg';
 import { AuctionItem } from '@/types/auction';
 
 export interface SelectableAuctionItem {
@@ -534,21 +533,17 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                     }`}
                   >
                     <div className="relative w-12 h-12 mb-1 flex items-center justify-center">
-                      {isTitle ? (
-                        <TitleItemSvg itemKey={item.icon} className="w-11 h-11 object-contain drop-shadow" />
-                      ) : (
-                        <Image
-                          src={item.localIcon}
-                          alt={item.name}
-                          width={44}
-                          height={44}
-                          unoptimized
-                          className="object-contain drop-shadow"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = item.remoteIcon;
-                          }}
-                        />
-                      )}
+                      <Image
+                        src={item.localIcon}
+                        alt={item.name}
+                        width={44}
+                        height={44}
+                        unoptimized
+                        className="object-contain drop-shadow"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = item.remoteIcon;
+                        }}
+                      />
                       {isTitle ? (
                         <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-amber-950/90 border border-amber-500/60 text-amber-200">
                           Title
@@ -667,21 +662,17 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                               : 'border-rose-500/30 bg-[#0d121f]'
                           }`}
                         >
-                          {isTitle ? (
-                            <TitleItemSvg itemKey={entry.item.icon} className="w-9 h-9 object-contain drop-shadow" />
-                          ) : (
-                            <Image
-                              src={entry.item.localIcon}
-                              alt={entry.item.name}
-                              width={36}
-                              height={36}
-                              unoptimized
-                              className="object-contain"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = entry.item.remoteIcon;
-                              }}
-                            />
-                          )}
+                          <Image
+                            src={entry.item.localIcon}
+                            alt={entry.item.name}
+                            width={36}
+                            height={36}
+                            unoptimized
+                            className="object-contain"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = entry.item.remoteIcon;
+                            }}
+                          />
                           {isTitle ? (
                             <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-amber-950/90 border border-amber-500/60 text-amber-200">
                               Title
