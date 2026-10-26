@@ -123,7 +123,7 @@ export default function MemberQueueView({ onSwitchToAdmin }: MemberQueueViewProp
       )}
 
       {/* TOP HEADER */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-[#0c101d]/90 backdrop-blur-md shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-3xl border-2 border-slate-300 dark:border-slate-800 bg-white dark:bg-[#0c101d] shadow-md">
         <div className="flex items-center gap-3">
           <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-500/15 text-2xl border border-indigo-500/30 text-indigo-400">
             📋
@@ -135,7 +135,7 @@ export default function MemberQueueView({ onSwitchToAdmin }: MemberQueueViewProp
                 — {guildName}
               </span>
             </h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-slate-700 dark:text-slate-300 font-medium">
               มายาสิ้นสูญ Lv.75 / Lv.95 และ Apocalypse ทุกระดับ (ไม่ต้อง Login แค่เลือกชื่อตัวเองแล้วกดต่อคิว)
             </p>
           </div>
@@ -177,9 +177,9 @@ export default function MemberQueueView({ onSwitchToAdmin }: MemberQueueViewProp
       </div>
 
       {/* STEP 1: CHARACTER SELECTOR */}
-      <div className="p-4 rounded-3xl border border-indigo-500/30 bg-gradient-to-r from-indigo-950/20 via-slate-900/40 to-indigo-950/20 shadow-sm space-y-3">
+      <div className="p-4 rounded-3xl border-2 border-indigo-200 dark:border-indigo-500/40 bg-white dark:bg-[#0d121f] shadow-md space-y-3">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
+          <label className="text-xs font-black uppercase tracking-wider text-indigo-700 dark:text-indigo-400 flex items-center gap-1.5">
             <span>👤</span>
             <span>ขั้นตอนที่ 1: เลือกชื่อตัวละครของคุณ</span>
           </label>
@@ -201,24 +201,24 @@ export default function MemberQueueView({ onSwitchToAdmin }: MemberQueueViewProp
         </div>
 
         {currentMember ? (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl border border-emerald-500/40 bg-emerald-50/50 dark:bg-emerald-950/20">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl border-2 border-emerald-500 bg-emerald-50/90 dark:bg-emerald-950/40 shadow-sm">
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white dark:bg-slate-900 border border-emerald-500/30 shadow-sm shrink-0">
                 <JobEmblem job={currentMember.job} size={28} />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-extrabold text-base text-slate-900 dark:text-white">
+                  <span className="font-black text-base sm:text-lg text-slate-900 dark:text-white">
                     {currentMember.name}
                   </span>
                   {currentMember.title && (
-                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30">
                       {currentMember.title}
                     </span>
                   )}
                 </div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2 mt-0.5">
-                  <span>อาชีพ: <strong className="text-slate-700 dark:text-slate-200">{currentMember.job || '-'}</strong></span>
+                <div className="text-xs text-slate-700 dark:text-slate-300 flex items-center gap-2 mt-0.5 font-medium">
+                  <span>อาชีพ: <strong className="text-slate-900 dark:text-white">{currentMember.job || '-'}</strong></span>
                   <span>•</span>
                   <span>Lv.{currentMember.lv || 1}</span>
                 </div>
@@ -226,7 +226,7 @@ export default function MemberQueueView({ onSwitchToAdmin }: MemberQueueViewProp
             </div>
 
             <div className="flex items-center gap-2 self-start sm:self-center">
-              <div className="px-3 py-1.5 rounded-xl border border-emerald-500/30 bg-white dark:bg-slate-900/80 text-xs font-bold text-emerald-600 dark:text-emerald-300 shadow-sm">
+              <div className="px-3.5 py-1.5 rounded-xl border-2 border-emerald-500 bg-white dark:bg-slate-900 text-xs font-black text-emerald-700 dark:text-emerald-300 shadow-sm">
                 กำลังต่อคิวอยู่: <strong className="font-mono text-sm">{myQueueLists.length}</strong> คิว
               </div>
             </div>
@@ -280,7 +280,7 @@ export default function MemberQueueView({ onSwitchToAdmin }: MemberQueueViewProp
       {/* STEP 2: QUEUE LISTS */}
       <div className="space-y-3">
         {/* Filter Tabs */}
-        <div className="flex flex-wrap items-center gap-1.5 p-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c101d] shadow-sm">
+        <div className="flex flex-wrap items-center gap-1.5 p-2 rounded-2xl border-2 border-slate-300 dark:border-slate-800 bg-white dark:bg-[#0c101d] shadow-sm">
           {[
             { id: 'open', label: '🟢 เปิดรับคิวอยู่', count: queueLists.filter((q) => q.status === 'open').length },
             { id: 'vanished', label: '🌀 มายาสิ้นสูญ', count: queueLists.filter((q) => q.dungeonCategory === 'vanished').length },
@@ -292,14 +292,14 @@ export default function MemberQueueView({ onSwitchToAdmin }: MemberQueueViewProp
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id as typeof activeTab)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer ${
                 activeTab === tab.id
-                  ? 'bg-indigo-600 text-white shadow'
-                  : 'bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  ? 'bg-indigo-600 text-white shadow-md'
+                  : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-extrabold border border-slate-300 dark:border-slate-700'
               }`}
             >
               <span>{tab.label}</span>
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/30 text-white">
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/25 text-white font-mono font-bold">
                 {tab.count}
               </span>
             </button>
@@ -308,7 +308,7 @@ export default function MemberQueueView({ onSwitchToAdmin }: MemberQueueViewProp
 
         {/* Empty state */}
         {displayLists.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-slate-300 dark:border-slate-800 bg-white/40 dark:bg-transparent p-12 text-center space-y-2">
+          <div className="rounded-3xl border-2 border-dashed border-slate-300 dark:border-slate-800 bg-white dark:bg-[#0c101d] p-12 text-center space-y-2 shadow-sm">
             <span className="text-3xl">📋</span>
             <h4 className="text-sm font-bold text-slate-800 dark:text-slate-300">
               {activeTab === 'open'
@@ -342,29 +342,29 @@ export default function MemberQueueView({ onSwitchToAdmin }: MemberQueueViewProp
               return (
                 <div
                   key={queue.id}
-                  className={`rounded-3xl border p-4 sm:p-5 transition shadow-sm space-y-4 ${
+                  className={`rounded-3xl border-2 p-4 sm:p-5 transition shadow-md space-y-4 ${
                     isJoined
-                      ? 'border-indigo-500/60 bg-gradient-to-r from-indigo-950/25 via-slate-900/60 to-purple-950/20'
+                      ? 'border-indigo-500 bg-indigo-50/80 dark:bg-[#0d1322] shadow-indigo-500/10'
                       : isOpen
                       ? 'border-slate-300 dark:border-slate-800 bg-white dark:bg-[#0c101d] hover:border-slate-400'
-                      : 'border-slate-200 dark:border-slate-800/60 bg-slate-50/60 dark:bg-[#0a0e18]/80 opacity-85'
+                      : 'border-slate-300 dark:border-slate-800/80 bg-slate-100/90 dark:bg-[#0a0e18]'
                   }`}
                 >
                   {/* Card Header: Title + Status + Action Button */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800/80">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
                     <div className="flex items-start gap-3 min-w-0">
-                      <span className="text-2xl sm:text-3xl shrink-0 p-2 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                      <span className="text-2xl sm:text-3xl shrink-0 p-2 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 shadow-sm">
                         {preset?.icon || '📋'}
                       </span>
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white tracking-wide truncate">
+                          <h3 className="font-black text-base sm:text-lg text-slate-900 dark:text-white tracking-wide truncate">
                             {queue.title}
                           </h3>
 
                           {/* Level / Difficulty badge */}
                           {preset && (
-                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${preset.badgeBg} ${preset.badgeColor} ${preset.badgeBorder}`}>
+                            <span className={`px-2 py-0.5 rounded-lg text-xs font-black border shadow-sm ${preset.badgeBg} ${preset.badgeColor} ${preset.badgeBorder}`}>
                               {preset.level || preset.difficulty}
                             </span>
                           )}
@@ -372,35 +372,35 @@ export default function MemberQueueView({ onSwitchToAdmin }: MemberQueueViewProp
                           {/* Status Badge */}
                           {isOpen ? (
                             isCapacityFull ? (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-600 dark:text-amber-300 border border-amber-500/40 flex items-center gap-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                              <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-amber-100 text-amber-900 border-2 border-amber-400 flex items-center gap-1 shadow-sm">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-600" />
                                 <span>🔒 คิวเต็มแล้ว ({entries.length}/{queue.maxCapacity})</span>
                               </span>
                             ) : (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                              <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-2 border-emerald-500 flex items-center gap-1 shadow-sm">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
                                 <span>เปิดรับคิว ({entries.length}{queue.maxCapacity ? `/${queue.maxCapacity}` : ''} คน)</span>
                               </span>
                             )
                           ) : isInProgress ? (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-600 dark:text-purple-300 border border-purple-500/40 flex items-center gap-1">
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 border-2 border-purple-500 flex items-center gap-1 shadow-sm">
                               <span>⏳</span>
                               <span>กำลังลงดันเจี้ยน</span>
                             </span>
                           ) : (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700">
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-300 border-2 border-slate-400 shadow-sm">
                               🔒 ปิดคิวแล้ว
                             </span>
                           )}
                         </div>
 
                         {/* Meta info */}
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400 mt-1">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-bold text-slate-700 dark:text-slate-300 mt-1">
                           <span>
-                            👥 จำนวนในคิว: <strong className="text-indigo-600 dark:text-indigo-400 font-mono font-bold">{entries.length}</strong>
+                            👥 จำนวนในคิว: <strong className="text-indigo-700 dark:text-indigo-400 font-black font-mono text-sm">{entries.length}</strong>
                             {queue.maxCapacity ? `/${queue.maxCapacity}` : ''} คน
                           </span>
-                          {queue.note && <span>💬 หมายเหตุ: <strong>{queue.note}</strong></span>}
+                          {queue.note && <span>💬 หมายเหตุ: <strong className="text-slate-900 dark:text-white">{queue.note}</strong></span>}
                         </div>
                       </div>
                     </div>
@@ -410,7 +410,7 @@ export default function MemberQueueView({ onSwitchToAdmin }: MemberQueueViewProp
                       {isOpen ? (
                         isJoined ? (
                           <div className="flex items-center gap-2">
-                            <span className="px-3 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center gap-1">
+                            <span className="px-3.5 py-2 rounded-xl bg-emerald-600 text-white text-xs font-black flex items-center gap-1.5 shadow-md">
                               <span>✅</span>
                               <span>
                                 อยู่ในคิวแล้ว (อันดับ {myIndices.map(i => `#${i + 1}`).join(', ')})
@@ -420,14 +420,14 @@ export default function MemberQueueView({ onSwitchToAdmin }: MemberQueueViewProp
                             <button
                               type="button"
                               onClick={() => handleLeave(queue)}
-                              className="px-2.5 py-1.5 rounded-xl border border-rose-300 dark:border-rose-500/40 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-950/40 text-rose-700 dark:text-rose-300 text-xs font-bold transition cursor-pointer"
+                              className="px-3 py-2 rounded-xl border-2 border-rose-400 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 text-xs font-black transition cursor-pointer shadow-sm active:scale-95"
                               title="ยกเลิกการต่อคิวนี้"
                             >
                               ✕ ยกเลิกคิว
                             </button>
                           </div>
                         ) : isCapacityFull ? (
-                          <span className="px-3 py-1.5 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-bold flex items-center gap-1">
+                          <span className="px-3.5 py-2 rounded-xl border-2 border-rose-400 bg-rose-100 dark:bg-rose-950/50 text-rose-800 dark:text-rose-200 text-xs font-black flex items-center gap-1 shadow-sm">
                             <span>🔒</span>
                             <span>คิวเต็มแล้ว ({entries.length}/{queue.maxCapacity})</span>
                           </span>
@@ -435,14 +435,14 @@ export default function MemberQueueView({ onSwitchToAdmin }: MemberQueueViewProp
                           <button
                             type="button"
                             onClick={() => handleJoin(queue)}
-                            className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs sm:text-sm font-extrabold shadow-md shadow-indigo-950/40 flex items-center gap-1.5 transition cursor-pointer active:scale-95"
+                            className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs sm:text-sm font-black shadow-md shadow-indigo-950/40 flex items-center gap-1.5 transition cursor-pointer active:scale-95"
                           >
                             <span>+</span>
                             <span>กดต่อคิวนี้</span>
                           </button>
                         )
                       ) : (
-                        <span className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 text-slate-400 text-xs font-semibold">
+                        <span className="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-200 dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-xs font-bold">
                           🔒 ปิดรับคิว
                         </span>
                       )}
@@ -451,70 +451,75 @@ export default function MemberQueueView({ onSwitchToAdmin }: MemberQueueViewProp
 
                   {/* QUEUE ENTRIES AS A CLEAN LIST */}
                   {entries.length === 0 ? (
-                    <div className="p-6 text-center text-xs text-slate-400 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
+                    <div className="p-8 text-center text-xs font-bold text-slate-500 dark:text-slate-400 border-2 border-dashed border-slate-300 dark:border-slate-800 rounded-2xl bg-slate-50/50 dark:bg-transparent">
                       ยังไม่มีคนกดต่อคิวในรายการนี้ เป็นคนแรกที่กดเข้าร่วมได้เลย! 🚀
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between text-xs font-bold text-slate-600 dark:text-slate-400 px-1 pb-1">
-                        <span className="flex items-center gap-1.5">
+                      <div className="flex items-center justify-between text-xs font-black text-slate-800 dark:text-slate-200 px-1 pb-1">
+                        <span className="flex items-center gap-1.5 text-sm font-black">
                           <span>📋</span>
                           <span>รายชื่อผู้ต่อคิว ({entries.length} คน)</span>
                         </span>
-                        <span className="text-[11px] font-normal text-slate-500">
+                        <span className="text-xs font-bold text-slate-600 dark:text-slate-400">
                           เรียงตามลำดับเวลาที่กดเข้าร่วม (มาก่อนได้ก่อน)
                         </span>
                       </div>
 
-                      <div className="space-y-1.5 max-h-[460px] overflow-y-auto pr-1 scrollbar-thin">
+                      <div className="space-y-2 max-h-[460px] overflow-y-auto pr-1 scrollbar-thin">
                         {entries.map((entry, idx) => {
                           const isMe = entry.memberId === selectedMemberId;
                           const timeStr = formatQueueTime(entry.joinedAt);
+                          const isDone = !!entry.isCompleted;
 
                           return (
                             <div
                               key={entry.id}
-                              className={`p-2.5 sm:p-3 rounded-2xl border flex items-center justify-between gap-3 text-xs sm:text-sm transition ${
-                                isMe
-                                  ? 'border-emerald-500 bg-emerald-500/15 text-emerald-950 dark:text-emerald-100 font-bold ring-1 ring-emerald-500 shadow-md shadow-emerald-500/10'
-                                  : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 text-slate-800 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-700'
+                              className={`p-3 sm:p-3.5 rounded-2xl border-2 flex items-center justify-between gap-3 text-xs sm:text-sm transition ${
+                                isDone
+                                  ? 'border-emerald-500 bg-emerald-50/90 dark:bg-emerald-950/30 shadow-sm'
+                                  : isMe
+                                  ? 'border-indigo-500 bg-indigo-50/90 dark:bg-indigo-950/30 shadow-sm ring-1 ring-indigo-500/30'
+                                  : 'border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900/90 text-slate-900 dark:text-slate-100 shadow-sm hover:border-slate-400'
                               }`}
                             >
                               <div className="flex items-center gap-3 min-w-0">
                                 <span
-                                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center font-mono font-black text-xs shrink-0 ${
-                                    idx === 0
-                                      ? 'bg-amber-500/20 text-amber-500 border border-amber-500/40'
+                                  className={`w-8 h-8 rounded-xl flex items-center justify-center font-mono font-black text-xs shrink-0 ${
+                                    isDone
+                                      ? 'bg-emerald-600 text-white shadow-sm'
+                                      : idx === 0
+                                      ? 'bg-amber-500 text-slate-950 font-black shadow-sm'
                                       : idx === 1
-                                      ? 'bg-slate-300/30 text-slate-400 border border-slate-400/40'
+                                      ? 'bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300'
                                       : idx === 2
-                                      ? 'bg-amber-700/20 text-amber-600 border border-amber-700/40'
-                                      : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
+                                      ? 'bg-amber-700/20 text-amber-700 dark:text-amber-500 border border-amber-600/40'
+                                      : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300'
                                   }`}
                                 >
-                                  #{idx + 1}
+                                  {isDone ? '✓' : `#${idx + 1}`}
                                 </span>
                                 {entry.memberJob && (
-                                  <JobEmblem job={entry.memberJob} size={26} />
+                                  <JobEmblem job={entry.memberJob} size={28} />
                                 )}
                                 <div className="min-w-0">
-                                  <div className="flex items-center gap-1.5 font-bold truncate text-slate-900 dark:text-white">
-                                    <span className={`truncate ${entry.isCompleted ? 'text-emerald-600 dark:text-emerald-400 font-extrabold' : ''}`}>
+                                  <div className="flex items-center gap-2 font-black truncate text-slate-900 dark:text-white">
+                                    <span className={`text-sm sm:text-base truncate ${isDone ? 'text-emerald-700 dark:text-emerald-300 font-black' : ''}`}>
                                       {entry.memberName}
                                     </span>
                                     {isMe && (
-                                      <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/40 shrink-0">
+                                      <span className="px-2 py-0.5 rounded-lg text-[11px] font-black bg-indigo-600 text-white shadow-sm shrink-0">
                                         (คุณ)
                                       </span>
                                     )}
-                                    {entry.isCompleted && (
-                                      <span className="px-2 py-0.5 rounded-lg text-[11px] font-black bg-emerald-600 text-white shadow-sm shrink-0">
+                                    {isDone && (
+                                      <span className="px-2.5 py-0.5 rounded-lg text-[11px] font-black bg-emerald-600 text-white shadow-sm shrink-0 flex items-center gap-1">
                                         ✓ ผ่านแล้ว
                                       </span>
                                     )}
                                   </div>
                                   {entry.memberJob && (
-                                    <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                                    <div className="text-xs font-bold text-slate-600 dark:text-slate-400">
                                       {entry.memberJob}
                                     </div>
                                   )}
@@ -522,13 +527,8 @@ export default function MemberQueueView({ onSwitchToAdmin }: MemberQueueViewProp
                               </div>
 
                               <div className="flex items-center gap-2 shrink-0">
-                                {entry.isCompleted && (
-                                  <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1 sm:hidden">
-                                    ✓ ผ่าน
-                                  </span>
-                                )}
                                 {timeStr && (
-                                  <span className="text-xs text-slate-500 dark:text-slate-400 font-mono flex items-center gap-1 bg-slate-100 dark:bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-200 dark:border-slate-800">
+                                  <span className="text-xs text-slate-800 dark:text-slate-200 font-bold font-mono flex items-center gap-1.5 bg-slate-100 dark:bg-slate-950 px-3 py-1.5 rounded-xl border-2 border-slate-300 dark:border-slate-700 shadow-sm">
                                     <span>🕒</span>
                                     <span>{timeStr}</span>
                                   </span>
@@ -537,7 +537,7 @@ export default function MemberQueueView({ onSwitchToAdmin }: MemberQueueViewProp
                                   <button
                                     type="button"
                                     onClick={() => handleLeave(queue)}
-                                    className="px-2.5 py-1 rounded-xl border border-rose-300 dark:border-rose-500/40 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 text-rose-600 dark:text-rose-300 text-xs font-semibold cursor-pointer transition"
+                                    className="px-3 py-1.5 rounded-xl border-2 border-rose-400 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-black shadow-sm transition cursor-pointer active:scale-95"
                                     title="ยกเลิกการต่อคิวนี้"
                                   >
                                     ✕ ออกจากคิว
