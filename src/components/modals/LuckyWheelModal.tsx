@@ -413,7 +413,16 @@ export default function LuckyWheelModal({
                   </div>
                   <p className="text-xs text-slate-400">
                     ผู้ลงชื่อชิงไอเทม:{' '}
-                    <strong className="text-amber-400 font-mono">{entries.length}</strong> คน
+                    <strong className="text-amber-400 font-mono">
+                      {entries.length}
+                      {auction.maxEntries ? `/${auction.maxEntries}` : ''}
+                    </strong>{' '}
+                    คน
+                    {auction.maxEntries && entries.length >= auction.maxEntries && (
+                      <span className="ml-1.5 px-1.5 py-0.2 rounded text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                        เต็มโควตา
+                      </span>
+                    )}
                   </p>
                 </div>
               </div>

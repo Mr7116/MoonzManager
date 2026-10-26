@@ -79,6 +79,7 @@ export interface GuildState {
   addMemberToAuction: (auctionId: string, memberId: string) => void;
   addMultipleMembersToAuction: (auctionId: string, memberIds: string[]) => void;
   removeMemberFromAuction: (auctionId: string, memberId: string) => void;
+  updateAuctionMaxEntries: (auctionId: string, maxEntries?: number) => void;
   setAuctionWinner: (auctionId: string, winnerMemberId: string) => void;
   resetAuctionWinner: (auctionId: string) => void;
   placeBid: (auctionId: string, memberId: string, memberName: string, memberJob: string | undefined, amount: number, note?: string) => { success: boolean; message: string };
@@ -846,6 +847,10 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
         if (item.id !== auctionId) return item;
         const currentEntries = item.entries || [];
         if (currentEntries.some((e) => e.memberId === memberId)) return item;
+        // Check maxEntries limit
+        if (item.maxEntries && item.maxEntries > 0 && currentEntries.length >= item.maxEntries) {
+          return item;
+        }
         const newEntry: AuctionEntry = {
           id: `entry_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
           memberId: member.id,
@@ -869,7 +874,10 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
         const currentEntries = item.entries || [];
         const existingIds = new Set(currentEntries.map((e) => e.memberId));
         const newEntries: AuctionEntry[] = [];
-        memberIds.forEach((mId) => {
+        const maxLimit = item.maxEntries && item.maxEntries > 0 ? item.maxEntries : Infinity;
+
+        for (const mId of memberIds) {
+          if (currentEntries.length + newEntries.length >= maxLimit) break;
           if (!existingIds.has(mId)) {
             const member = latestStateRef.current.members.find((m) => m.id === mId);
             if (member) {
@@ -883,10 +891,24 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
               });
             }
           }
-        });
+        }
+
         return {
           ...item,
           entries: [...currentEntries, ...newEntries],
+        };
+      })
+    );
+    triggerAutoSave();
+  };
+
+  const updateAuctionMaxEntries = (auctionId: string, maxEntries?: number) => {
+    setAuctionItems((prev) =>
+      prev.map((item) => {
+        if (item.id !== auctionId) return item;
+        return {
+          ...item,
+          maxEntries: maxEntries !== undefined && maxEntries > 0 ? maxEntries : undefined,
         };
       })
     );
@@ -1094,6 +1116,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
         addMemberToAuction,
         addMultipleMembersToAuction,
         removeMemberFromAuction,
+        updateAuctionMaxEntries,
         setAuctionWinner,
         resetAuctionWinner,
         placeBid,

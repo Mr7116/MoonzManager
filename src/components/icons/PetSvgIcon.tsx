@@ -105,3 +105,4 @@ export const PetSvgIcon: React.FC<PetSvgIconProps> = ({
 };
 
 export default PetSvgIcon;
+

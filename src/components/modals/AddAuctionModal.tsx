@@ -38,6 +38,7 @@ interface SelectedEntry {
   item: SelectableAuctionItem;
   affixId?: string;
   count: number;
+  maxEntries?: number;
 }
 
 interface AddAuctionModalProps {
@@ -53,6 +54,7 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
   const [selectedAffixId, setSelectedAffixId] = useState<string>('sage');
   const [search, setSearch] = useState('');
   const [sourceNote, setSourceNote] = useState<string>('ดรอปจากกิลด์วอร์ (GVG)');
+  const [defaultMaxEntries, setDefaultMaxEntries] = useState<number | undefined>(undefined);
   const [selectedMap, setSelectedMap] = useState<Record<string, SelectedEntry>>({});
 
   const currentAffix = useMemo(() => {
@@ -210,9 +212,24 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
             item,
             affixId: item.category === 'relic' ? selectedAffixId : undefined,
             count: 1,
+            maxEntries: defaultMaxEntries,
           },
         };
       }
+    });
+  };
+
+  const handleUpdateEntryMaxLimit = (entryKey: string, maxLimit?: number) => {
+    setSelectedMap((prev) => {
+      const existing = prev[entryKey];
+      if (!existing) return prev;
+      return {
+        ...prev,
+        [entryKey]: {
+          ...existing,
+          maxEntries: maxLimit !== undefined && maxLimit > 0 ? maxLimit : undefined,
+        },
+      };
     });
   };
 
@@ -329,6 +346,7 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
               : undefined,
           startPrice: 0,
           minIncrement: 0,
+          maxEntries: entry.maxEntries && entry.maxEntries > 0 ? entry.maxEntries : undefined,
           sourceNote: sourceNote.trim() || undefined,
           status,
         });
@@ -387,16 +405,102 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
           </button>
         </div>
 
-        {/* Source Note Bar */}
-        <div className="p-3 rounded-2xl border border-slate-800 bg-slate-950/60 shrink-0 text-xs">
-          <label className="text-slate-400 block mb-1 font-semibold">แหล่งที่มา / หมายเหตุ (Source):</label>
-          <input
-            type="text"
-            value={sourceNote}
-            onChange={(e) => setSourceNote(e.target.value)}
-            placeholder="เช่น ดรอปจาก GVG รอบวันอาทิตย์ / Siege War / กล่องสมบัติกิลด์"
-            className="w-full rounded-xl border border-slate-700 bg-[#080d1a] px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:border-rose-500 focus:outline-none"
-          />
+        {/* Source Note & Quota Settings */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3 rounded-2xl border border-slate-800 bg-slate-950/60 shrink-0 text-xs">
+          <div className="md:col-span-2">
+            <label className="text-slate-400 block mb-1 font-semibold">แหล่งที่มา / หมายเหตุ (Source):</label>
+            <input
+              type="text"
+              value={sourceNote}
+              onChange={(e) => setSourceNote(e.target.value)}
+              placeholder="เช่น ดรอปจาก GVG รอบวันอาทิตย์ / Siege War / กล่องสมบัติกิลด์"
+              className="w-full rounded-xl border border-slate-700 bg-[#080d1a] px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:border-rose-500 focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="text-slate-400 block mb-1 font-semibold flex items-center justify-between">
+              <span>โควตาคนลงชื่อเริ่มต้น:</span>
+              <span className="text-[10px] text-amber-400 font-bold">
+                {defaultMaxEntries ? `จำกัด ${defaultMaxEntries} คน (0/${defaultMaxEntries})` : 'ไม่จำกัด'}
+              </span>
+            </label>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setDefaultMaxEntries(undefined);
+                  setSelectedMap((prev) => {
+                    const next = { ...prev };
+                    Object.keys(next).forEach((k) => (next[k] = { ...next[k], maxEntries: undefined }));
+                    return next;
+                  });
+                }}
+                className={`px-2 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer border ${
+                  defaultMaxEntries === undefined
+                    ? 'bg-slate-700 text-white border-slate-500'
+                    : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                }`}
+              >
+                ไม่จำกัด
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setDefaultMaxEntries(1);
+                  setSelectedMap((prev) => {
+                    const next = { ...prev };
+                    Object.keys(next).forEach((k) => (next[k] = { ...next[k], maxEntries: 1 }));
+                    return next;
+                  });
+                }}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer border ${
+                  defaultMaxEntries === 1
+                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 border-amber-400 font-black shadow'
+                    : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                }`}
+                title="ตั้งค่าให้คนลงชื่อได้แค่ 1 คน พอลงครบแล้วปิดรับทันที (0/1)"
+              >
+                ⚡ 1 คน (0/1)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setDefaultMaxEntries(2);
+                  setSelectedMap((prev) => {
+                    const next = { ...prev };
+                    Object.keys(next).forEach((k) => (next[k] = { ...next[k], maxEntries: 2 }));
+                    return next;
+                  });
+                }}
+                className={`px-2 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer border ${
+                  defaultMaxEntries === 2
+                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 border-amber-400 font-black shadow'
+                    : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                }`}
+              >
+                2 คน
+              </button>
+              <input
+                type="number"
+                min={0}
+                placeholder="กำหนด"
+                value={defaultMaxEntries ?? ''}
+                onChange={(e) => {
+                  const val = e.target.value === '' ? undefined : Math.max(0, parseInt(e.target.value) || 0);
+                  const parsed = val && val > 0 ? val : undefined;
+                  setDefaultMaxEntries(parsed);
+                  setSelectedMap((prev) => {
+                    const next = { ...prev };
+                    Object.keys(next).forEach((k) => (next[k] = { ...next[k], maxEntries: parsed }));
+                    return next;
+                  });
+                }}
+                className="w-14 text-center rounded-lg border border-slate-700 bg-[#080d1a] px-1 py-1 text-xs text-amber-300 font-bold placeholder-slate-600 focus:border-amber-400 focus:outline-none"
+                title="กำหนดจำนวนคนลงชื่อสูงสุดต่อชิ้น"
+              />
+            </div>
+          </div>
         </div>
 
         {/* Middle Body */}
@@ -900,8 +1004,50 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                         </div>
                       </div>
 
-                      {/* Quantity Stepper & Remove */}
-                      <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
+                      {/* Quota & Quantity & Remove */}
+                      <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-end sm:self-center">
+                        {/* Per-item Quota Setting */}
+                        <div className="flex items-center gap-1 bg-slate-950/80 rounded-xl border border-slate-700/80 px-2 py-1">
+                          <span className="text-[10px] text-slate-400 font-semibold">โควตา:</span>
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateEntryMaxLimit(entry.entryKey, 1)}
+                            className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition cursor-pointer border ${
+                              entry.maxEntries === 1
+                                ? 'bg-amber-500 text-slate-950 border-amber-400 shadow font-black'
+                                : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                            }`}
+                            title="จำกัดคนลงชื่อ 1 คน (0/1)"
+                          >
+                            0/1
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateEntryMaxLimit(entry.entryKey, undefined)}
+                            className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition cursor-pointer border ${
+                              !entry.maxEntries
+                                ? 'bg-slate-700 text-white border-slate-600'
+                                : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                            }`}
+                            title="ไม่จำกัดจำนวนคนลงชื่อ"
+                          >
+                            ไม่จำกัด
+                          </button>
+                          <input
+                            type="number"
+                            min={0}
+                            value={entry.maxEntries ?? ''}
+                            onChange={(e) => {
+                              const val = e.target.value === '' ? undefined : parseInt(e.target.value);
+                              handleUpdateEntryMaxLimit(entry.entryKey, val && val > 0 ? val : undefined);
+                            }}
+                            placeholder="ระบุ"
+                            className="w-10 text-center rounded border border-slate-700 bg-black/60 px-1 py-0.5 text-[10px] text-amber-300 font-bold focus:border-amber-400 focus:outline-none"
+                            title="ใส่ตัวเลขโควตา เช่น 1, 2, 3... หรือเว้นว่างเพื่อไม่จำกัด"
+                          />
+                        </div>
+
+                        {/* Quantity Stepper */}
                         <div className="flex items-center gap-1 bg-slate-950 rounded-xl border border-slate-700 p-0.5">
                           <button
                             type="button"

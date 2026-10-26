@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
-import { AuctionItem } from '@/types/auction';
+import { AuctionItem, formatRegistrationTime } from '@/types/auction';
 import { Member } from '@/types/member';
 import JobEmblem from '@/components/tactical/JobEmblem';
 import TitleSvgIcon from '@/components/icons/TitleSvgIcon';
@@ -21,6 +21,7 @@ interface RegisterMembersModalProps {
   members: Member[];
   onAddMember: (auctionId: string, memberId: string) => void;
   onRemoveMember: (auctionId: string, memberId: string) => void;
+  onUpdateMaxEntries?: (auctionId: string, maxEntries?: number) => void;
   onOpenWheel: () => void;
 }
 
@@ -31,6 +32,7 @@ export default function RegisterMembersModal({
   members,
   onAddMember,
   onRemoveMember,
+  onUpdateMaxEntries,
   onOpenWheel,
 }: RegisterMembersModalProps) {
   const [search, setSearch] = useState('');
@@ -38,6 +40,9 @@ export default function RegisterMembersModal({
   const entries = useMemo(() => {
     return auction?.entries || [];
   }, [auction]);
+
+  const maxLimit = auction?.maxEntries && auction.maxEntries > 0 ? auction.maxEntries : undefined;
+  const isQuotaFull = maxLimit !== undefined && entries.length >= maxLimit;
 
   const registeredIdSet = useMemo(() => {
     return new Set(entries.map((e) => e.memberId));
@@ -228,12 +233,90 @@ export default function RegisterMembersModal({
                   className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white text-xs font-bold shadow-md shadow-rose-950/40 flex items-center gap-1.5 transition cursor-pointer"
                 >
                   <span>🎡</span>
-                  <span>ไปหมุนวงล้อสุ่ม ({entries.length}) ▶</span>
+                  <span>ไปหมุนวงล้อสุ่ม ({entries.length}{maxLimit ? `/${maxLimit}` : ''}) ▶</span>
                 </button>
               )}
             </div>
           );
         })()}
+
+        {/* Quota Setting Bar for Admin */}
+        {onUpdateMaxEntries && (
+          <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-2xl border border-slate-800 bg-slate-950/70 text-xs shrink-0">
+            <div className="flex items-center gap-2">
+              <span className="text-slate-400 font-bold">🔒 โควตาจำกัดคนลงชื่อ:</span>
+              <span className="text-amber-400 font-mono font-bold">
+                {maxLimit ? `${entries.length} / ${maxLimit} คน` : `${entries.length} คน (ไม่จำกัด)`}
+              </span>
+              {isQuotaFull && (
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                  เต็มโควตาแล้ว
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => onUpdateMaxEntries(auction.id, undefined)}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition cursor-pointer ${
+                  !maxLimit
+                    ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300 ring-1 ring-emerald-500'
+                    : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-white'
+                }`}
+              >
+                ไม่จำกัด
+              </button>
+              <button
+                type="button"
+                onClick={() => onUpdateMaxEntries(auction.id, 1)}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition cursor-pointer ${
+                  maxLimit === 1
+                    ? 'bg-amber-500/20 border-amber-500 text-amber-300 ring-1 ring-amber-500'
+                    : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-white'
+                }`}
+              >
+                ⚡ 1 คน (0/1)
+              </button>
+              <button
+                type="button"
+                onClick={() => onUpdateMaxEntries(auction.id, 2)}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition cursor-pointer ${
+                  maxLimit === 2
+                    ? 'bg-amber-500/20 border-amber-500 text-amber-300 ring-1 ring-amber-500'
+                    : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-white'
+                }`}
+              >
+                2 คน
+              </button>
+              <button
+                type="button"
+                onClick={() => onUpdateMaxEntries(auction.id, 3)}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition cursor-pointer ${
+                  maxLimit === 3
+                    ? 'bg-amber-500/20 border-amber-500 text-amber-300 ring-1 ring-amber-500'
+                    : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-white'
+                }`}
+              >
+                3 คน
+              </button>
+              <div className="flex items-center gap-1 pl-1">
+                <span className="text-[10px] text-slate-500">ระบุ:</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={999}
+                  placeholder="จำนวน"
+                  value={maxLimit && ![1, 2, 3].includes(maxLimit) ? maxLimit : ''}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10);
+                    onUpdateMaxEntries(auction.id, isNaN(val) || val <= 0 ? undefined : val);
+                  }}
+                  className="w-14 rounded-lg border border-slate-700 bg-slate-900 px-2 py-0.5 text-xs text-white text-center focus:border-amber-500 focus:outline-none"
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Two-Column Grid: Members Selector & Enrolled List */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 overflow-hidden min-h-[300px]">
@@ -282,6 +365,10 @@ export default function RegisterMembersModal({
                       >
                         ✓ ลงชื่อแล้ว (ลบ)
                       </button>
+                    ) : isQuotaFull ? (
+                      <span className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-500 text-[11px] font-medium cursor-not-allowed">
+                        🔒 โควตาเต็ม
+                      </span>
                     ) : (
                       <button
                         type="button"
@@ -301,7 +388,14 @@ export default function RegisterMembersModal({
           <div className="flex flex-col rounded-2xl border border-slate-800 bg-[#090d18] p-3 space-y-2.5 overflow-hidden">
             <div className="flex items-center justify-between shrink-0">
               <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                <span>รายชื่อในวงล้อสุ่ม ({entries.length} คน):</span>
+                <span>
+                  รายชื่อในวงล้อสุ่ม ({entries.length}{maxLimit ? `/${maxLimit}` : ''} คน):
+                </span>
+                {maxLimit && (
+                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold">
+                    โควตา {maxLimit} คน
+                  </span>
+                )}
               </label>
               {entries.length > 0 && (
                 <span className="text-[11px] text-amber-400 font-semibold font-mono">
@@ -318,34 +412,45 @@ export default function RegisterMembersModal({
               </div>
             ) : (
               <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 scrollbar-thin">
-                {entries.map((entry, idx) => (
-                  <div
-                    key={entry.id}
-                    className="flex items-center justify-between p-2 rounded-xl border border-slate-800 bg-[#0d121f] hover:border-slate-700 transition text-xs"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <span className="w-5 font-mono font-bold text-slate-500 text-right shrink-0">
-                        {idx + 1}.
-                      </span>
-                      {entry.memberJob && <JobEmblem job={entry.memberJob} size={22} />}
-                      <div className="min-w-0">
-                        <div className="font-bold text-white truncate">{entry.memberName}</div>
-                        {entry.memberJob && (
-                          <div className="text-[10px] text-slate-400">{entry.memberJob}</div>
+                {entries.map((entry, idx) => {
+                  const regTime = formatRegistrationTime(entry.registeredAt);
+                  return (
+                    <div
+                      key={entry.id}
+                      className="flex items-center justify-between p-2 rounded-xl border border-slate-800 bg-[#0d121f] hover:border-slate-700 transition text-xs"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className="w-5 font-mono font-bold text-slate-500 text-right shrink-0">
+                          {idx + 1}.
+                        </span>
+                        {entry.memberJob && <JobEmblem job={entry.memberJob} size={22} />}
+                        <div className="min-w-0">
+                          <div className="font-bold text-white truncate">{entry.memberName}</div>
+                          {entry.memberJob && (
+                            <div className="text-[10px] text-slate-400">{entry.memberJob}</div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        {regTime && (
+                          <span className="text-[10px] text-slate-400 font-mono flex items-center gap-0.5 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800">
+                            <span>🕒</span>
+                            <span>{regTime}</span>
+                          </span>
                         )}
+                        <button
+                          type="button"
+                          onClick={() => onRemoveMember(auction.id, entry.memberId)}
+                          className="text-slate-500 hover:text-rose-400 p-1 text-xs transition cursor-pointer"
+                          title="ลบรายชื่อนี้"
+                        >
+                          ✕
+                        </button>
                       </div>
                     </div>
-
-                    <button
-                      type="button"
-                      onClick={() => onRemoveMember(auction.id, entry.memberId)}
-                      className="text-slate-500 hover:text-rose-400 p-1 text-xs transition cursor-pointer"
-                      title="ลบรายชื่อนี้"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

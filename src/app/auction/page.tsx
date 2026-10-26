@@ -40,6 +40,7 @@ export default function AuctionPage() {
     startAllPendingAuctions,
     addMemberToAuction,
     removeMemberFromAuction,
+    updateAuctionMaxEntries,
     setAuctionWinner,
     resetAuctionWinner,
     deleteAuctionItem,
@@ -650,6 +651,7 @@ export default function AuctionPage() {
             const chestTier = isChest ? getChestTierStyle(item.accessoryName || item.cardQuality) : null;
             const petTier = isPet ? getPetTierStyle(item.accessoryName || item.cardQuality) : null;
             const entryCount = (item.entries || []).length;
+            const isQuotaFull = !!(item.maxEntries && item.maxEntries > 0 && entryCount >= item.maxEntries);
             const imageSrc = isTitle
               ? `/images/titles/${item.accessoryIcon}.webp`
               : isChest
@@ -791,9 +793,17 @@ export default function AuctionPage() {
                         </span>
                       )}
                       {isActive && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/40 flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                          <span>เปิดรับรายชื่อ / พร้อมหมุน</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border flex items-center gap-1 ${
+                          isQuotaFull
+                            ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40'
+                            : 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-500/40'
+                        }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${isQuotaFull ? 'bg-amber-500' : 'bg-emerald-500 animate-pulse'}`} />
+                          <span>
+                            {isQuotaFull
+                              ? `🔒 โควตาเต็ม (${entryCount}/${item.maxEntries})`
+                              : `เปิดรับรายชื่อ ${item.maxEntries ? `(${entryCount}/${item.maxEntries})` : '/ พร้อมหมุน'}`}
+                          </span>
                         </span>
                       )}
                       {isEnded && (
@@ -839,9 +849,18 @@ export default function AuctionPage() {
                           {isPending ? (
                             <span className="text-sm font-sans text-amber-300/90 font-bold">รอเปิดรับ</span>
                           ) : (
-                            <>
-                              {entryCount} <span className="text-xs font-sans text-slate-400 font-normal">คน</span>
-                            </>
+                            <span className="inline-flex items-center gap-1">
+                              <span>{entryCount}</span>
+                              {item.maxEntries ? (
+                                <span className="text-xs font-mono text-slate-400">/{item.maxEntries}</span>
+                              ) : null}
+                              <span className="text-xs font-sans text-slate-400 font-normal">คน</span>
+                              {isQuotaFull && (
+                                <span className="text-[10px] px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-500 font-bold border border-rose-500/30">
+                                  เต็ม
+                                </span>
+                              )}
+                            </span>
                           )}
                         </div>
                         {isActive && entryCount > 0 && (
@@ -881,7 +900,7 @@ export default function AuctionPage() {
                       className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-white text-xs font-bold border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 transition cursor-pointer"
                     >
                       <span>👥</span>
-                      <span>ลงชื่อ ({entryCount})</span>
+                      <span>ลงชื่อ ({entryCount}{item.maxEntries ? `/${item.maxEntries}` : ''})</span>
                     </button>
                   )}
 
@@ -950,6 +969,7 @@ export default function AuctionPage() {
             const chestTier = isChest ? getChestTierStyle(item.accessoryName || item.cardQuality) : null;
             const petTier = isPet ? getPetTierStyle(item.accessoryName || item.cardQuality) : null;
             const entryCount = (item.entries || []).length;
+            const isQuotaFull = !!(item.maxEntries && item.maxEntries > 0 && entryCount >= item.maxEntries);
             const imageSrc = isTitle
               ? `/images/titles/${item.accessoryIcon}.webp`
               : isChest
@@ -982,9 +1002,17 @@ export default function AuctionPage() {
                         <span>รอเปิดรับรายชื่อ</span>
                       </span>
                     ) : isActive ? (
-                      <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        <span>เปิดรับรายชื่อ / พร้อมสุ่ม</span>
+                      <span className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
+                        isQuotaFull
+                          ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30'
+                          : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30'
+                      }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${isQuotaFull ? 'bg-amber-500' : 'bg-emerald-500 animate-pulse'}`} />
+                        <span>
+                          {isQuotaFull
+                            ? `🔒 เต็มโควตา (${entryCount}/${item.maxEntries})`
+                            : `เปิดรับรายชื่อ ${item.maxEntries ? `(${entryCount}/${item.maxEntries})` : '/ พร้อมสุ่ม'}`}
+                        </span>
                       </span>
                     ) : isEnded ? (
                       <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30">
@@ -1211,7 +1239,7 @@ export default function AuctionPage() {
                         className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-white text-xs font-bold border border-slate-300 dark:border-slate-700 flex items-center justify-center gap-1.5 transition cursor-pointer"
                       >
                         <span>👥</span>
-                        <span>ลงชื่อ ({entryCount})</span>
+                        <span>ลงชื่อ ({entryCount}{item.maxEntries ? `/${item.maxEntries}` : ''})</span>
                       </button>
 
                       <button
@@ -1290,6 +1318,9 @@ export default function AuctionPage() {
         }}
         onRemoveMember={(auctionId, memberId) => {
           removeMemberFromAuction(auctionId, memberId);
+        }}
+        onUpdateMaxEntries={(auctionId, maxEntries) => {
+          updateAuctionMaxEntries(auctionId, maxEntries);
         }}
         onOpenWheel={() => {
           if (registerAuction) {
