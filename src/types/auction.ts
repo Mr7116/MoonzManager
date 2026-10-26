@@ -53,6 +53,7 @@ export interface AuctionItem {
   winnerMemberId?: string;
   winnerMemberName?: string;
   winnerMemberJob?: string;
+  winners?: Array<{ memberId: string; memberName: string; memberJob?: string; count: number }>;
   finalPrice?: number;
 
   // Metadata

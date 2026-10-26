@@ -24,6 +24,7 @@ interface RegisterMembersModalProps {
   onRemoveOneMember?: (auctionId: string, memberId: string) => void;
   onRemoveEntry?: (auctionId: string, entryId: string) => void;
   onUpdateMaxEntries?: (auctionId: string, maxEntries?: number) => void;
+  onConfirmWinners?: (auctionId: string) => void;
   onOpenWheel: () => void;
 }
 
@@ -37,6 +38,7 @@ export default function RegisterMembersModal({
   onRemoveOneMember,
   onRemoveEntry,
   onUpdateMaxEntries,
+  onConfirmWinners,
   onOpenWheel,
 }: RegisterMembersModalProps) {
   const [search, setSearch] = useState('');
@@ -47,6 +49,11 @@ export default function RegisterMembersModal({
 
   const maxLimit = auction?.maxEntries && auction.maxEntries > 0 ? auction.maxEntries : undefined;
   const isQuotaFull = maxLimit !== undefined && entries.length >= maxLimit;
+  const isTitle = auction
+    ? auction.itemCategory === 'title' ||
+      (auction.cardSlot && auction.cardSlot.includes('Title')) ||
+      (auction.cardQuality && auction.cardQuality.includes('Title'))
+    : false;
 
   const registeredIdSet = useMemo(() => {
     return new Set(entries.map((e) => e.memberId));
@@ -228,17 +235,38 @@ export default function RegisterMembersModal({
               </div>
 
               {entries.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    onOpenWheel();
-                  }}
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white text-xs font-bold shadow-md shadow-rose-950/40 flex items-center gap-1.5 transition cursor-pointer"
-                >
-                  <span>🎡</span>
-                  <span>ไปหมุนวงล้อสุ่ม ({entries.length}{maxLimit ? `/${maxLimit}` : ''}) ▶</span>
-                </button>
+                isTitle ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (
+                        window.confirm(
+                          `ยืนยันผู้ชนะ Title "${auction.accessoryName}" ทั้งหมด ${entries.length} ชิ้นตามรายชื่อที่ขอเข้ามาใช่หรือไม่?`
+                        )
+                      ) {
+                        onConfirmWinners?.(auction.id);
+                        onClose();
+                      }
+                    }}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 text-xs font-black shadow-lg shadow-amber-950/50 flex items-center gap-1.5 transition cursor-pointer active:scale-95"
+                    title="ยืนยันผู้ชนะตามจำนวนที่ขอเข้ามาทุกคน โดยไม่ต้องสุ่มวงล้อ"
+                  >
+                    <span>🏆</span>
+                    <span>กดยืนยันผู้ชนะ ({entries.length} ชิ้น) ▶</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onOpenWheel();
+                    }}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white text-xs font-bold shadow-md shadow-rose-950/40 flex items-center gap-1.5 transition cursor-pointer"
+                  >
+                    <span>🎡</span>
+                    <span>ไปหมุนวงล้อสุ่ม ({entries.length}{maxLimit ? `/${maxLimit}` : ''}) ▶</span>
+                  </button>
+                )
               )}
             </div>
           );
@@ -415,18 +443,27 @@ export default function RegisterMembersModal({
             <div className="flex items-center justify-between shrink-0">
               <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
                 <span>
-                  รายชื่อในวงล้อสุ่ม ({entries.length}{maxLimit ? `/${maxLimit}` : ''} คน):
+                  {isTitle
+                    ? `รายชื่อผู้ได้รับสิทธิ์ Title (${entries.length}${maxLimit ? `/${maxLimit}` : ''} ชิ้น):`
+                    : `รายชื่อในวงล้อสุ่ม (${entries.length}${maxLimit ? `/${maxLimit}` : ''} คน):`}
                 </span>
                 {maxLimit && (
                   <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold">
-                    โควตา {maxLimit} คน
+                    โควตา {maxLimit} {isTitle ? 'ชิ้น' : 'คน'}
                   </span>
                 )}
               </label>
               {entries.length > 0 && (
-                <span className="text-[11px] text-amber-400 font-semibold font-mono">
-                  โอกาส {((1 / entries.length) * 100).toFixed(1)}% / คน
-                </span>
+                isTitle ? (
+                  <span className="text-[11px] text-amber-400 font-bold flex items-center gap-1">
+                    <span>⚡</span>
+                    <span>ได้รับสิทธิ์ทุกคน (ไม่ต้องสุ่ม)</span>
+                  </span>
+                ) : (
+                  <span className="text-[11px] text-amber-400 font-semibold font-mono">
+                    โอกาส {((1 / entries.length) * 100).toFixed(1)}% / คน
+                  </span>
+                )
               )}
             </div>
 
@@ -505,17 +542,37 @@ export default function RegisterMembersModal({
             </button>
 
             {entries.length > 0 && (
-              <button
-                type="button"
-                onClick={() => {
-                  onClose();
-                  onOpenWheel();
-                }}
-                className="px-5 py-2 rounded-xl bg-gradient-to-r from-rose-600 via-pink-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-xs font-extrabold text-white shadow-lg shadow-rose-950/40 flex items-center gap-1.5 transition cursor-pointer"
-              >
-                <span>🎡</span>
-                <span>เปิดวงล้อสุ่มผู้โชคดี!</span>
-              </button>
+              isTitle ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        `ยืนยันผู้ชนะ Title "${auction.accessoryName}" ทั้งหมด ${entries.length} ชิ้นตามรายชื่อที่ขอเข้ามาใช่หรือไม่?`
+                      )
+                    ) {
+                      onConfirmWinners?.(auction.id);
+                      onClose();
+                    }
+                  }}
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-400 hover:to-orange-500 text-xs font-black text-slate-950 shadow-xl shadow-amber-950/50 flex items-center gap-2 transition cursor-pointer active:scale-95"
+                >
+                  <span className="text-base">🏆</span>
+                  <span>กดยืนยันผู้ชนะ ({entries.length} ชิ้นตามที่ขอ)</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onOpenWheel();
+                  }}
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-rose-600 via-pink-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-xs font-extrabold text-white shadow-lg shadow-rose-950/40 flex items-center gap-1.5 transition cursor-pointer"
+                >
+                  <span>🎡</span>
+                  <span>เปิดวงล้อสุ่มผู้โชคดี!</span>
+                </button>
+              )
             )}
           </div>
         </div>

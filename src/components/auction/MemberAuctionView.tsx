@@ -660,13 +660,27 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
                           )}
 
                           {isEnded && item.winnerMemberName ? (
-                            <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold">
+                            <div className="flex flex-wrap items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold">
                               <span>ผู้ชนะ:</span>
-                              {item.winnerMemberJob && (
-                                <JobEmblem job={item.winnerMemberJob} size={15} />
+                              {item.winners && item.winners.length > 1 ? (
+                                <div className="flex flex-wrap items-center gap-1">
+                                  {item.winners.map((w) => (
+                                    <span key={w.memberId} className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold border border-emerald-500/30">
+                                      {w.memberJob && <JobEmblem job={w.memberJob} size={14} />}
+                                      <span>{w.memberName}</span>
+                                      <span className="text-amber-600 dark:text-amber-400 font-mono">x{w.count}</span>
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="flex items-center gap-1">
+                                  {item.winnerMemberJob && (
+                                    <JobEmblem job={item.winnerMemberJob} size={15} />
+                                  )}
+                                  <span>{item.winnerMemberName}</span>
+                                </span>
                               )}
-                              <span>{item.winnerMemberName}</span>
-                            </span>
+                            </div>
                           ) : (
                             <button
                               type="button"

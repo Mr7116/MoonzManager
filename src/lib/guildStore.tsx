@@ -83,6 +83,7 @@ export interface GuildState {
   removeMemberEntryById: (auctionId: string, entryId: string) => void;
   updateAuctionMaxEntries: (auctionId: string, maxEntries?: number) => void;
   setAuctionWinner: (auctionId: string, winnerMemberId: string) => void;
+  confirmAuctionWinners: (auctionId: string) => void;
   resetAuctionWinner: (auctionId: string) => void;
   placeBid: (auctionId: string, memberId: string, memberName: string, memberJob: string | undefined, amount: number, note?: string) => { success: boolean; message: string };
   closeAuction: (auctionId: string, winnerMemberId?: string) => void;
@@ -980,6 +981,45 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
     triggerAutoSave();
   };
 
+  const confirmAuctionWinners = (auctionId: string) => {
+    setAuctionItems((prev) =>
+      prev.map((item) => {
+        if (item.id !== auctionId) return item;
+        const currentEntries = item.entries || [];
+        if (currentEntries.length === 0) return item;
+
+        // Group entries by member
+        const countMap = new Map<string, { memberId: string; memberName: string; memberJob?: string; count: number }>();
+        for (const e of currentEntries) {
+          const existing = countMap.get(e.memberId);
+          if (existing) {
+            existing.count += 1;
+          } else {
+            countMap.set(e.memberId, {
+              memberId: e.memberId,
+              memberName: e.memberName,
+              memberJob: e.memberJob,
+              count: 1,
+            });
+          }
+        }
+        const winnersList = Array.from(countMap.values());
+        const summary = winnersList.map((w) => `${w.memberName} (x${w.count})`).join(', ');
+
+        return {
+          ...item,
+          status: 'ended',
+          closedAt: new Date().toISOString(),
+          winnerMemberId: winnersList[0]?.memberId,
+          winnerMemberName: summary,
+          winnerMemberJob: winnersList.length === 1 ? winnersList[0]?.memberJob : undefined,
+          winners: winnersList,
+        };
+      })
+    );
+    triggerAutoSave();
+  };
+
   const resetAuctionWinner = (auctionId: string) => {
     setAuctionItems((prev) =>
       prev.map((item) => {
@@ -991,6 +1031,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
           winnerMemberId: undefined,
           winnerMemberName: undefined,
           winnerMemberJob: undefined,
+          winners: undefined,
         };
       })
     );
@@ -1154,6 +1195,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
         removeMemberEntryById,
         updateAuctionMaxEntries,
         setAuctionWinner,
+        confirmAuctionWinners,
         resetAuctionWinner,
         placeBid,
         closeAuction,

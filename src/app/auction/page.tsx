@@ -44,6 +44,7 @@ export default function AuctionPage() {
     removeMemberEntryById,
     updateAuctionMaxEntries,
     setAuctionWinner,
+    confirmAuctionWinners,
     resetAuctionWinner,
     deleteAuctionItem,
   } = useGuildStore();
@@ -829,23 +830,37 @@ export default function AuctionPage() {
                   <div className="text-left md:text-right">
                     {isEnded && item.winnerMemberName ? (
                       <div>
-                        <div className="text-[10px] font-semibold text-slate-400">ผู้ชนะที่สุ่มได้:</div>
-                        <div className="flex items-center md:justify-end gap-1.5 mt-0.5">
-                          {item.winnerMemberJob && (
-                            <JobEmblem job={item.winnerMemberJob} size={18} />
-                          )}
-                          <span className="text-base sm:text-lg font-black text-emerald-300 tracking-wide">
-                            {item.winnerMemberName}
-                          </span>
+                        <div className="text-[10px] font-semibold text-slate-400">
+                          {item.winners && item.winners.length > 1 ? `ผู้ได้รับสิทธิ์ทั้งหมด (${entryCount} ชิ้น):` : 'ผู้ชนะที่สุ่มได้:'}
                         </div>
-                        <div className="text-[10px] text-slate-500">
-                          จากผู้ลงชื่อทั้งหมด {entryCount} คน
+                        {item.winners && item.winners.length > 1 ? (
+                          <div className="flex flex-wrap items-center md:justify-end gap-1.5 mt-1 max-w-md">
+                            {item.winners.map((w) => (
+                              <span key={w.memberId} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold">
+                                {w.memberJob && <JobEmblem job={w.memberJob} size={15} />}
+                                <span>{w.memberName}</span>
+                                <span className="text-amber-300 font-mono">x{w.count}</span>
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="flex items-center md:justify-end gap-1.5 mt-0.5">
+                            {item.winnerMemberJob && (
+                              <JobEmblem job={item.winnerMemberJob} size={18} />
+                            )}
+                            <span className="text-base sm:text-lg font-black text-emerald-300 tracking-wide">
+                              {item.winnerMemberName}
+                            </span>
+                          </div>
+                        )}
+                        <div className="text-[10px] text-slate-500 mt-0.5">
+                          จากผู้ลงชื่อทั้งหมด {entryCount} รายการ
                         </div>
                       </div>
                     ) : (
                       <div>
                         <div className="text-[10px] font-semibold text-slate-400">
-                          {isPending ? 'สถานะ:' : 'สมาชิกที่ส่งรายชื่อเข้ามา:'}
+                          {isPending ? 'สถานะ:' : isTitle ? 'สมาชิกที่ขอรับสิทธิ์:' : 'สมาชิกที่ส่งรายชื่อเข้ามา:'}
                         </div>
                         <div className="text-base sm:text-lg font-extrabold font-mono text-amber-400">
                           {isPending ? (
@@ -856,7 +871,7 @@ export default function AuctionPage() {
                               {item.maxEntries ? (
                                 <span className="text-xs font-mono text-slate-400">/{item.maxEntries}</span>
                               ) : null}
-                              <span className="text-xs font-sans text-slate-400 font-normal">คน</span>
+                              <span className="text-xs font-sans text-slate-400 font-normal">ชิ้น</span>
                               {isQuotaFull && (
                                 <span className="text-[10px] px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-500 font-bold border border-rose-500/30">
                                   เต็ม
@@ -867,7 +882,7 @@ export default function AuctionPage() {
                         </div>
                         {isActive && entryCount > 0 && (
                           <div className="text-[10px] text-emerald-400 font-medium">
-                            พร้อมหมุนวงล้อสุ่ม 🎡
+                            {isTitle ? '⚡ กดปุ่มยืนยันผู้ชนะได้ทันที' : 'พร้อมหมุนวงล้อสุ่ม 🎡'}
                           </div>
                         )}
                         {isActive && entryCount === 0 && (
@@ -896,37 +911,53 @@ export default function AuctionPage() {
 
                   {/* Action 2: REGISTER MEMBERS (เมื่อ active) */}
                   {isActive && (
-                    <button
-                      type="button"
-                      onClick={() => setRegisterAuctionId(item.id)}
-                      className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-white text-xs font-bold border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 transition cursor-pointer"
-                    >
-                      <span>👥</span>
-                      <span>ลงชื่อ ({entryCount}{item.maxEntries ? `/${item.maxEntries}` : ''})</span>
-                    </button>
-                  )}
-
-                  {/* Action 3: LUCKY WHEEL (หมุนวงล้อ) หรือ รายชื่อผู้ได้รับสิทธิ์สำหรับ Title */}
-                  {isActive && (
                     isTitle ? (
-                      <button
-                        type="button"
-                        onClick={() => setRegisterAuctionId(item.id)}
-                        className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 via-orange-600 to-amber-500 hover:from-amber-500 hover:to-orange-400 text-white text-xs font-extrabold shadow-md shadow-amber-950/40 flex items-center gap-1.5 transition cursor-pointer"
-                        title="Title ได้รับสิทธิ์ตามลำดับกดก่อน-หลัง (ไม่ต้องสุ่ม)"
-                      >
-                        <span>👑</span>
-                        <span>ดูผู้ได้รับสิทธิ์ ({entryCount}{item.maxEntries ? `/${item.maxEntries}` : ''})</span>
-                      </button>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setRegisterAuctionId(item.id)}
+                          className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-white text-xs font-bold border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 transition cursor-pointer"
+                        >
+                          <span>👥</span>
+                          <span>จัดการรายชื่อ ({entryCount}{item.maxEntries ? `/${item.maxEntries}` : ''})</span>
+                        </button>
+
+                        {entryCount > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (window.confirm(`ยืนยันผู้ชนะ Title "${item.accessoryName}" ทั้งหมด ${entryCount} ชิ้นตามรายชื่อที่ขอเข้ามาใช่หรือไม่?`)) {
+                                confirmAuctionWinners(item.id);
+                              }
+                            }}
+                            className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 text-xs font-black shadow-md shadow-amber-950/40 flex items-center gap-1.5 transition cursor-pointer active:scale-95"
+                            title="ยืนยันผู้ชนะตามจำนวนที่ขอเข้ามาทุกคน โดยไม่ต้องสุ่มวงล้อ"
+                          >
+                            <span>🏆</span>
+                            <span>กดยืนยันผู้ชนะ ({entryCount})</span>
+                          </button>
+                        )}
+                      </div>
                     ) : (
-                      <button
-                        type="button"
-                        onClick={() => setWheelAuctionId(item.id)}
-                        className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-rose-600 via-pink-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white text-xs font-extrabold shadow-md shadow-rose-950/40 flex items-center gap-1.5 transition cursor-pointer"
-                      >
-                        <span>🎡</span>
-                        <span>หมุนวงล้อสุ่ม</span>
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setRegisterAuctionId(item.id)}
+                          className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-white text-xs font-bold border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 transition cursor-pointer"
+                        >
+                          <span>👥</span>
+                          <span>ลงชื่อ ({entryCount}{item.maxEntries ? `/${item.maxEntries}` : ''})</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setWheelAuctionId(item.id)}
+                          className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-rose-600 via-pink-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white text-xs font-extrabold shadow-md shadow-rose-950/40 flex items-center gap-1.5 transition cursor-pointer"
+                        >
+                          <span>🎡</span>
+                          <span>หมุนวงล้อสุ่ม</span>
+                        </button>
+                      </>
                     )
                   )}
 
@@ -1259,12 +1290,20 @@ export default function AuctionPage() {
                       {isTitle ? (
                         <button
                           type="button"
-                          onClick={() => setRegisterAuctionId(item.id)}
-                          className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 via-orange-600 to-amber-500 hover:from-amber-500 hover:to-orange-400 text-white text-xs font-extrabold shadow-md shadow-amber-950/40 flex items-center justify-center gap-1.5 transition cursor-pointer"
-                          title="Title ได้รับสิทธิ์ตามลำดับกดก่อน-หลัง (ไม่ต้องสุ่ม)"
+                          onClick={() => {
+                            if (entryCount === 0) {
+                              setRegisterAuctionId(item.id);
+                              return;
+                            }
+                            if (window.confirm(`ยืนยันผู้ชนะ Title "${item.accessoryName}" ทั้งหมด ${entryCount} ชิ้นตามรายชื่อที่ขอเข้ามาใช่หรือไม่?`)) {
+                              confirmAuctionWinners(item.id);
+                            }
+                          }}
+                          className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 text-xs font-black shadow-md shadow-amber-950/40 flex items-center justify-center gap-1.5 transition cursor-pointer active:scale-95"
+                          title="ยืนยันผู้ชนะตามจำนวนที่ขอเข้ามาทุกคน โดยไม่ต้องสุ่มวงล้อ"
                         >
-                          <span>👑</span>
-                          <span>ดูผู้ได้รับสิทธิ์</span>
+                          <span>🏆</span>
+                          <span>ยืนยันผู้ชนะ ({entryCount})</span>
                         </button>
                       ) : (
                         <button
@@ -1353,6 +1392,9 @@ export default function AuctionPage() {
         }}
         onUpdateMaxEntries={(auctionId, maxEntries) => {
           updateAuctionMaxEntries(auctionId, maxEntries);
+        }}
+        onConfirmWinners={(auctionId) => {
+          confirmAuctionWinners(auctionId);
         }}
         onOpenWheel={() => {
           if (registerAuction) {
