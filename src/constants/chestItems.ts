@@ -17,6 +17,23 @@ export interface ChestItem {
 
 export const CHEST_ITEMS: ChestItem[] = [
   {
+    id: 11603003,
+    name: 'หีบ Pioneer Certificate',
+    nameTh: 'หีบ Pioneer Certificate',
+    category: 'chest',
+    quality: 'Gold',
+    qualityBadge: 'Pack ส้มทอง',
+    type: 'กล่อง Title (Pack)',
+    icon: 'gold_title_chest',
+    localIcon: '/images/chests/gold_title_chest.webp',
+    remoteIcon: '/images/chests/gold_title_chest.svg',
+    stats: [
+      'หีบเกียรติยศบรรจุ Pioneer Certificate (เกียรติบัตรนักบุกเบิก)',
+      'ใช้สำหรับ Promote Title สู่ระดับ Trailblazer สูงสุด',
+      'ไอเทมประเภท Pack ล้ำค่าจากกิจกรรมกิลด์',
+    ],
+  },
+  {
     id: 11603001,
     name: 'หีบ Adventure Journal',
     nameTh: 'หีบ Adventure Journal',
@@ -26,10 +43,27 @@ export const CHEST_ITEMS: ChestItem[] = [
     type: 'กล่อง Title (Pack)',
     icon: 'purple_title_chest',
     localIcon: '/images/chests/purple_title_chest.webp',
-    remoteIcon: 'https://roworlddb.com/media/images/item/icon_item_bx_fy.webp',
+    remoteIcon: '/images/chests/purple_title_chest.svg',
     stats: [
       'หีบสมบัติบรรจุสมุดบันทึกการผจญภัย (Adventure Journal)',
       'ใช้สำหรับ Level Up หรือ Promote Title ขั้นสูง',
+      'ไอเทมประเภท Pack จากกิจกรรมกิลด์',
+    ],
+  },
+  {
+    id: 11603002,
+    name: 'หีบ Adventure Scrap',
+    nameTh: 'หีบ Adventure Scrap',
+    category: 'chest',
+    quality: 'Blue',
+    qualityBadge: 'Pack ฟ้า',
+    type: 'กล่อง Title (Pack)',
+    icon: 'blue_title_chest',
+    localIcon: '/images/chests/blue_title_chest.webp',
+    remoteIcon: '/images/chests/blue_title_chest.svg',
+    stats: [
+      'หีบสมบัติบรรจุเศษบันทึกการผจญภัย (Adventure Scrap)',
+      'ใช้สำหรับ Level Up หรือ ผสมผสานไอเทม Title',
       'ไอเทมประเภท Pack จากกิจกรรมกิลด์',
     ],
   },
@@ -82,7 +116,21 @@ export interface ChestTierStyle {
 export function getChestTierStyle(itemNameOrQuality?: string): ChestTierStyle {
   const str = (itemNameOrQuality || '').toLowerCase();
 
-  if (str.includes('adventure journal') || str.includes('purple') || str.includes('ม่วง')) {
+  // Blue tier (หีบ Adventure Scrap)
+  if (str.includes('adventure scrap') || str.includes('scrap') || str.includes('blue') || str.includes('ฟ้า')) {
+    return {
+      tier: 'blue',
+      border: 'border-sky-400 dark:border-sky-500/70',
+      bg: 'bg-sky-50 dark:bg-sky-950/20',
+      text: 'text-sky-800 dark:text-sky-300',
+      badgeBg: 'bg-gradient-to-r from-sky-500/20 to-blue-500/20 text-sky-900 dark:text-sky-200 border-sky-500/50',
+      shadow: 'shadow-sky-500/10',
+      label: 'Pack ฟ้า',
+    };
+  }
+
+  // Purple tier (หีบ Adventure Journal)
+  if (str.includes('adventure journal') || str.includes('journal') || str.includes('purple') || str.includes('ม่วง')) {
     return {
       tier: 'purple',
       border: 'border-purple-400 dark:border-purple-500/70',
@@ -94,7 +142,7 @@ export function getChestTierStyle(itemNameOrQuality?: string): ChestTierStyle {
     };
   }
 
-  // Default to Gold tier (หีบเลือกอัญมณีขั้นสูง, กล่องเลือกอัญมณีสุดยอด)
+  // Gold tier (หีบ Pioneer Certificate, หีบเลือกอัญมณีขั้นสูง, กล่องเลือกอัญมณีสุดยอด)
   return {
     tier: 'gold',
     border: 'border-amber-400 dark:border-amber-500/70',

@@ -161,7 +161,9 @@ export default function PlaceBidModal({
                     const fallback = isTitle
                       ? `https://roworlddb.com/media/images/item/${auction.accessoryIcon}.webp`
                       : isChest
-                      ? (auction.accessoryIcon.includes('stonebox') || auction.accessoryIcon.includes('gem')
+                      ? (auction.accessoryIcon.includes('title_chest')
+                          ? `/images/chests/${auction.accessoryIcon}.svg`
+                          : auction.accessoryIcon.includes('stonebox') || auction.accessoryIcon.includes('gem')
                           ? `https://roworlddb.com/media/images/item/icon_item_stonebox_14.webp`
                           : `https://roworlddb.com/media/images/item/icon_item_bx_fy.webp`)
                       : isRelic
@@ -181,7 +183,7 @@ export default function PlaceBidModal({
                     </span>
                   ) : isChest ? (
                     <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold border flex items-center gap-1 ${chestTier?.badgeBg}`}>
-                      <TitleChestSvgIcon className="w-3 h-3" />
+                      <TitleChestSvgIcon className="w-3 h-3" variant={chestTier?.tier} />
                       <span>{auction.cardQuality || chestTier?.label}</span>
                     </span>
                   ) : isRelic ? (

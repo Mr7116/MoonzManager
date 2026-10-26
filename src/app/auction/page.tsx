@@ -695,7 +695,9 @@ export default function AuctionPage() {
                         const fallback = isTitle
                           ? `https://roworlddb.com/media/images/item/${item.accessoryIcon}.webp`
                           : isChest
-                          ? (item.accessoryIcon.includes('stonebox') || item.accessoryIcon.includes('gem')
+                          ? (item.accessoryIcon.includes('title_chest')
+                              ? `/images/chests/${item.accessoryIcon}.svg`
+                              : item.accessoryIcon.includes('stonebox') || item.accessoryIcon.includes('gem')
                               ? `https://roworlddb.com/media/images/item/icon_item_stonebox_14.webp`
                               : `https://roworlddb.com/media/images/item/icon_item_bx_fy.webp`)
                           : isRelic
@@ -710,7 +712,7 @@ export default function AuctionPage() {
                       </span>
                     ) : isChest ? (
                       <span className={`absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold border ${chestTier?.badgeBg}`}>
-                        {chestTier?.tier === 'purple' ? 'ม่วง' : 'ทอง'}
+                        {chestTier?.tier === 'purple' ? 'ม่วง' : chestTier?.tier === 'blue' ? 'ฟ้า' : 'ทอง'}
                       </span>
                     ) : isRelic ? (
                       <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-amber-950/90 border border-amber-500/60 text-amber-200">
@@ -742,7 +744,7 @@ export default function AuctionPage() {
                         </span>
                       ) : isChest ? (
                         <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold border flex items-center gap-1 ${chestTier?.badgeBg}`}>
-                          <TitleChestSvgIcon className="w-3 h-3" />
+                          <TitleChestSvgIcon className="w-3 h-3" variant={chestTier?.tier} />
                           <span>{item.cardQuality || chestTier?.label}</span>
                         </span>
                       ) : isRelic ? (
@@ -977,7 +979,7 @@ export default function AuctionPage() {
                       </span>
                     ) : isChest ? (
                       <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border flex items-center gap-1 ${chestTier?.badgeBg}`}>
-                        <TitleChestSvgIcon className="w-3 h-3" />
+                        <TitleChestSvgIcon className="w-3 h-3" variant={chestTier?.tier} />
                         <span>{chestTier?.label}</span>
                       </span>
                     ) : isRelic ? (
@@ -1043,7 +1045,9 @@ export default function AuctionPage() {
                           const fallback = isTitle
                             ? `https://roworlddb.com/media/images/item/${item.accessoryIcon}.webp`
                             : isChest
-                            ? (item.accessoryIcon.includes('stonebox') || item.accessoryIcon.includes('gem')
+                            ? (item.accessoryIcon.includes('title_chest')
+                                ? `/images/chests/${item.accessoryIcon}.svg`
+                                : item.accessoryIcon.includes('stonebox') || item.accessoryIcon.includes('gem')
                                 ? `https://roworlddb.com/media/images/item/icon_item_stonebox_14.webp`
                                 : `https://roworlddb.com/media/images/item/icon_item_bx_fy.webp`)
                             : isRelic
@@ -1058,7 +1062,7 @@ export default function AuctionPage() {
                         </span>
                       ) : isChest ? (
                         <span className={`absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold border ${chestTier?.badgeBg}`}>
-                          {chestTier?.tier === 'purple' ? 'ม่วง' : 'ทอง'}
+                          {chestTier?.tier === 'purple' ? 'ม่วง' : chestTier?.tier === 'blue' ? 'ฟ้า' : 'ทอง'}
                         </span>
                       ) : isRelic ? (
                         <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-amber-950/90 border border-amber-500/60 text-amber-200">
@@ -1088,7 +1092,7 @@ export default function AuctionPage() {
                         </div>
                       ) : isChest ? (
                         <div className={`text-[11px] font-semibold mt-0.5 flex items-center gap-1 ${chestTier?.text}`}>
-                          <TitleChestSvgIcon className="w-3.5 h-3.5 shrink-0" />
+                          <TitleChestSvgIcon className="w-3.5 h-3.5 shrink-0" variant={chestTier?.tier} />
                           <span>{item.cardQuality || item.cardSlot || chestTier?.label}</span>
                         </div>
                       ) : isRelic ? (
