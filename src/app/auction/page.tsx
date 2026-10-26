@@ -17,8 +17,10 @@ import JobEmblem from '@/components/tactical/JobEmblem';
 import TitleSvgIcon from '@/components/icons/TitleSvgIcon';
 import TitleChestSvgIcon from '@/components/icons/TitleChestSvgIcon';
 import RelicSvgIcon from '@/components/icons/RelicSvgIcon';
+import PetSvgIcon from '@/components/icons/PetSvgIcon';
 import { getTitleTierStyle } from '@/constants/titleItems';
 import { getChestTierStyle } from '@/constants/chestItems';
+import { getPetTierStyle } from '@/constants/petItems';
 
 export default function AuctionPage() {
   const {
@@ -641,15 +643,19 @@ export default function AuctionPage() {
             const isEnded = item.status === 'ended';
             const isTitle = item.itemCategory === 'title' || (item.cardSlot && item.cardSlot.includes('Title')) || (item.cardQuality && item.cardQuality.includes('Title'));
             const isChest = !isTitle && (item.itemCategory === 'chest' || (item.cardSlot && (item.cardSlot.includes('หีบ') || item.cardSlot.includes('กล่อง') || item.cardSlot.includes('Pack'))));
-            const isRelic = !isTitle && !isChest && (item.itemCategory === 'relic' || item.cardQuality === 'Sage');
-            const isCard = !isTitle && !isChest && !isRelic && (item.itemCategory === 'card' || item.cardQuality === 'Purple');
+            const isPet = !isTitle && !isChest && (item.itemCategory === 'pet' || (item.cardSlot && item.cardSlot.includes('สัตว์เลี้ยง')) || (item.cardQuality && item.cardQuality.startsWith('Pet')));
+            const isRelic = !isTitle && !isChest && !isPet && (item.itemCategory === 'relic' || item.cardQuality === 'Sage');
+            const isCard = !isTitle && !isChest && !isPet && !isRelic && (item.itemCategory === 'card' || item.cardQuality === 'Purple');
             const titleTier = isTitle ? getTitleTierStyle(item.accessoryIcon || item.accessoryName || item.cardQuality) : null;
             const chestTier = isChest ? getChestTierStyle(item.accessoryName || item.cardQuality) : null;
+            const petTier = isPet ? getPetTierStyle(item.accessoryName || item.cardQuality) : null;
             const entryCount = (item.entries || []).length;
             const imageSrc = isTitle
               ? `/images/titles/${item.accessoryIcon}.webp`
               : isChest
               ? `/images/chests/${item.accessoryIcon}.webp`
+              : isPet
+              ? `/images/pets/${item.accessoryIcon}.webp`
               : isRelic
               ? `/images/relics/${item.accessoryIcon}.webp`
               : isCard
@@ -678,6 +684,8 @@ export default function AuctionPage() {
                       ? `${titleTier?.border} ${titleTier?.bg}`
                       : isChest
                       ? `${chestTier?.border} ${chestTier?.bg}`
+                      : isPet
+                      ? `${petTier?.border} ${petTier?.bg}`
                       : isRelic
                       ? 'border-amber-500/50 bg-amber-950/20'
                       : isCard
@@ -700,6 +708,10 @@ export default function AuctionPage() {
                               : item.accessoryIcon.includes('stonebox') || item.accessoryIcon.includes('gem')
                               ? `https://roworlddb.com/media/images/item/icon_item_stonebox_14.webp`
                               : `https://roworlddb.com/media/images/item/icon_item_bx_fy.webp`)
+                          : isPet
+                          ? (item.accessoryIcon.includes('mfmm')
+                              ? `https://roworlddb.com/media/images/icon/pet/${item.accessoryIcon}.webp`
+                              : `https://roworlddb.com/media/images/pet/${item.accessoryIcon}.webp`)
                           : isRelic
                           ? `https://roworlddb.com/media/images/hallows/${item.accessoryIcon}.webp`
                           : `https://roworlddb.com/media/images/item/${item.accessoryIcon}.webp`;
@@ -713,6 +725,10 @@ export default function AuctionPage() {
                     ) : isChest ? (
                       <span className={`absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold border ${chestTier?.badgeBg}`}>
                         {chestTier?.tier === 'purple' ? 'ม่วง' : chestTier?.tier === 'blue' ? 'ฟ้า' : 'ทอง'}
+                      </span>
+                    ) : isPet ? (
+                      <span className={`absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold border ${petTier?.badgeBg}`}>
+                        {petTier?.tier === 'gold' ? 'SSR' : petTier?.tier === 'purple' ? 'SR' : petTier?.tier === 'blue' ? 'R' : 'N'}
                       </span>
                     ) : isRelic ? (
                       <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-amber-950/90 border border-amber-500/60 text-amber-200">
@@ -746,6 +762,11 @@ export default function AuctionPage() {
                         <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold border flex items-center gap-1 ${chestTier?.badgeBg}`}>
                           <TitleChestSvgIcon className="w-3 h-3" variant={chestTier?.tier} />
                           <span>{item.cardQuality || chestTier?.label}</span>
+                        </span>
+                      ) : isPet ? (
+                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold border flex items-center gap-1 ${petTier?.badgeBg}`}>
+                          <PetSvgIcon className="w-3 h-3" variant={petTier?.tier} />
+                          <span>{item.cardQuality || petTier?.label}</span>
                         </span>
                       ) : isRelic ? (
                         <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40 flex items-center gap-1">
@@ -922,15 +943,19 @@ export default function AuctionPage() {
             const isEnded = item.status === 'ended';
             const isTitle = item.itemCategory === 'title' || (item.cardSlot && item.cardSlot.includes('Title')) || (item.cardQuality && item.cardQuality.includes('Title'));
             const isChest = !isTitle && (item.itemCategory === 'chest' || (item.cardSlot && (item.cardSlot.includes('หีบ') || item.cardSlot.includes('กล่อง') || item.cardSlot.includes('Pack'))));
-            const isRelic = !isTitle && !isChest && (item.itemCategory === 'relic' || item.cardQuality === 'Sage');
-            const isCard = !isTitle && !isChest && !isRelic && (item.itemCategory === 'card' || item.cardQuality === 'Purple');
+            const isPet = !isTitle && !isChest && (item.itemCategory === 'pet' || (item.cardSlot && item.cardSlot.includes('สัตว์เลี้ยง')) || (item.cardQuality && item.cardQuality.startsWith('Pet')));
+            const isRelic = !isTitle && !isChest && !isPet && (item.itemCategory === 'relic' || item.cardQuality === 'Sage');
+            const isCard = !isTitle && !isChest && !isPet && !isRelic && (item.itemCategory === 'card' || item.cardQuality === 'Purple');
             const titleTier = isTitle ? getTitleTierStyle(item.accessoryIcon || item.accessoryName || item.cardQuality) : null;
             const chestTier = isChest ? getChestTierStyle(item.accessoryName || item.cardQuality) : null;
+            const petTier = isPet ? getPetTierStyle(item.accessoryName || item.cardQuality) : null;
             const entryCount = (item.entries || []).length;
             const imageSrc = isTitle
               ? `/images/titles/${item.accessoryIcon}.webp`
               : isChest
               ? `/images/chests/${item.accessoryIcon}.webp`
+              : isPet
+              ? `/images/pets/${item.accessoryIcon}.webp`
               : isRelic
               ? `/images/relics/${item.accessoryIcon}.webp`
               : isCard
@@ -982,6 +1007,11 @@ export default function AuctionPage() {
                         <TitleChestSvgIcon className="w-3 h-3" variant={chestTier?.tier} />
                         <span>{chestTier?.label}</span>
                       </span>
+                    ) : isPet ? (
+                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border flex items-center gap-1 ${petTier?.badgeBg}`}>
+                        <PetSvgIcon className="w-3 h-3" variant={petTier?.tier} />
+                        <span>{item.cardQuality || petTier?.label}</span>
+                      </span>
                     ) : isRelic ? (
                       <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1">
                         <RelicSvgIcon className="w-3 h-3" />
@@ -1028,6 +1058,8 @@ export default function AuctionPage() {
                         ? `${titleTier?.border} ${titleTier?.bg} ${titleTier?.shadow}`
                         : isChest
                         ? `${chestTier?.border} ${chestTier?.bg} ${chestTier?.shadow}`
+                        : isPet
+                        ? `${petTier?.border} ${petTier?.bg} ${petTier?.shadow}`
                         : isRelic
                         ? 'border-amber-500/50 bg-amber-950/20 shadow-amber-500/15'
                         : isCard
@@ -1050,6 +1082,10 @@ export default function AuctionPage() {
                                 : item.accessoryIcon.includes('stonebox') || item.accessoryIcon.includes('gem')
                                 ? `https://roworlddb.com/media/images/item/icon_item_stonebox_14.webp`
                                 : `https://roworlddb.com/media/images/item/icon_item_bx_fy.webp`)
+                            : isPet
+                            ? (item.accessoryIcon.includes('mfmm')
+                                ? `https://roworlddb.com/media/images/icon/pet/${item.accessoryIcon}.webp`
+                                : `https://roworlddb.com/media/images/pet/${item.accessoryIcon}.webp`)
                             : isRelic
                             ? `https://roworlddb.com/media/images/hallows/${item.accessoryIcon}.webp`
                             : `https://roworlddb.com/media/images/item/${item.accessoryIcon}.webp`;
@@ -1063,6 +1099,10 @@ export default function AuctionPage() {
                       ) : isChest ? (
                         <span className={`absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold border ${chestTier?.badgeBg}`}>
                           {chestTier?.tier === 'purple' ? 'ม่วง' : chestTier?.tier === 'blue' ? 'ฟ้า' : 'ทอง'}
+                        </span>
+                      ) : isPet ? (
+                        <span className={`absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold border ${petTier?.badgeBg}`}>
+                          {petTier?.tier === 'gold' ? 'SSR' : petTier?.tier === 'purple' ? 'SR' : petTier?.tier === 'blue' ? 'R' : 'N'}
                         </span>
                       ) : isRelic ? (
                         <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-amber-950/90 border border-amber-500/60 text-amber-200">
@@ -1094,6 +1134,11 @@ export default function AuctionPage() {
                         <div className={`text-[11px] font-semibold mt-0.5 flex items-center gap-1 ${chestTier?.text}`}>
                           <TitleChestSvgIcon className="w-3.5 h-3.5 shrink-0" variant={chestTier?.tier} />
                           <span>{item.cardQuality || item.cardSlot || chestTier?.label}</span>
+                        </div>
+                      ) : isPet ? (
+                        <div className={`text-[11px] font-semibold mt-0.5 flex items-center gap-1 ${petTier?.text}`}>
+                          <PetSvgIcon className="w-3.5 h-3.5 shrink-0" variant={petTier?.tier} />
+                          <span>{item.cardQuality || item.cardSlot || petTier?.label}</span>
                         </div>
                       ) : isRelic ? (
                         <div className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 mt-0.5 flex items-center gap-1">

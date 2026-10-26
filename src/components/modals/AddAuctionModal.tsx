@@ -9,15 +9,17 @@ import { GVG_BASE_RELICS, GvgBaseRelic } from '@/constants/gvgRelics';
 import { RELIC_AFFIXES, RelicAffix } from '@/constants/relicAffixes';
 import { TITLE_ITEMS, TitleItem, getTitleTierStyle } from '@/constants/titleItems';
 import { CHEST_ITEMS, ChestItem, getChestTierStyle } from '@/constants/chestItems';
+import { PET_ITEMS, PetItem, getPetTierStyle } from '@/constants/petItems';
 import RelicSvgIcon from '@/components/icons/RelicSvgIcon';
 import TitleSvgIcon from '@/components/icons/TitleSvgIcon';
 import TitleChestSvgIcon from '@/components/icons/TitleChestSvgIcon';
+import PetSvgIcon from '@/components/icons/PetSvgIcon';
 import { AuctionItem } from '@/types/auction';
 
 export interface SelectableAuctionItem {
   id: number;
   name: string;
-  category: 'accessory' | 'card' | 'relic' | 'title' | 'chest';
+  category: 'accessory' | 'card' | 'relic' | 'title' | 'chest' | 'pet';
   level?: number;
   slot?: string;
   slotTh?: string;
@@ -47,7 +49,7 @@ interface AddAuctionModalProps {
 }
 
 export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAuctionModalProps) {
-  const [categoryTab, setCategoryTab] = useState<'all' | 'accessory' | 'card' | 'relic' | 'title' | 'chest'>('all');
+  const [categoryTab, setCategoryTab] = useState<'all' | 'accessory' | 'card' | 'relic' | 'title' | 'chest' | 'pet'>('all');
   const [selectedAffixId, setSelectedAffixId] = useState<string>('sage');
   const [search, setSearch] = useState('');
   const [sourceNote, setSourceNote] = useState<string>('ดรอปจากกิลด์วอร์ (GVG)');
@@ -126,7 +128,20 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
       stats: chest.stats,
     }));
 
-    return [...accessories, ...cards, ...relics, ...titles, ...chests];
+    const pets: SelectableAuctionItem[] = PET_ITEMS.map((pet) => ({
+      id: pet.id,
+      name: pet.name,
+      category: 'pet' as const,
+      slot: pet.qualityTag,
+      slotTh: pet.qualityName,
+      qualityBadge: pet.qualityBadge,
+      icon: pet.icon,
+      localIcon: pet.localIcon,
+      remoteIcon: pet.remoteIcon,
+      stats: pet.stats,
+    }));
+
+    return [...accessories, ...cards, ...relics, ...titles, ...chests, ...pets];
   }, [currentAffix]);
 
   // Filtered items
@@ -297,6 +312,8 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
               ? 'ไอเทม Title'
               : entry.item.category === 'chest'
               ? 'กล่อง / หีบสมบัติ (Pack)'
+              : entry.item.category === 'pet'
+              ? `สัตว์เลี้ยง (${entry.item.slot || 'Pet'})`
               : entry.item.slotTh || entry.item.slot,
           cardQuality:
             entry.item.category === 'card'
@@ -307,6 +324,8 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
               ? entry.item.qualityBadge || 'Title'
               : entry.item.category === 'chest'
               ? entry.item.qualityBadge || 'Pack'
+              : entry.item.category === 'pet'
+              ? entry.item.qualityBadge || 'Pet'
               : undefined,
           startPrice: 0,
           minIncrement: 0,
@@ -337,6 +356,10 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
               <h3 className="text-lg font-extrabold text-white tracking-wide flex items-center gap-2 flex-wrap">
                 <span>เพิ่มรายการของดรอปเพื่อเปิดสุ่ม (Add Drop Items)</span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center gap-1">
+                  <PetSvgIcon className="w-3.5 h-3.5" variant="gold" />
+                  <span>สัตว์เลี้ยง ({PET_ITEMS.length})</span>
+                </span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center gap-1">
                   <TitleSvgIcon className="w-3.5 h-3.5" />
                   <span>ไอเทม Title</span>
                 </span>
@@ -351,7 +374,7 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                 </span>
               </h3>
               <p className="text-xs text-slate-400">
-                คลิกเลือกไอเทม Title, Relic, เครื่องประดับ หรือการ์ดม่วง MVP เพื่อเพิ่มเป็น List รายการให้สมาชิกกิลด์ส่งรายชื่อเข้ามาสุ่มด้วยวงล้อ
+                คลิกเลือกสัตว์เลี้ยง, ไอเทม Title, หีบ Pack, Relic, เครื่องประดับ หรือการ์ดม่วง MVP เพื่อเพิ่มเป็น List รายการให้สมาชิกกิลด์ส่งรายชื่อเข้ามาสุ่มด้วยวงล้อ
               </p>
             </div>
           </div>
@@ -409,6 +432,22 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                 <span>📦 ทั้งหมด</span>
                 <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/40">
                   {allSelectableItems.length}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCategoryTab('pet')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                  categoryTab === 'pet'
+                    ? 'bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-slate-950 font-black shadow-md shadow-orange-950'
+                    : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+                }`}
+              >
+                <PetSvgIcon className="w-4 h-4 shrink-0" variant="gold" />
+                <span>🐾 สัตว์เลี้ยง (Pet)</span>
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/40 text-amber-300">
+                  {PET_ITEMS.length}
                 </span>
               </button>
 
@@ -550,8 +589,10 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                 const isRelic = item.category === 'relic';
                 const isTitle = item.category === 'title';
                 const isChest = item.category === 'chest';
+                const isPet = item.category === 'pet';
                 const titleTier = isTitle ? getTitleTierStyle(item.icon || item.name) : null;
                 const chestTier = isChest ? getChestTierStyle(item.name || item.qualityBadge) : null;
+                const petTier = isPet ? getPetTierStyle(item.name || item.qualityBadge) : null;
 
                 return (
                   <button
@@ -564,6 +605,8 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                           ? `${titleTier?.border} ${titleTier?.bg} ring-1 ring-current shadow-md ${titleTier?.shadow}`
                           : isChest
                           ? `${chestTier?.border} ${chestTier?.bg} ring-1 ring-current shadow-md ${chestTier?.shadow}`
+                          : isPet
+                          ? `${petTier?.border} ${petTier?.bg} ring-1 ring-current shadow-md ${petTier?.shadow}`
                           : isRelic
                           ? 'border-amber-400 bg-amber-950/40 ring-1 ring-amber-500 shadow-md shadow-amber-500/20'
                           : isCard
@@ -573,6 +616,8 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                         ? `${titleTier?.border} bg-[#0b101c] hover:bg-slate-900/80`
                         : isChest
                         ? `${chestTier?.border} bg-[#0b101c] hover:bg-slate-900/80`
+                        : isPet
+                        ? `${petTier?.border} bg-[#0b101c] hover:bg-slate-900/80`
                         : 'border-slate-800 bg-[#0b101c] hover:border-slate-700 hover:bg-slate-900/80'
                     }`}
                   >
@@ -595,6 +640,10 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                       ) : isChest ? (
                         <span className={`absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold border ${chestTier?.badgeBg}`}>
                           {chestTier?.tier === 'purple' ? 'ม่วง' : chestTier?.tier === 'blue' ? 'ฟ้า' : 'ทอง'}
+                        </span>
+                      ) : isPet ? (
+                        <span className={`absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold border ${petTier?.badgeBg}`}>
+                          {item.slot || (petTier?.tier === 'gold' ? 'SSR' : petTier?.tier === 'purple' ? 'SR' : petTier?.tier === 'blue' ? 'R' : 'N')}
                         </span>
                       ) : isRelic ? (
                         <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-amber-950/90 border border-amber-500/60 text-amber-200">
@@ -621,6 +670,8 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                           ? titleTier?.text
                           : isChest
                           ? chestTier?.text
+                          : isPet
+                          ? petTier?.text
                           : isRelic
                           ? 'text-amber-400'
                           : isCard
@@ -633,6 +684,8 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                         ? item.qualityBadge || titleTier?.label
                         : isChest
                         ? item.qualityBadge || chestTier?.label
+                        : isPet
+                        ? item.qualityBadge || petTier?.label
                         : isRelic
                         ? item.affixEffect || 'GVG Relic'
                         : isCard
@@ -647,6 +700,8 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                             ? titleTier?.badgeBg
                             : isChest
                             ? chestTier?.badgeBg
+                            : isPet
+                            ? petTier?.badgeBg
                             : isRelic
                             ? 'bg-amber-400 text-slate-950 font-black'
                             : isCard
@@ -693,8 +748,10 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                   const isRelic = entry.item.category === 'relic';
                   const isTitle = entry.item.category === 'title';
                   const isChest = entry.item.category === 'chest';
+                  const isPet = entry.item.category === 'pet';
                   const titleTier = isTitle ? getTitleTierStyle(entry.item.icon || entry.item.name) : null;
                   const chestTier = isChest ? getChestTierStyle(entry.item.name || entry.item.qualityBadge) : null;
+                  const petTier = isPet ? getPetTierStyle(entry.item.name || entry.item.qualityBadge) : null;
                   return (
                     <div
                       key={entry.entryKey}
@@ -703,6 +760,8 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                           ? `${titleTier?.border} bg-[#0c1220] hover:border-current`
                           : isChest
                           ? `${chestTier?.border} bg-[#0c1220] hover:border-current`
+                          : isPet
+                          ? `${petTier?.border} bg-[#0c1220] hover:border-current`
                           : isRelic
                           ? 'border-amber-500/30 bg-[#161208] hover:border-amber-500/50'
                           : isCard
@@ -718,6 +777,8 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                               ? `${titleTier?.border} ${titleTier?.bg}`
                               : isChest
                               ? `${chestTier?.border} ${chestTier?.bg}`
+                              : isPet
+                              ? `${petTier?.border} ${petTier?.bg}`
                               : isRelic
                               ? 'border-amber-500/40 bg-amber-950/30'
                               : isCard
@@ -743,6 +804,10 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                           ) : isChest ? (
                             <span className={`absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold border ${chestTier?.badgeBg}`}>
                               {chestTier?.tier === 'purple' ? 'ม่วง' : chestTier?.tier === 'blue' ? 'ฟ้า' : 'ทอง'}
+                            </span>
+                          ) : isPet ? (
+                            <span className={`absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold border ${petTier?.badgeBg}`}>
+                              {entry.item.slot || (petTier?.tier === 'gold' ? 'SSR' : petTier?.tier === 'purple' ? 'SR' : petTier?.tier === 'blue' ? 'R' : 'N')}
                             </span>
                           ) : isRelic ? (
                             <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-amber-950/90 border border-amber-500/60 text-amber-200">
@@ -771,6 +836,11 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                               <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold border flex items-center gap-1 ${chestTier?.badgeBg}`}>
                                 <TitleChestSvgIcon className="w-3 h-3" variant={chestTier?.tier} />
                                 <span>{entry.item.qualityBadge || chestTier?.label}</span>
+                              </span>
+                            ) : isPet ? (
+                              <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold border flex items-center gap-1 ${petTier?.badgeBg}`}>
+                                <PetSvgIcon className="w-3 h-3" variant={petTier?.tier} />
+                                <span>{entry.item.qualityBadge || petTier?.label}</span>
                               </span>
                             ) : isRelic ? (
                               <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
