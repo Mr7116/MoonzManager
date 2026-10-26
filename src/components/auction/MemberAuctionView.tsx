@@ -9,8 +9,10 @@ import JobEmblem from '@/components/tactical/JobEmblem';
 import ThemeToggle from '@/components/layout/ThemeToggle';
 import { AuctionItem, AuctionRound } from '@/types/auction';
 import TitleSvgIcon from '@/components/icons/TitleSvgIcon';
+import TitleChestSvgIcon from '@/components/icons/TitleChestSvgIcon';
 import RelicSvgIcon from '@/components/icons/RelicSvgIcon';
 import { getTitleTierStyle } from '@/constants/titleItems';
+import { getChestTierStyle } from '@/constants/chestItems';
 
 interface MemberAuctionViewProps {
   onSwitchToAdmin?: () => void;
@@ -461,12 +463,16 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
                 ? entries.some((e) => e.memberId === selectedMemberId)
                 : false;
               const isExpanded = expandedItemId === item.id;
-              const isCard = item.itemCategory === 'card' || item.cardQuality === 'Purple';
-              const isRelic = item.itemCategory === 'relic' || item.cardQuality === 'Sage';
               const isTitle = item.itemCategory === 'title' || (item.cardSlot && item.cardSlot.includes('Title')) || (item.cardQuality && item.cardQuality.includes('Title'));
+              const isChest = !isTitle && (item.itemCategory === 'chest' || (item.cardSlot && (item.cardSlot.includes('หีบ') || item.cardSlot.includes('กล่อง') || item.cardSlot.includes('Pack'))));
+              const isRelic = !isTitle && !isChest && (item.itemCategory === 'relic' || item.cardQuality === 'Sage');
+              const isCard = !isTitle && !isChest && !isRelic && (item.itemCategory === 'card' || item.cardQuality === 'Purple');
               const titleTier = isTitle ? getTitleTierStyle(item.accessoryIcon || item.accessoryName || item.cardQuality) : null;
+              const chestTier = isChest ? getChestTierStyle(item.accessoryName || item.cardQuality) : null;
               const imageSrc = isTitle
                 ? `/images/titles/${item.accessoryIcon}.webp`
+                : isChest
+                ? `/images/chests/${item.accessoryIcon}.webp`
                 : isRelic
                 ? `/images/relics/${item.accessoryIcon}.webp`
                 : isCard
@@ -495,6 +501,8 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
                       <div className={`relative w-13 h-13 shrink-0 rounded-xl border flex items-center justify-center shadow-md ${
                         isTitle
                           ? `${titleTier?.border} ${titleTier?.bg}`
+                          : isChest
+                          ? `${chestTier?.border} ${chestTier?.bg}`
                           : isRelic
                           ? 'border-amber-500/50 bg-amber-950/20'
                           : isCard
@@ -511,6 +519,10 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
                           onError={(e) => {
                             const fallback = isTitle
                               ? `https://roworlddb.com/media/images/item/${item.accessoryIcon}.webp`
+                              : isChest
+                              ? (item.accessoryIcon.includes('stonebox') || item.accessoryIcon.includes('gem')
+                                  ? `https://roworlddb.com/media/images/item/icon_item_stonebox_14.webp`
+                                  : `https://roworlddb.com/media/images/item/icon_item_bx_fy.webp`)
                               : isRelic
                               ? `https://roworlddb.com/media/images/hallows/${item.accessoryIcon}.webp`
                               : `https://roworlddb.com/media/images/item/${item.accessoryIcon}.webp`;
@@ -520,6 +532,10 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
                         {isTitle ? (
                           <span className={`absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold border ${titleTier?.badgeBg}`}>
                             {titleTier?.tier === 'gold' ? 'ทอง' : titleTier?.tier === 'purple' ? 'ม่วง' : titleTier?.tier === 'blue' ? 'ฟ้า' : 'เขียว'}
+                          </span>
+                        ) : isChest ? (
+                          <span className={`absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold border ${chestTier?.badgeBg}`}>
+                            {chestTier?.tier === 'purple' ? 'ม่วง' : 'ทอง'}
                           </span>
                         ) : isRelic ? (
                           <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-amber-950/90 border border-amber-500/60 text-amber-200">
@@ -549,6 +565,11 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
                             <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold border flex items-center gap-1 ${titleTier?.badgeBg}`}>
                               <TitleSvgIcon className="w-3 h-3" />
                               <span>{item.cardQuality || titleTier?.label}</span>
+                            </span>
+                          ) : isChest ? (
+                            <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold border flex items-center gap-1 ${chestTier?.badgeBg}`}>
+                              <TitleChestSvgIcon className="w-3 h-3" />
+                              <span>{item.cardQuality || chestTier?.label}</span>
                             </span>
                           ) : isRelic ? (
                             <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40 flex items-center gap-1">

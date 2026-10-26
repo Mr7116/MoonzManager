@@ -189,3 +189,4 @@ export const TitleChestSvgIcon: React.FC<TitleChestSvgIconProps> = ({
   );
 };
 export default TitleChestSvgIcon;
+

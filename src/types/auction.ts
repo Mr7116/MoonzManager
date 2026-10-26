@@ -29,7 +29,7 @@ export interface AuctionEntry {
 export interface AuctionItem {
   id: string;
   roundId?: string;
-  itemCategory?: 'accessory' | 'card' | 'relic' | 'title';
+  itemCategory?: 'accessory' | 'card' | 'relic' | 'title' | 'chest';
   cardSlot?: string;
   cardQuality?: string;
   accessoryId: number;

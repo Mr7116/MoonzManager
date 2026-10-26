@@ -6,8 +6,10 @@ import Image from 'next/image';
 import { AuctionItem, AuctionEntry } from '@/types/auction';
 import JobEmblem from '@/components/tactical/JobEmblem';
 import TitleSvgIcon from '@/components/icons/TitleSvgIcon';
+import TitleChestSvgIcon from '@/components/icons/TitleChestSvgIcon';
 import RelicSvgIcon from '@/components/icons/RelicSvgIcon';
 import { getTitleTierStyle } from '@/constants/titleItems';
+import { getChestTierStyle } from '@/constants/chestItems';
 
 interface LuckyWheelModalProps {
   isOpen: boolean;
@@ -292,11 +294,15 @@ export default function LuckyWheelModal({
         {/* Item Banner Bar */}
         {(() => {
           const isTitle = auction.itemCategory === 'title' || (auction.cardSlot && auction.cardSlot.includes('Title')) || (auction.cardQuality && auction.cardQuality.includes('Title'));
-          const isRelic = !isTitle && (auction.itemCategory === 'relic' || auction.cardQuality === 'Sage');
-          const isCard = !isTitle && !isRelic && (auction.itemCategory === 'card' || auction.cardQuality === 'Purple');
+          const isChest = !isTitle && (auction.itemCategory === 'chest' || (auction.cardSlot && (auction.cardSlot.includes('หีบ') || auction.cardSlot.includes('กล่อง') || auction.cardSlot.includes('Pack'))));
+          const isRelic = !isTitle && !isChest && (auction.itemCategory === 'relic' || auction.cardQuality === 'Sage');
+          const isCard = !isTitle && !isChest && !isRelic && (auction.itemCategory === 'card' || auction.cardQuality === 'Purple');
           const titleTier = isTitle ? getTitleTierStyle(auction.accessoryIcon || auction.accessoryName || auction.cardQuality) : null;
+          const chestTier = isChest ? getChestTierStyle(auction.accessoryName || auction.cardQuality) : null;
           const imageSrc = isTitle
             ? `/images/titles/${auction.accessoryIcon}.webp`
+            : isChest
+            ? `/images/chests/${auction.accessoryIcon}.webp`
             : isRelic
             ? `/images/relics/${auction.accessoryIcon}.webp`
             : isCard
@@ -305,11 +311,11 @@ export default function LuckyWheelModal({
 
           return (
             <div className={`w-full flex items-center justify-between gap-3 p-3 rounded-2xl border shadow-inner shrink-0 ${
-              isTitle ? `${titleTier?.border} ${titleTier?.bg}` : isRelic ? 'border-amber-500/30 bg-amber-950/20' : isCard ? 'border-purple-500/30 bg-purple-950/20' : 'border-rose-500/30 bg-rose-950/20'
+              isTitle ? `${titleTier?.border} ${titleTier?.bg}` : isChest ? `${chestTier?.border} ${chestTier?.bg}` : isRelic ? 'border-amber-500/30 bg-amber-950/20' : isCard ? 'border-purple-500/30 bg-purple-950/20' : 'border-rose-500/30 bg-rose-950/20'
             }`}>
               <div className="flex items-center gap-3">
                 <div className={`relative w-12 h-12 shrink-0 rounded-xl border flex items-center justify-center shadow ${
-                  isTitle ? `${titleTier?.border} bg-[#0c1220]` : isRelic ? 'border-amber-500/40 bg-[#0c1220]' : isCard ? 'border-purple-500/40 bg-[#0c1220]' : 'border-rose-500/40 bg-[#0c1220]'
+                  isTitle ? `${titleTier?.border} bg-[#0c1220]` : isChest ? `${chestTier?.border} bg-[#0c1220]` : isRelic ? 'border-amber-500/40 bg-[#0c1220]' : isCard ? 'border-purple-500/40 bg-[#0c1220]' : 'border-rose-500/40 bg-[#0c1220]'
                 }`}>
                   <Image
                     src={imageSrc}
@@ -321,6 +327,10 @@ export default function LuckyWheelModal({
                     onError={(e) => {
                       const fallback = isTitle
                         ? `https://roworlddb.com/media/images/item/${auction.accessoryIcon}.webp`
+                        : isChest
+                        ? (auction.accessoryIcon.includes('stonebox') || auction.accessoryIcon.includes('gem')
+                            ? `https://roworlddb.com/media/images/item/icon_item_stonebox_14.webp`
+                            : `https://roworlddb.com/media/images/item/icon_item_bx_fy.webp`)
                         : isRelic
                         ? `https://roworlddb.com/media/images/hallows/${auction.accessoryIcon}.webp`
                         : `https://roworlddb.com/media/images/item/${auction.accessoryIcon}.webp`;
@@ -330,6 +340,10 @@ export default function LuckyWheelModal({
                   {isTitle ? (
                     <span className={`absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold border ${titleTier?.badgeBg}`}>
                       {titleTier?.tier === 'gold' ? 'ทอง' : titleTier?.tier === 'purple' ? 'ม่วง' : titleTier?.tier === 'blue' ? 'ฟ้า' : 'เขียว'}
+                    </span>
+                  ) : isChest ? (
+                    <span className={`absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold border ${chestTier?.badgeBg}`}>
+                      {chestTier?.tier === 'purple' ? 'ม่วง' : 'ทอง'}
                     </span>
                   ) : isRelic ? (
                     <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-amber-950/90 border border-amber-500/60 text-amber-200">
@@ -355,6 +369,11 @@ export default function LuckyWheelModal({
                       <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold border flex items-center gap-1 ${titleTier?.badgeBg}`}>
                         <TitleSvgIcon className="w-3 h-3" />
                         <span>{auction.cardQuality || titleTier?.label}</span>
+                      </span>
+                    ) : isChest ? (
+                      <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold border flex items-center gap-1 ${chestTier?.badgeBg}`}>
+                        <TitleChestSvgIcon className="w-3 h-3" />
+                        <span>{auction.cardQuality || chestTier?.label}</span>
                       </span>
                     ) : isRelic ? (
                       <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1">

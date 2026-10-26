@@ -8,14 +8,16 @@ import { PURPLE_MVP_CARDS, PurpleMvpCard } from '@/constants/purpleMvpCards';
 import { GVG_BASE_RELICS, GvgBaseRelic } from '@/constants/gvgRelics';
 import { RELIC_AFFIXES, RelicAffix } from '@/constants/relicAffixes';
 import { TITLE_ITEMS, TitleItem, getTitleTierStyle } from '@/constants/titleItems';
+import { CHEST_ITEMS, ChestItem, getChestTierStyle } from '@/constants/chestItems';
 import RelicSvgIcon from '@/components/icons/RelicSvgIcon';
 import TitleSvgIcon from '@/components/icons/TitleSvgIcon';
+import TitleChestSvgIcon from '@/components/icons/TitleChestSvgIcon';
 import { AuctionItem } from '@/types/auction';
 
 export interface SelectableAuctionItem {
   id: number;
   name: string;
-  category: 'accessory' | 'card' | 'relic' | 'title';
+  category: 'accessory' | 'card' | 'relic' | 'title' | 'chest';
   level?: number;
   slot?: string;
   slotTh?: string;
@@ -45,7 +47,7 @@ interface AddAuctionModalProps {
 }
 
 export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAuctionModalProps) {
-  const [categoryTab, setCategoryTab] = useState<'all' | 'accessory' | 'card' | 'relic' | 'title'>('all');
+  const [categoryTab, setCategoryTab] = useState<'all' | 'accessory' | 'card' | 'relic' | 'title' | 'chest'>('all');
   const [selectedAffixId, setSelectedAffixId] = useState<string>('sage');
   const [search, setSearch] = useState('');
   const [sourceNote, setSourceNote] = useState<string>('ดรอปจากกิลด์วอร์ (GVG)');
@@ -111,7 +113,20 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
       stats: title.stats,
     }));
 
-    return [...accessories, ...cards, ...relics, ...titles];
+    const chests: SelectableAuctionItem[] = CHEST_ITEMS.map((chest) => ({
+      id: chest.id,
+      name: chest.name,
+      category: 'chest' as const,
+      slot: chest.type,
+      slotTh: chest.type,
+      qualityBadge: chest.qualityBadge,
+      icon: chest.icon,
+      localIcon: chest.localIcon,
+      remoteIcon: chest.remoteIcon,
+      stats: chest.stats,
+    }));
+
+    return [...accessories, ...cards, ...relics, ...titles, ...chests];
   }, [currentAffix]);
 
   // Filtered items
@@ -280,6 +295,8 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
               ? `${entry.item.affixName || 'Sage'} (${entry.item.affixEffect || ''})`
               : entry.item.category === 'title'
               ? 'ไอเทม Title'
+              : entry.item.category === 'chest'
+              ? 'กล่อง / หีบสมบัติ (Pack)'
               : entry.item.slotTh || entry.item.slot,
           cardQuality:
             entry.item.category === 'card'
@@ -288,6 +305,8 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
               ? entry.item.affixName || 'Sage'
               : entry.item.category === 'title'
               ? entry.item.qualityBadge || 'Title'
+              : entry.item.category === 'chest'
+              ? entry.item.qualityBadge || 'Pack'
               : undefined,
           startPrice: 0,
           minIncrement: 0,
@@ -411,6 +430,22 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
 
               <button
                 type="button"
+                onClick={() => setCategoryTab('chest')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                  categoryTab === 'chest'
+                    ? 'bg-gradient-to-r from-purple-600 via-indigo-600 to-amber-600 text-white font-black shadow-md shadow-purple-950'
+                    : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+                }`}
+              >
+                <TitleChestSvgIcon className="w-4 h-4 shrink-0" />
+                <span>🎁 กล่อง / หีบสมบัติ (Pack)</span>
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/40 text-purple-300">
+                  {CHEST_ITEMS.length}
+                </span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setCategoryTab('relic')}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
                   categoryTab === 'relic'
@@ -514,7 +549,9 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                 const isCard = item.category === 'card';
                 const isRelic = item.category === 'relic';
                 const isTitle = item.category === 'title';
+                const isChest = item.category === 'chest';
                 const titleTier = isTitle ? getTitleTierStyle(item.icon || item.name) : null;
+                const chestTier = isChest ? getChestTierStyle(item.name || item.qualityBadge) : null;
 
                 return (
                   <button
@@ -525,6 +562,8 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                       isSelected
                         ? isTitle
                           ? `${titleTier?.border} ${titleTier?.bg} ring-1 ring-current shadow-md ${titleTier?.shadow}`
+                          : isChest
+                          ? `${chestTier?.border} ${chestTier?.bg} ring-1 ring-current shadow-md ${chestTier?.shadow}`
                           : isRelic
                           ? 'border-amber-400 bg-amber-950/40 ring-1 ring-amber-500 shadow-md shadow-amber-500/20'
                           : isCard
@@ -532,6 +571,8 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                           : 'border-rose-400 bg-rose-950/40 ring-1 ring-rose-500 shadow-md shadow-rose-500/20'
                         : isTitle
                         ? `${titleTier?.border} bg-[#0b101c] hover:bg-slate-900/80`
+                        : isChest
+                        ? `${chestTier?.border} bg-[#0b101c] hover:bg-slate-900/80`
                         : 'border-slate-800 bg-[#0b101c] hover:border-slate-700 hover:bg-slate-900/80'
                     }`}
                   >
@@ -550,6 +591,10 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                       {isTitle ? (
                         <span className={`absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold border ${titleTier?.badgeBg}`}>
                           {titleTier?.tier === 'gold' ? 'ทอง' : titleTier?.tier === 'purple' ? 'ม่วง' : titleTier?.tier === 'blue' ? 'ฟ้า' : 'เขียว'}
+                        </span>
+                      ) : isChest ? (
+                        <span className={`absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold border ${chestTier?.badgeBg}`}>
+                          {chestTier?.tier === 'purple' ? 'ม่วง' : 'ทอง'}
                         </span>
                       ) : isRelic ? (
                         <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-amber-950/90 border border-amber-500/60 text-amber-200">
@@ -574,6 +619,8 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                       className={`text-[9px] font-semibold mt-0.5 truncate w-full ${
                         isTitle
                           ? titleTier?.text
+                          : isChest
+                          ? chestTier?.text
                           : isRelic
                           ? 'text-amber-400'
                           : isCard
@@ -584,6 +631,8 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                     >
                       {isTitle
                         ? item.qualityBadge || titleTier?.label
+                        : isChest
+                        ? item.qualityBadge || chestTier?.label
                         : isRelic
                         ? item.affixEffect || 'GVG Relic'
                         : isCard
@@ -596,6 +645,8 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                         className={`absolute top-1 right-1 flex items-center justify-center px-1.5 py-0.2 rounded-full text-white text-[10px] font-bold shadow ${
                           isTitle
                             ? titleTier?.badgeBg
+                            : isChest
+                            ? chestTier?.badgeBg
                             : isRelic
                             ? 'bg-amber-400 text-slate-950 font-black'
                             : isCard
@@ -641,13 +692,17 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                   const isCard = entry.item.category === 'card';
                   const isRelic = entry.item.category === 'relic';
                   const isTitle = entry.item.category === 'title';
+                  const isChest = entry.item.category === 'chest';
                   const titleTier = isTitle ? getTitleTierStyle(entry.item.icon || entry.item.name) : null;
+                  const chestTier = isChest ? getChestTierStyle(entry.item.name || entry.item.qualityBadge) : null;
                   return (
                     <div
                       key={entry.entryKey}
                       className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-2.5 rounded-2xl border transition ${
                         isTitle
                           ? `${titleTier?.border} bg-[#0c1220] hover:border-current`
+                          : isChest
+                          ? `${chestTier?.border} bg-[#0c1220] hover:border-current`
                           : isRelic
                           ? 'border-amber-500/30 bg-[#161208] hover:border-amber-500/50'
                           : isCard
@@ -661,6 +716,8 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                           className={`relative w-11 h-11 shrink-0 rounded-xl border flex items-center justify-center ${
                             isTitle
                               ? `${titleTier?.border} ${titleTier?.bg}`
+                              : isChest
+                              ? `${chestTier?.border} ${chestTier?.bg}`
                               : isRelic
                               ? 'border-amber-500/40 bg-amber-950/30'
                               : isCard
@@ -682,6 +739,10 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                           {isTitle ? (
                             <span className={`absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold border ${titleTier?.badgeBg}`}>
                               {titleTier?.tier === 'gold' ? 'ทอง' : titleTier?.tier === 'purple' ? 'ม่วง' : titleTier?.tier === 'blue' ? 'ฟ้า' : 'เขียว'}
+                            </span>
+                          ) : isChest ? (
+                            <span className={`absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold border ${chestTier?.badgeBg}`}>
+                              {chestTier?.tier === 'purple' ? 'ม่วง' : 'ทอง'}
                             </span>
                           ) : isRelic ? (
                             <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-amber-950/90 border border-amber-500/60 text-amber-200">
@@ -705,6 +766,11 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                               <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold border flex items-center gap-1 ${titleTier?.badgeBg}`}>
                                 <TitleSvgIcon className="w-3 h-3" />
                                 <span>{entry.item.qualityBadge || titleTier?.label}</span>
+                              </span>
+                            ) : isChest ? (
+                              <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold border flex items-center gap-1 ${chestTier?.badgeBg}`}>
+                                <TitleChestSvgIcon className="w-3 h-3" />
+                                <span>{entry.item.qualityBadge || chestTier?.label}</span>
                               </span>
                             ) : isRelic ? (
                               <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
