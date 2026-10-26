@@ -409,9 +409,9 @@ export default function RegisterMembersModal({
                     {memberCount > 0 ? (
                       <div className="flex items-center gap-1.5 shrink-0">
                         <span className="px-2 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-300 font-bold text-[10px] border border-emerald-500/30">
-                          x{memberCount}
+                          {isTitle ? `x${memberCount}` : 'ลงชื่อแล้ว'}
                         </span>
-                        {!isQuotaFull && (
+                        {isTitle && !isQuotaFull && (
                           <button
                             type="button"
                             onClick={() => onAddMember(auction.id, m.id)}
@@ -424,16 +424,16 @@ export default function RegisterMembersModal({
                         <button
                           type="button"
                           onClick={() => {
-                            if (onRemoveOneMember) {
+                            if (isTitle && onRemoveOneMember && memberCount > 1) {
                               onRemoveOneMember(auction.id, m.id);
                             } else {
                               onRemoveMember(auction.id, m.id);
                             }
                           }}
                           className="px-2 py-0.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 text-[10px] font-bold transition cursor-pointer"
-                          title="ลดลง 1 รายการ"
+                          title={isTitle && memberCount > 1 ? 'ลดลง 1 รายการ' : 'ลบรายชื่อนี้ออก'}
                         >
-                          -1
+                          {isTitle && memberCount > 1 ? '-1' : 'ลบ'}
                         </button>
                       </div>
                     ) : isQuotaFull ? (

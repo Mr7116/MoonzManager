@@ -5,7 +5,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { Member } from '@/types/member';
 import { Party, Team, LaneKey, FieldZoneKey } from '@/types/party';
-import { AuctionItem, AuctionEntry, AuctionRound, BidRecord } from '@/types/auction';
+import { AuctionItem, AuctionEntry, AuctionRound, BidRecord, isTitleItem } from '@/types/auction';
 import { QueueList, QueueEntry } from '@/types/queue';
 
 export interface GuildState {
@@ -449,9 +449,23 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
           } catch (e) {}
         }
         if (Array.isArray((auctionEntry as any).items)) {
-          setAuctionItems((auctionEntry as any).items);
+          const rawItems = (auctionEntry as any).items as AuctionItem[];
+          const sanitizedItems = rawItems.map((item) => {
+            if (!isTitleItem(item) && Array.isArray(item.entries) && item.entries.length > 0) {
+              const seen = new Set<string>();
+              const uniqueEntries = item.entries.filter((e) => {
+                if (!e.memberId) return true;
+                if (seen.has(e.memberId)) return false;
+                seen.add(e.memberId);
+                return true;
+              });
+              return { ...item, entries: uniqueEntries };
+            }
+            return item;
+          });
+          setAuctionItems(sanitizedItems);
           try {
-            localStorage.setItem('Moonz_auctions', JSON.stringify((auctionEntry as any).items));
+            localStorage.setItem('Moonz_auctions', JSON.stringify(sanitizedItems));
           } catch (e) {}
         }
       }
@@ -570,10 +584,24 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
         teams: state.polarityTeams,
       };
 
+      const sanitizedAuctionItems = state.auctionItems.map((item) => {
+        if (!isTitleItem(item) && Array.isArray(item.entries) && item.entries.length > 0) {
+          const seen = new Set<string>();
+          const uniqueEntries = item.entries.filter((e) => {
+            if (!e.memberId) return true;
+            if (seen.has(e.memberId)) return false;
+            seen.add(e.memberId);
+            return true;
+          });
+          return { ...item, entries: uniqueEntries };
+        }
+        return item;
+      });
+
       const auctionEntry = {
         id: '__auction_items_config__',
         category: '__system__',
-        items: state.auctionItems,
+        items: sanitizedAuctionItems,
         rounds: state.auctionRounds,
       };
 
@@ -586,7 +614,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
       try {
         localStorage.setItem('Moonz_siege_teams', JSON.stringify(state.siegeTeams));
         localStorage.setItem('Moonz_polarity_teams', JSON.stringify(state.polarityTeams));
-        localStorage.setItem('Moonz_auctions', JSON.stringify(state.auctionItems));
+        localStorage.setItem('Moonz_auctions', JSON.stringify(sanitizedAuctionItems));
         localStorage.setItem('Moonz_auction_rounds', JSON.stringify(state.auctionRounds));
         localStorage.setItem('Moonz_queue_lists', JSON.stringify(state.queueLists));
       } catch (e) {}
@@ -1070,10 +1098,18 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
       prev.map((item) => {
         if (item.id !== auctionId) return item;
         const currentEntries = item.entries || [];
+
         // Check maxEntries limit
         if (item.maxEntries && item.maxEntries > 0 && currentEntries.length >= item.maxEntries) {
           return item;
         }
+
+        // If not Title, member can only register once
+        const isTitle = isTitleItem(item);
+        if (!isTitle && currentEntries.some((e) => e.memberId === memberId)) {
+          return item;
+        }
+
         const newEntry: AuctionEntry = {
           id: `entry_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
           memberId: member.id,
@@ -1097,9 +1133,14 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
         const currentEntries = item.entries || [];
         const newEntries: AuctionEntry[] = [];
         const maxLimit = item.maxEntries && item.maxEntries > 0 ? item.maxEntries : Infinity;
+        const isTitle = isTitleItem(item);
 
         for (const mId of memberIds) {
           if (currentEntries.length + newEntries.length >= maxLimit) break;
+          // If not Title, member can only register once
+          if (!isTitle && (currentEntries.some((e) => e.memberId === mId) || newEntries.some((e) => e.memberId === mId))) {
+            continue;
+          }
           const member = latestStateRef.current.members.find((m) => m.id === mId);
           if (member) {
             newEntries.push({
