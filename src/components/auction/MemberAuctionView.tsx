@@ -28,6 +28,7 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
     auctionItems,
     addMemberToAuction,
     removeMemberFromAuction,
+    removeOneMemberEntryFromAuction,
   } = useGuildStore();
 
   const { isAuthenticated } = useAuth();
@@ -142,17 +143,30 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
       showToast('รายการนี้ยังไม่เปิดรับรายชื่อ หรือสุ่มเสร็จแล้ว', true);
       return;
     }
+    if (item.maxEntries && item.maxEntries > 0 && (item.entries || []).length >= item.maxEntries) {
+      showToast('ขออภัย รายการนี้มีคนลงชื่อครบตามโควตาแล้ว', true);
+      return;
+    }
 
+    const isTitle = item.itemCategory === 'title' || (item.cardSlot && item.cardSlot.includes('Title')) || (item.cardQuality && item.cardQuality.includes('Title'));
     addMemberToAuction(item.id, currentMember.id);
-    showToast(`ลงชื่อลุ้นรับ "${item.accessoryName}" สำเร็จ! 🎉`);
+    showToast(isTitle ? `กดรับสิทธิ์ "${item.accessoryName}" สำเร็จ! 👑` : `ลงชื่อลุ้นรับ "${item.accessoryName}" สำเร็จ! 🎉`);
   };
 
-  // Leave item
+  // Leave one entry (or all if only 1)
+  const handleLeaveOne = (item: AuctionItem) => {
+    if (!currentMember) return;
+    const isTitle = item.itemCategory === 'title' || (item.cardSlot && item.cardSlot.includes('Title')) || (item.cardQuality && item.cardQuality.includes('Title'));
+    removeOneMemberEntryFromAuction(item.id, currentMember.id);
+    showToast(`ยกเลิกลด 1 สิทธิ์ของ "${item.accessoryName}" เรียบร้อยแล้ว`);
+  };
+
+  // Leave item (all)
   const handleLeave = (item: AuctionItem) => {
     if (!currentMember) return;
     if (
       window.confirm(
-        `คุณต้องการยกเลิกการลงชื่อลุ้น "${item.accessoryName}" ใช่หรือไม่?`
+        `คุณต้องการยกเลิกการลงชื่อทั้งหมดของ "${item.accessoryName}" ใช่หรือไม่?`
       )
     ) {
       removeMemberFromAuction(item.id, currentMember.id);
@@ -461,10 +475,12 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
               const isEnded = item.status === 'ended';
               const isPending = item.status === 'pending';
               const entries = item.entries || [];
-              const isRegistered = selectedMemberId
-                ? entries.some((e) => e.memberId === selectedMemberId)
-                : false;
-              const myIndex = selectedMemberId ? entries.findIndex((e) => e.memberId === selectedMemberId) : -1;
+              const myEntries = selectedMemberId ? entries.filter((e) => e.memberId === selectedMemberId) : [];
+              const myCount = myEntries.length;
+              const isRegistered = myCount > 0;
+              const myIndices = selectedMemberId
+                ? entries.map((e, idx) => (e.memberId === selectedMemberId ? idx : -1)).filter((idx) => idx !== -1)
+                : [];
               const isQuotaFull = !!(item.maxEntries && item.maxEntries > 0 && entries.length >= item.maxEntries);
               const isExpanded = expandedItemId === item.id;
               const isTitle = item.itemCategory === 'title' || (item.cardSlot && item.cardSlot.includes('Title')) || (item.cardQuality && item.cardQuality.includes('Title'));
@@ -616,12 +632,12 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
                             isQuotaFull ? (
                               <span className="px-2 py-0.2 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40 flex items-center gap-1">
                                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                                <span>🔒 เต็มโควตา ({entries.length}/{item.maxEntries})</span>
+                                <span>{isTitle ? `🔒 ได้ผู้รับสิทธิ์ครบแล้ว (${entries.length}/${item.maxEntries})` : `🔒 เต็มโควตา (${entries.length}/${item.maxEntries})`}</span>
                               </span>
                             ) : (
                               <span className="px-2 py-0.2 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                <span>เปิดรับรายชื่อ {item.maxEntries ? `(${entries.length}/${item.maxEntries})` : ''}</span>
+                                <span>{isTitle ? `⚡ เปิดรับสิทธิ์ ${item.maxEntries ? `(${entries.length}/${item.maxEntries})` : ''}` : `เปิดรับรายชื่อ ${item.maxEntries ? `(${entries.length}/${item.maxEntries})` : ''}`}</span>
                               </span>
                             )
                           )}
@@ -632,7 +648,7 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
                           )}
                           {isEnded && (
                             <span className="px-2 py-0.2 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/40">
-                              🏆 สุ่มเสร็จแล้ว
+                              🏆 สรุปผลแล้ว
                             </span>
                           )}
                         </div>
@@ -660,9 +676,15 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
                               className="text-amber-600 dark:text-amber-400 font-semibold hover:underline cursor-pointer flex items-center gap-1"
                             >
                               <span>
-                                👥 ผู้ลงชื่อ {entries.length}
-                                {item.maxEntries ? `/${item.maxEntries}` : ''} คน
+                                {isTitle ? '👑 ผู้ได้รับสิทธิ์ ' : '👥 ผู้ลงชื่อ '}
+                                {entries.length}
+                                {item.maxEntries ? `/${item.maxEntries}` : ''} รายการ
                               </span>
+                              {isTitle && (
+                                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold">
+                                  (กดก่อนได้ก่อน)
+                                </span>
+                              )}
                               {isQuotaFull && (
                                 <span className="text-[10px] px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-600 dark:text-rose-400 font-bold border border-rose-500/30">
                                   เต็ม
@@ -681,28 +703,44 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
                     <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
                       {isOpen ? (
                         isRegistered ? (
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5 flex-wrap justify-end">
                             <span className="px-3 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center gap-1">
-                              <span>✅</span>
+                              <span>{isTitle ? '👑' : '✅'}</span>
                               <span>
-                                ลงชื่อแล้ว
-                                {item.maxEntries ? ` (อันดับ ${myIndex + 1}/${item.maxEntries})` : ''}
+                                {isTitle ? `ได้สิทธิ์แล้ว x${myCount}` : `ลงชื่อแล้ว x${myCount}`}
                               </span>
+                              {item.maxEntries && (
+                                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono">
+                                  ({myIndices.map((i) => `#${i + 1}`).join(', ')})
+                                </span>
+                              )}
                             </span>
+
+                            {!isQuotaFull && (
+                              <button
+                                type="button"
+                                onClick={() => handleJoin(item)}
+                                className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold shadow transition cursor-pointer flex items-center gap-1 active:scale-95"
+                                title="กดลงชื่อเพิ่มอีก 1 รายการ"
+                              >
+                                <span>+</span>
+                                <span>{isTitle ? 'รับสิทธิ์เพิ่ม (+1)' : 'ลงชื่อเพิ่ม (+1)'}</span>
+                              </button>
+                            )}
 
                             <button
                               type="button"
-                              onClick={() => handleLeave(item)}
+                              onClick={() => (myCount > 1 ? handleLeaveOne(item) : handleLeave(item))}
                               className="px-2.5 py-1.5 rounded-xl border border-rose-300 dark:border-rose-500/40 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-950/40 text-rose-700 dark:text-rose-300 text-xs font-bold transition cursor-pointer"
-                              title="ยกเลิกการลงชื่อชิ้นนี้"
+                              title={myCount > 1 ? 'ยกเลิกลด 1 ชิ้น' : 'ยกเลิกรายการนี้'}
                             >
-                              ✕ ยกเลิก
+                              {myCount > 1 ? '✕ ลด 1 อัน' : '✕ ยกเลิก'}
                             </button>
                           </div>
                         ) : isQuotaFull ? (
                           <span className="px-3 py-1.5 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-bold flex items-center gap-1">
                             <span>🔒</span>
-                            <span>เต็มโควตาแล้ว ({entries.length}/{item.maxEntries})</span>
+                            <span>{isTitle ? `ผู้รับสิทธิ์เต็มแล้ว (${entries.length}/${item.maxEntries})` : `เต็มโควตาแล้ว (${entries.length}/${item.maxEntries})`}</span>
                           </span>
                         ) : (
                           <button
@@ -712,7 +750,7 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
                           >
                             <span>+</span>
                             <span>
-                              ลงชื่อลุ้นรับชิ้นนี้
+                              {isTitle ? 'กดรับสิทธิ์ Title นี้' : 'ลงชื่อลุ้นรับชิ้นนี้'}
                               {item.maxEntries ? ` (${entries.length}/${item.maxEntries})` : ''}
                             </span>
                           </button>
@@ -734,12 +772,13 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
                     <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800/80">
                       <div className="flex items-center justify-between gap-2 text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-2">
                         <span>
-                          รายชื่อสมาชิกที่ลงชื่อลุ้นชิ้นนี้ ({entries.length}
-                          {item.maxEntries ? `/${item.maxEntries}` : ''} คน):
+                          {isTitle
+                            ? `👑 รายชื่อผู้ได้รับสิทธิ์ Title ตามลำดับ (${entries.length}${item.maxEntries ? `/${item.maxEntries}` : ''} รายการ):`
+                            : `รายชื่อสมาชิกที่ลงชื่อลุ้นชิ้นนี้ (${entries.length}${item.maxEntries ? `/${item.maxEntries}` : ''} รายการ):`}
                         </span>
                         {item.maxEntries && (
                           <span className="text-[10px] text-amber-500 font-semibold">
-                            โควตาสูงสุด {item.maxEntries} คน (ลงชื่อก่อนได้ก่อน)
+                            โควตาสูงสุด {item.maxEntries} รายการ (ใครกดก่อนได้ก่อน)
                           </span>
                         )}
                       </div>
@@ -767,6 +806,9 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
                                 <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
                                   (คุณ)
                                 </span>
+                              )}
+                              {isTitle && (
+                                <span className="text-[10px] text-amber-500 font-bold">👑 ได้สิทธิ์</span>
                               )}
                               {regTime && (
                                 <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono flex items-center gap-0.5 ml-0.5">

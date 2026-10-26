@@ -79,6 +79,8 @@ export interface GuildState {
   addMemberToAuction: (auctionId: string, memberId: string) => void;
   addMultipleMembersToAuction: (auctionId: string, memberIds: string[]) => void;
   removeMemberFromAuction: (auctionId: string, memberId: string) => void;
+  removeOneMemberEntryFromAuction: (auctionId: string, memberId: string) => void;
+  removeMemberEntryById: (auctionId: string, entryId: string) => void;
   updateAuctionMaxEntries: (auctionId: string, maxEntries?: number) => void;
   setAuctionWinner: (auctionId: string, winnerMemberId: string) => void;
   resetAuctionWinner: (auctionId: string) => void;
@@ -846,7 +848,6 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
       prev.map((item) => {
         if (item.id !== auctionId) return item;
         const currentEntries = item.entries || [];
-        if (currentEntries.some((e) => e.memberId === memberId)) return item;
         // Check maxEntries limit
         if (item.maxEntries && item.maxEntries > 0 && currentEntries.length >= item.maxEntries) {
           return item;
@@ -872,24 +873,20 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
       prev.map((item) => {
         if (item.id !== auctionId) return item;
         const currentEntries = item.entries || [];
-        const existingIds = new Set(currentEntries.map((e) => e.memberId));
         const newEntries: AuctionEntry[] = [];
         const maxLimit = item.maxEntries && item.maxEntries > 0 ? item.maxEntries : Infinity;
 
         for (const mId of memberIds) {
           if (currentEntries.length + newEntries.length >= maxLimit) break;
-          if (!existingIds.has(mId)) {
-            const member = latestStateRef.current.members.find((m) => m.id === mId);
-            if (member) {
-              existingIds.add(mId);
-              newEntries.push({
-                id: `entry_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-                memberId: member.id,
-                memberName: member.name,
-                memberJob: member.job,
-                registeredAt: new Date().toISOString(),
-              });
-            }
+          const member = latestStateRef.current.members.find((m) => m.id === mId);
+          if (member) {
+            newEntries.push({
+              id: `entry_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+              memberId: member.id,
+              memberName: member.name,
+              memberJob: member.job,
+              registeredAt: new Date().toISOString(),
+            });
           }
         }
 
@@ -922,6 +919,43 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
         return {
           ...item,
           entries: (item.entries || []).filter((e) => e.memberId !== memberId),
+        };
+      })
+    );
+    triggerAutoSave();
+  };
+
+  const removeOneMemberEntryFromAuction = (auctionId: string, memberId: string) => {
+    setAuctionItems((prev) =>
+      prev.map((item) => {
+        if (item.id !== auctionId) return item;
+        const currentEntries = item.entries || [];
+        let lastIndex = -1;
+        for (let i = currentEntries.length - 1; i >= 0; i--) {
+          if (currentEntries[i].memberId === memberId) {
+            lastIndex = i;
+            break;
+          }
+        }
+        if (lastIndex === -1) return item;
+        const newEntries = [...currentEntries];
+        newEntries.splice(lastIndex, 1);
+        return {
+          ...item,
+          entries: newEntries,
+        };
+      })
+    );
+    triggerAutoSave();
+  };
+
+  const removeMemberEntryById = (auctionId: string, entryId: string) => {
+    setAuctionItems((prev) =>
+      prev.map((item) => {
+        if (item.id !== auctionId) return item;
+        return {
+          ...item,
+          entries: (item.entries || []).filter((e) => e.id !== entryId),
         };
       })
     );
@@ -1116,6 +1150,8 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
         addMemberToAuction,
         addMultipleMembersToAuction,
         removeMemberFromAuction,
+        removeOneMemberEntryFromAuction,
+        removeMemberEntryById,
         updateAuctionMaxEntries,
         setAuctionWinner,
         resetAuctionWinner,

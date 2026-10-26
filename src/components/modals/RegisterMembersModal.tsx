@@ -21,6 +21,8 @@ interface RegisterMembersModalProps {
   members: Member[];
   onAddMember: (auctionId: string, memberId: string) => void;
   onRemoveMember: (auctionId: string, memberId: string) => void;
+  onRemoveOneMember?: (auctionId: string, memberId: string) => void;
+  onRemoveEntry?: (auctionId: string, entryId: string) => void;
   onUpdateMaxEntries?: (auctionId: string, maxEntries?: number) => void;
   onOpenWheel: () => void;
 }
@@ -32,6 +34,8 @@ export default function RegisterMembersModal({
   members,
   onAddMember,
   onRemoveMember,
+  onRemoveOneMember,
+  onRemoveEntry,
   onUpdateMaxEntries,
   onOpenWheel,
 }: RegisterMembersModalProps) {
@@ -279,14 +283,14 @@ export default function RegisterMembersModal({
               </button>
               <button
                 type="button"
-                onClick={() => onUpdateMaxEntries(auction.id, 2)}
+                onClick={() => onUpdateMaxEntries(auction.id, 24)}
                 className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition cursor-pointer ${
-                  maxLimit === 2
+                  maxLimit === 24
                     ? 'bg-amber-500/20 border-amber-500 text-amber-300 ring-1 ring-amber-500'
                     : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-white'
                 }`}
               >
-                2 คน
+                👑 24 คน (0/24)
               </button>
               <button
                 type="button"
@@ -337,13 +341,14 @@ export default function RegisterMembersModal({
 
             <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 scrollbar-thin">
               {filteredMembers.map((m) => {
-                const isRegistered = registeredIdSet.has(m.id);
+                const memberEntries = entries.filter((e) => e.memberId === m.id);
+                const memberCount = memberEntries.length;
 
                 return (
                   <div
                     key={m.id}
                     className={`flex items-center justify-between p-2 rounded-xl border text-xs transition ${
-                      isRegistered
+                      memberCount > 0
                         ? 'border-emerald-500/40 bg-emerald-950/20'
                         : 'border-slate-800/80 bg-slate-950/60 hover:border-slate-700 hover:bg-slate-900/60'
                     }`}
@@ -356,15 +361,36 @@ export default function RegisterMembersModal({
                       </div>
                     </div>
 
-                    {isRegistered ? (
-                      <button
-                        type="button"
-                        onClick={() => onRemoveMember(auction.id, m.id)}
-                        className="px-2.5 py-1 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 text-[11px] font-bold transition cursor-pointer"
-                        title="นำออกจากรายชื่อชิงไอเทม"
-                      >
-                        ✓ ลงชื่อแล้ว (ลบ)
-                      </button>
+                    {memberCount > 0 ? (
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="px-2 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-300 font-bold text-[10px] border border-emerald-500/30">
+                          x{memberCount}
+                        </span>
+                        {!isQuotaFull && (
+                          <button
+                            type="button"
+                            onClick={() => onAddMember(auction.id, m.id)}
+                            className="px-2 py-0.5 rounded-lg bg-emerald-600/30 hover:bg-emerald-600 hover:text-white border border-emerald-500/40 text-emerald-300 text-[10px] font-bold transition cursor-pointer"
+                            title="เพิ่มชื่อสมาชิกนี้อีก 1 รายการ"
+                          >
+                            +1
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (onRemoveOneMember) {
+                              onRemoveOneMember(auction.id, m.id);
+                            } else {
+                              onRemoveMember(auction.id, m.id);
+                            }
+                          }}
+                          className="px-2 py-0.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 text-[10px] font-bold transition cursor-pointer"
+                          title="ลดลง 1 รายการ"
+                        >
+                          -1
+                        </button>
+                      </div>
                     ) : isQuotaFull ? (
                       <span className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-500 text-[11px] font-medium cursor-not-allowed">
                         🔒 โควตาเต็ม
@@ -441,9 +467,15 @@ export default function RegisterMembersModal({
                         )}
                         <button
                           type="button"
-                          onClick={() => onRemoveMember(auction.id, entry.memberId)}
+                          onClick={() => {
+                            if (onRemoveEntry) {
+                              onRemoveEntry(auction.id, entry.id);
+                            } else {
+                              onRemoveMember(auction.id, entry.memberId);
+                            }
+                          }}
                           className="text-slate-500 hover:text-rose-400 p-1 text-xs transition cursor-pointer"
-                          title="ลบรายชื่อนี้"
+                          title="ลบรายการนี้"
                         >
                           ✕
                         </button>

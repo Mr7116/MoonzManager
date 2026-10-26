@@ -40,6 +40,8 @@ export default function AuctionPage() {
     startAllPendingAuctions,
     addMemberToAuction,
     removeMemberFromAuction,
+    removeOneMemberEntryFromAuction,
+    removeMemberEntryById,
     updateAuctionMaxEntries,
     setAuctionWinner,
     resetAuctionWinner,
@@ -800,9 +802,9 @@ export default function AuctionPage() {
                         }`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${isQuotaFull ? 'bg-amber-500' : 'bg-emerald-500 animate-pulse'}`} />
                           <span>
-                            {isQuotaFull
-                              ? `🔒 โควตาเต็ม (${entryCount}/${item.maxEntries})`
-                              : `เปิดรับรายชื่อ ${item.maxEntries ? `(${entryCount}/${item.maxEntries})` : '/ พร้อมหมุน'}`}
+                            {isTitle
+                              ? (isQuotaFull ? `🔒 ผู้รับสิทธิ์ครบ (${entryCount}/${item.maxEntries})` : `⚡ เปิดรับสิทธิ์ Title ${item.maxEntries ? `(${entryCount}/${item.maxEntries})` : ''}`)
+                              : (isQuotaFull ? `🔒 โควตาเต็ม (${entryCount}/${item.maxEntries})` : `เปิดรับรายชื่อ ${item.maxEntries ? `(${entryCount}/${item.maxEntries})` : '/ พร้อมหมุน'}`)}
                           </span>
                         </span>
                       )}
@@ -904,16 +906,28 @@ export default function AuctionPage() {
                     </button>
                   )}
 
-                  {/* Action 3: LUCKY WHEEL (หมุนวงล้อ) */}
+                  {/* Action 3: LUCKY WHEEL (หมุนวงล้อ) หรือ รายชื่อผู้ได้รับสิทธิ์สำหรับ Title */}
                   {isActive && (
-                    <button
-                      type="button"
-                      onClick={() => setWheelAuctionId(item.id)}
-                      className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-rose-600 via-pink-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white text-xs font-extrabold shadow-md shadow-rose-950/40 flex items-center gap-1.5 transition cursor-pointer"
-                    >
-                      <span>🎡</span>
-                      <span>หมุนวงล้อสุ่ม</span>
-                    </button>
+                    isTitle ? (
+                      <button
+                        type="button"
+                        onClick={() => setRegisterAuctionId(item.id)}
+                        className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 via-orange-600 to-amber-500 hover:from-amber-500 hover:to-orange-400 text-white text-xs font-extrabold shadow-md shadow-amber-950/40 flex items-center gap-1.5 transition cursor-pointer"
+                        title="Title ได้รับสิทธิ์ตามลำดับกดก่อน-หลัง (ไม่ต้องสุ่ม)"
+                      >
+                        <span>👑</span>
+                        <span>ดูผู้ได้รับสิทธิ์ ({entryCount}{item.maxEntries ? `/${item.maxEntries}` : ''})</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setWheelAuctionId(item.id)}
+                        className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-rose-600 via-pink-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white text-xs font-extrabold shadow-md shadow-rose-950/40 flex items-center gap-1.5 transition cursor-pointer"
+                      >
+                        <span>🎡</span>
+                        <span>หมุนวงล้อสุ่ม</span>
+                      </button>
+                    )
                   )}
 
                   {/* Re-roll or View Wheel (for ended) */}
@@ -1242,14 +1256,26 @@ export default function AuctionPage() {
                         <span>ลงชื่อ ({entryCount}{item.maxEntries ? `/${item.maxEntries}` : ''})</span>
                       </button>
 
-                      <button
-                        type="button"
-                        onClick={() => setWheelAuctionId(item.id)}
-                        className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 via-pink-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white text-xs font-extrabold shadow-md shadow-rose-950/40 flex items-center justify-center gap-1.5 transition cursor-pointer"
-                      >
-                        <span>🎡</span>
-                        <span>หมุนวงล้อ</span>
-                      </button>
+                      {isTitle ? (
+                        <button
+                          type="button"
+                          onClick={() => setRegisterAuctionId(item.id)}
+                          className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 via-orange-600 to-amber-500 hover:from-amber-500 hover:to-orange-400 text-white text-xs font-extrabold shadow-md shadow-amber-950/40 flex items-center justify-center gap-1.5 transition cursor-pointer"
+                          title="Title ได้รับสิทธิ์ตามลำดับกดก่อน-หลัง (ไม่ต้องสุ่ม)"
+                        >
+                          <span>👑</span>
+                          <span>ดูผู้ได้รับสิทธิ์</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setWheelAuctionId(item.id)}
+                          className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 via-pink-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white text-xs font-extrabold shadow-md shadow-rose-950/40 flex items-center justify-center gap-1.5 transition cursor-pointer"
+                        >
+                          <span>🎡</span>
+                          <span>หมุนวงล้อ</span>
+                        </button>
+                      )}
                     </>
                   ) : (
                     <button
@@ -1318,6 +1344,12 @@ export default function AuctionPage() {
         }}
         onRemoveMember={(auctionId, memberId) => {
           removeMemberFromAuction(auctionId, memberId);
+        }}
+        onRemoveOneMember={(auctionId, memberId) => {
+          removeOneMemberEntryFromAuction(auctionId, memberId);
+        }}
+        onRemoveEntry={(auctionId, entryId) => {
+          removeMemberEntryById(auctionId, entryId);
         }}
         onUpdateMaxEntries={(auctionId, maxEntries) => {
           updateAuctionMaxEntries(auctionId, maxEntries);

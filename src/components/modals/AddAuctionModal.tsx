@@ -212,7 +212,7 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
             item,
             affixId: item.category === 'relic' ? selectedAffixId : undefined,
             count: 1,
-            maxEntries: defaultMaxEntries,
+            maxEntries: defaultMaxEntries !== undefined ? defaultMaxEntries : (item.category === 'title' ? 24 : undefined),
           },
         };
       }
@@ -466,20 +466,21 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
               <button
                 type="button"
                 onClick={() => {
-                  setDefaultMaxEntries(2);
+                  setDefaultMaxEntries(24);
                   setSelectedMap((prev) => {
                     const next = { ...prev };
-                    Object.keys(next).forEach((k) => (next[k] = { ...next[k], maxEntries: 2 }));
+                    Object.keys(next).forEach((k) => (next[k] = { ...next[k], maxEntries: 24 }));
                     return next;
                   });
                 }}
-                className={`px-2 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer border ${
-                  defaultMaxEntries === 2
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer border ${
+                  defaultMaxEntries === 24
                     ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 border-amber-400 font-black shadow'
                     : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
                 }`}
+                title="ตั้งค่าโควตา 24 คน (เหมาะสำหรับ Title GVG 24 ชิ้น)"
               >
-                2 คน
+                👑 24 คน (0/24)
               </button>
               <input
                 type="number"
@@ -1020,6 +1021,18 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                             title="จำกัดคนลงชื่อ 1 คน (0/1)"
                           >
                             0/1
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateEntryMaxLimit(entry.entryKey, 24)}
+                            className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition cursor-pointer border ${
+                              entry.maxEntries === 24
+                                ? 'bg-amber-500 text-slate-950 border-amber-400 shadow font-black'
+                                : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                            }`}
+                            title="จำกัดคนลงชื่อ 24 คน (0/24 เหมาะสำหรับ Title)"
+                          >
+                            0/24
                           </button>
                           <button
                             type="button"
