@@ -6,7 +6,7 @@ export interface TitleItem {
   name: string;
   nameTh: string;
   category: 'title';
-  quality: 'Gold' | 'Purple' | 'Green';
+  quality: 'Gold' | 'Purple' | 'Blue' | 'Green';
   qualityBadge: string;
   type: string;
   icon: string;
@@ -55,8 +55,8 @@ export const TITLE_ITEMS: TitleItem[] = [
     name: 'Adventure Scrap',
     nameTh: 'Adventure Scrap',
     category: 'title',
-    quality: 'Green',
-    qualityBadge: 'Title เขียว',
+    quality: 'Blue',
+    qualityBadge: 'Title ฟ้า',
     type: 'ไอเทม Title (เศษบันทึก)',
     icon: 'icon_item_touxian_02',
     localIcon: '/images/titles/icon_item_touxian_02.webp',
@@ -86,7 +86,7 @@ export const TITLE_ITEMS: TitleItem[] = [
 ];
 
 export interface TitleTierStyle {
-  tier: 'gold' | 'purple' | 'green';
+  tier: 'gold' | 'purple' | 'blue' | 'green';
   border: string;
   bg: string;
   text: string;
@@ -124,16 +124,16 @@ export function getTitleTierStyle(itemNameOrIcon?: string): TitleTierStyle {
     };
   }
 
-  // Adventure Scrap -> กรอบสีเขียว
+  // Adventure Scrap -> กรอบสีฟ้า
   if (str.includes('scrap') || str.includes('touxian_02')) {
     return {
-      tier: 'green',
-      border: 'border-emerald-400 dark:border-emerald-500/70',
-      bg: 'bg-emerald-500/15 dark:bg-emerald-950/30',
-      text: 'text-emerald-600 dark:text-emerald-400',
-      badgeBg: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/40',
-      shadow: 'shadow-emerald-500/20',
-      label: 'Title เขียว',
+      tier: 'blue',
+      border: 'border-sky-400 dark:border-sky-500/70',
+      bg: 'bg-sky-500/15 dark:bg-sky-950/30',
+      text: 'text-sky-600 dark:text-sky-400',
+      badgeBg: 'bg-sky-500/20 text-sky-700 dark:text-sky-300 border-sky-500/40',
+      shadow: 'shadow-sky-500/20',
+      label: 'Title ฟ้า',
     };
   }
 
