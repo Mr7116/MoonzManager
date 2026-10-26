@@ -508,8 +508,8 @@ export default function MemberQueueView({ onSwitchToAdmin }: MemberQueueViewProp
                                       </span>
                                     )}
                                     {entry.isCompleted && (
-                                      <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/40 shrink-0">
-                                        ✓ ผ่านเรียบร้อย
+                                      <span className="px-2 py-0.5 rounded-lg text-[11px] font-black bg-emerald-600 text-white shadow-sm shrink-0">
+                                        ✓ ผ่านแล้ว
                                       </span>
                                     )}
                                   </div>

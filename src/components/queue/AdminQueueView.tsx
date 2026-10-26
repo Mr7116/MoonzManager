@@ -435,52 +435,52 @@ export default function AdminQueueView({ onSwitchToMember }: AdminQueueViewProps
                         return (
                           <div
                             key={entry.id}
-                            className={`p-2.5 sm:p-3 rounded-2xl border flex items-center justify-between gap-3 text-xs sm:text-sm transition ${
+                            className={`p-3 sm:p-3.5 rounded-2xl border-2 flex items-center justify-between gap-3 text-xs sm:text-sm transition ${
                               isDone
-                                ? 'border-emerald-500/50 bg-emerald-500/10 text-slate-800 dark:text-slate-200 shadow-sm'
-                                : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 text-slate-800 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-700'
+                                ? 'border-emerald-500 bg-emerald-50/90 dark:bg-emerald-950/30 shadow-md shadow-emerald-500/10'
+                                : 'border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm hover:border-slate-400 dark:hover:border-slate-700'
                             }`}
                           >
                             <div className="flex items-center gap-3 min-w-0">
                               <span
-                                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center font-mono font-black text-xs shrink-0 ${
+                                className={`w-8 h-8 rounded-xl flex items-center justify-center font-mono font-black text-xs shrink-0 ${
                                   isDone
-                                    ? 'bg-emerald-500/20 text-emerald-500 border border-emerald-500/40'
+                                    ? 'bg-emerald-600 text-white shadow-sm'
                                     : idx === 0
-                                    ? 'bg-amber-500/20 text-amber-500 border border-amber-500/40'
+                                    ? 'bg-amber-500 text-slate-950 font-black shadow-sm'
                                     : idx === 1
-                                    ? 'bg-slate-300/30 text-slate-400 border border-slate-400/40'
+                                    ? 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700'
                                     : idx === 2
-                                    ? 'bg-amber-700/20 text-amber-600 border border-amber-700/40'
-                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
+                                    ? 'bg-amber-700/20 text-amber-700 dark:text-amber-500 border border-amber-600/40'
+                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
                                 }`}
                               >
                                 {isDone ? '✓' : `#${idx + 1}`}
                               </span>
                               {entry.memberJob && (
-                                <JobEmblem job={entry.memberJob} size={26} />
+                                <JobEmblem job={entry.memberJob} size={28} />
                               )}
                               <div className="min-w-0">
-                                <div className="flex items-center gap-1.5 font-bold truncate text-slate-900 dark:text-white" title={entry.memberName}>
-                                  <span className={isDone ? 'text-emerald-600 dark:text-emerald-400 font-extrabold' : ''}>
+                                <div className="flex items-center gap-2 font-bold truncate text-slate-900 dark:text-white" title={entry.memberName}>
+                                  <span className={`text-sm ${isDone ? 'text-emerald-700 dark:text-emerald-300 font-black' : 'font-extrabold'}`}>
                                     {entry.memberName}
                                   </span>
                                   {isDone && (
-                                    <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/40 shrink-0">
+                                    <span className="px-2 py-0.5 rounded-lg text-[11px] font-black bg-emerald-600 text-white shadow-sm shrink-0">
                                       ✓ ผ่านแล้ว
                                     </span>
                                   )}
                                 </div>
                                 {entry.memberJob && (
-                                  <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                                  <div className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">
                                     {entry.memberJob}
                                   </div>
                                 )}
                               </div>
                             </div>
 
-                            <div className="flex items-center gap-2 shrink-0">
-                              {/* ปุ่มติ๊กถูก (คนนี้ผ่านเรียบร้อย) */}
+                            <div className="flex items-center gap-2.5 shrink-0">
+                              {/* ปุ่มติ๊กถูก (คนนี้ผ่านเรียบร้อย) - High Contrast & Clearly Visible */}
                               <button
                                 type="button"
                                 onClick={() => {
@@ -491,41 +491,41 @@ export default function AdminQueueView({ onSwitchToMember }: AdminQueueViewProps
                                       : `บันทึก "${entry.memberName}" ผ่านเรียบร้อยแล้ว! ✅`
                                   );
                                 }}
-                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs font-bold transition cursor-pointer active:scale-95 shadow-sm ${
+                                className={`flex items-center gap-2 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl border-2 text-xs font-black transition cursor-pointer active:scale-95 shadow-sm group ${
                                   isDone
-                                    ? 'border-emerald-500 bg-emerald-500/25 text-emerald-600 dark:text-emerald-300 ring-1 ring-emerald-500/40'
-                                    : 'border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-emerald-50 dark:bg-slate-950 dark:hover:bg-emerald-950/40 text-slate-400 hover:text-emerald-500 hover:border-emerald-500/50'
+                                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-500 shadow-emerald-500/30'
+                                    : 'bg-white hover:bg-emerald-50 dark:bg-slate-900 dark:hover:bg-emerald-950/40 text-slate-700 dark:text-slate-200 hover:text-emerald-700 dark:hover:text-emerald-300 border-slate-300 hover:border-emerald-500 dark:border-slate-700 dark:hover:border-emerald-500'
                                 }`}
                                 title={isDone ? 'ผ่านเรียบร้อยแล้ว (คลิกเพื่อยกเลิก)' : 'คลิกเพื่อติ๊กถูก: คนนี้ผ่านเรียบร้อยแล้ว'}
                               >
                                 <span
-                                  className={`w-4 h-4 rounded-md flex items-center justify-center text-[11px] font-black transition ${
+                                  className={`w-5 h-5 rounded-lg flex items-center justify-center text-xs font-black transition ${
                                     isDone
-                                      ? 'bg-emerald-500 text-slate-950'
-                                      : 'border border-slate-400 dark:border-slate-600 text-transparent hover:text-emerald-500'
+                                      ? 'bg-white text-emerald-700 shadow-inner'
+                                      : 'border-2 border-slate-400 group-hover:border-emerald-500 bg-slate-50 dark:bg-slate-800 text-transparent group-hover:text-emerald-600'
                                   }`}
                                 >
                                   ✓
                                 </span>
-                                <span className="text-[11px] hidden sm:inline">
-                                  {isDone ? 'ผ่านแล้ว' : 'ผ่าน'}
+                                <span className="text-xs font-extrabold">
+                                  {isDone ? 'ผ่านเรียบร้อย' : 'กดผ่าน'}
                                 </span>
                               </button>
 
                               {timeStr && (
-                                <span className="text-xs text-slate-500 dark:text-slate-400 font-mono flex items-center gap-1 bg-slate-100 dark:bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-200 dark:border-slate-800">
+                                <span className="text-xs font-bold text-slate-700 dark:text-slate-300 font-mono flex items-center gap-1.5 bg-slate-100 dark:bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 shadow-sm">
                                   <span>🕒</span>
                                   <span>{timeStr}</span>
                                 </span>
                               )}
 
                               {/* Entry Controls: Move / Delete */}
-                              <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
+                              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-300 dark:border-slate-700 shadow-sm">
                                 <button
                                   type="button"
                                   disabled={idx === 0}
                                   onClick={() => handleMoveEntry(queue.id, idx, 'up')}
-                                  className="w-6 h-6 rounded-lg text-xs font-bold text-slate-500 hover:text-white hover:bg-slate-800 disabled:opacity-20 cursor-pointer flex items-center justify-center transition"
+                                  className="w-7 h-7 rounded-lg text-xs font-black text-slate-700 dark:text-slate-300 hover:text-indigo-600 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-25 cursor-pointer flex items-center justify-center transition"
                                   title="เลื่อนคิวขึ้น"
                                 >
                                   ▲
@@ -534,7 +534,7 @@ export default function AdminQueueView({ onSwitchToMember }: AdminQueueViewProps
                                   type="button"
                                   disabled={idx === entries.length - 1}
                                   onClick={() => handleMoveEntry(queue.id, idx, 'down')}
-                                  className="w-6 h-6 rounded-lg text-xs font-bold text-slate-500 hover:text-white hover:bg-slate-800 disabled:opacity-20 cursor-pointer flex items-center justify-center transition"
+                                  className="w-7 h-7 rounded-lg text-xs font-black text-slate-700 dark:text-slate-300 hover:text-indigo-600 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-25 cursor-pointer flex items-center justify-center transition"
                                   title="เลื่อนคิวลง"
                                 >
                                   ▼
@@ -546,7 +546,7 @@ export default function AdminQueueView({ onSwitchToMember }: AdminQueueViewProps
                                       removeMemberFromQueue(queue.id, entry.id);
                                     }
                                   }}
-                                  className="w-6 h-6 rounded-lg text-xs font-bold text-slate-500 hover:text-rose-400 hover:bg-rose-950/40 cursor-pointer flex items-center justify-center transition ml-1"
+                                  className="w-7 h-7 rounded-lg text-xs font-black text-slate-400 hover:text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-950/50 cursor-pointer flex items-center justify-center transition ml-0.5"
                                   title="ลบออกจากคิว"
                                 >
                                   ✕
