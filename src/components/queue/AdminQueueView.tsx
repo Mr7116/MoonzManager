@@ -11,7 +11,7 @@ import { getQueuePreset } from '@/constants/queuePresets';
 import CreateQueueModal from './CreateQueueModal';
 
 interface AdminQueueViewProps {
-  onSwitchToMember: () => void;
+  onSwitchToMember?: () => void;
 }
 
 export default function AdminQueueView({ onSwitchToMember }: AdminQueueViewProps) {
@@ -159,13 +159,27 @@ export default function AdminQueueView({ onSwitchToMember }: AdminQueueViewProps
 
           <button
             type="button"
-            onClick={onSwitchToMember}
+            onClick={() => {
+              const url = `${window.location.origin}/queue/join`;
+              navigator.clipboard.writeText(url);
+              showToast(`คัดลอกลิงก์หน้าสมาชิกแล้ว: ${url} 📋`);
+            }}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 text-xs font-bold transition cursor-pointer"
+            title="คัดลอกลิงก์หน้าลงชื่อสำหรับสมาชิก เพื่อส่งลง Discord หรือ LINE"
+          >
+            <span>🔗</span>
+            <span>คัดลอกลิงก์ให้สมาชิก</span>
+          </button>
+
+          <Link
+            href="/queue/join"
+            target="_blank"
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-white text-xs font-bold transition cursor-pointer"
-            title="ดูหน้าจอเหมือนสมาชิกทั่วไปที่ไม่ได้ Login"
+            title="เปิดหน้าจอสมาชิกที่ไม่ได้ Login ในแท็บใหม่"
           >
             <span>👁️</span>
-            <span>มุมมองสมาชิก (คนทั่วไป)</span>
-          </button>
+            <span>ดูหน้าสมาชิก ↗</span>
+          </Link>
 
           <button
             type="button"
