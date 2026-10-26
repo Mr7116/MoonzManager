@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { Member } from '@/types/member';
 import { Party, Team, LaneKey, FieldZoneKey } from '@/types/party';
@@ -254,6 +255,14 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
 
   const isInitialLoadDone = useRef(false);
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastRemoteUpdatedAtRef = useRef<string | null>(null);
+  const isRemoteSyncingRef = useRef(false);
+  const clientSessionId = useRef<string>(
+    typeof window !== 'undefined'
+      ? `client_${Math.random().toString(36).substring(2, 9)}_${Date.now()}`
+      : 'server'
+  );
+  const realtimeChannelRef = useRef<RealtimeChannel | null>(null);
 
   // References to latest state to avoid stale closures in save
   const latestStateRef = useRef({
@@ -292,7 +301,202 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
     };
   }, [guildName, fileTimestamp, members, gvgTeams, gvgParties, siegeTeams, siegeParties, polarityTeams, polarityParties, presetParties, auctionItems, auctionRounds, activeRoundId, queueLists]);
 
-  // Fetch from Supabase
+  // Apply parsed database state to React state
+  const applyRemoteData = useCallback((data: any) => {
+    if (!data) return;
+    isRemoteSyncingRef.current = true;
+
+    if (data.updated_at) {
+      lastRemoteUpdatedAtRef.current = data.updated_at;
+    }
+
+    if (data.guild_name) setGuildName(data.guild_name);
+    if (data.file_timestamp) setFileTimestamp(data.file_timestamp);
+    if (Array.isArray(data.members)) setMembers(data.members);
+
+    if (Array.isArray(data.parties)) {
+      const rawParties = data.parties as (Party & {
+        category?: string;
+        teamName?: string;
+        teamField?: FieldZoneKey;
+        teamColor?: string;
+      })[];
+
+      // GVG
+      const gvgRaw = rawParties.filter((p) => !p.category || p.category === 'gvg');
+      if (gvgRaw.length > 0) {
+        const teamMap = new Map<string, Team>();
+        gvgRaw.forEach((p) => {
+          const tid = p.teamId || 'team_a';
+          if (!teamMap.has(tid)) {
+            teamMap.set(tid, {
+              id: tid,
+              name: p.teamName || (tid === 'team_a' ? 'ทีม A' : tid === 'team_b' ? 'ทีม B' : 'ทีม C'),
+              field: p.teamField === 'sub' ? 'sub' : 'main',
+              color: p.teamColor || 'rose',
+            });
+          }
+        });
+        const extractedTeams = Array.from(teamMap.values());
+        setGvgTeams(extractedTeams.length > 0 ? extractedTeams : DEFAULT_GVG_TEAMS);
+        setGvgParties(
+          gvgRaw.map((p) => ({
+            id: p.id,
+            name: p.name || 'ปาร์ตี้',
+            teamId: p.teamId || 'team_a',
+            lane: p.lane || 'lane_mid',
+            slots: Array.isArray(p.slots) ? p.slots.slice(0, 5) : [null, null, null, null, null],
+          }))
+        );
+      }
+
+      // Polarity
+      const polTeamsConfig = rawParties.find((p: any) => p.id === '__polarity_teams_config__') as { teams?: Team[] } | undefined;
+      if (polTeamsConfig && Array.isArray(polTeamsConfig.teams) && polTeamsConfig.teams.length > 0) {
+        setPolarityTeams(polTeamsConfig.teams);
+        try {
+          localStorage.setItem('Moonz_polarity_teams', JSON.stringify(polTeamsConfig.teams));
+        } catch (e) {}
+      }
+
+      const polRaw = rawParties.filter((p) => p.category === 'polarity' && p.id !== '__polarity_teams_config__');
+      if (polRaw.length > 0) {
+        setPolarityParties(polRaw);
+      } else {
+        setPolarityParties(
+          Array.from({ length: 8 }, (_, i) => ({
+            id: `pol_p${i + 1}`,
+            name: `ปาร์ตี้ ${i + 1}`,
+            teamId: 'pol_main',
+            slots: [null, null, null, null, null],
+          }))
+        );
+      }
+
+      // Siege
+      const siegeTeamsConfig = rawParties.find((p: any) => p.id === '__siege_teams_config__') as { teams?: Team[] } | undefined;
+      const siegeRaw = rawParties.filter((p) => p.category === 'siege' && p.id !== '__siege_teams_config__');
+
+      if (siegeTeamsConfig && Array.isArray(siegeTeamsConfig.teams) && siegeTeamsConfig.teams.length > 0) {
+        setSiegeTeams(siegeTeamsConfig.teams);
+        try {
+          localStorage.setItem('Moonz_siege_teams', JSON.stringify(siegeTeamsConfig.teams));
+        } catch (e) {}
+      } else if (siegeRaw.length > 0) {
+        const teamMap = new Map<string, Team>();
+        siegeRaw.forEach((p) => {
+          const tid = p.teamId || 'siege_team_1';
+          if (!teamMap.has(tid)) {
+            teamMap.set(tid, {
+              id: tid,
+              name: p.teamName || (tid === 'siege_team_1' ? 'ทีมปราสาท 1' : `ทีมปราสาท ${tid.replace('siege_team_', '')}`),
+              field: p.teamField === 'sub' ? 'sub' : 'main',
+              color: p.teamColor || 'sky',
+            });
+          }
+        });
+        const extracted = Array.from(teamMap.values());
+        if (extracted.length > 0) {
+          setSiegeTeams(extracted);
+          try {
+            localStorage.setItem('Moonz_siege_teams', JSON.stringify(extracted));
+          } catch (e) {}
+        }
+      }
+
+      if (siegeRaw.length > 0) {
+        setSiegeParties(
+          siegeRaw.map((p) => ({
+            id: p.id,
+            name: p.name || 'ปาร์ตี้',
+            teamId: p.teamId || 'siege_team_1',
+            slots: Array.isArray(p.slots) ? p.slots.slice(0, 5) : [null, null, null, null, null],
+          }))
+        );
+      } else {
+        setSiegeParties(
+          Array.from({ length: 8 }, (_, i) => ({
+            id: `siege_p${i + 1}`,
+            name: `ปาร์ตี้ ${i + 1}`,
+            teamId: 'siege_team_1',
+            slots: [null, null, null, null, null],
+          }))
+        );
+      }
+
+      // Preset
+      const presetRaw = rawParties.filter((p) => p.category === 'preset');
+      if (presetRaw.length > 0) {
+        setPresetParties(presetRaw);
+      } else {
+        setPresetParties(
+          Array.from({ length: 8 }, (_, i) => ({
+            id: `preset_p${i + 1}`,
+            name: `ตี้ประจำ ${i + 1}`,
+            teamId: 'preset',
+            slots: [null, null, null, null, null],
+          }))
+        );
+      }
+
+      // Auction Items & Rounds
+      const auctionEntry = rawParties.find((p) => p.id === '__auction_items_config__');
+      if (auctionEntry) {
+        if (Array.isArray((auctionEntry as any).rounds)) {
+          setAuctionRounds((auctionEntry as any).rounds);
+          try {
+            localStorage.setItem('Moonz_auction_rounds', JSON.stringify((auctionEntry as any).rounds));
+          } catch (e) {}
+        }
+        if (Array.isArray((auctionEntry as any).items)) {
+          setAuctionItems((auctionEntry as any).items);
+          try {
+            localStorage.setItem('Moonz_auctions', JSON.stringify((auctionEntry as any).items));
+          } catch (e) {}
+        }
+      }
+
+      // Queue Lists
+      const queueEntry = rawParties.find((p) => p.id === '__queue_lists_config__');
+      if (queueEntry && Array.isArray((queueEntry as any).lists)) {
+        setQueueLists((queueEntry as any).lists);
+        try {
+          localStorage.setItem('Moonz_queue_lists', JSON.stringify((queueEntry as any).lists));
+        } catch (e) {}
+      }
+    }
+
+    setTimeout(() => {
+      isRemoteSyncingRef.current = false;
+    }, 400);
+  }, []);
+
+  // Silent reload from Supabase (without toggling full-page loading spinner)
+  const silentReloadFromCloud = useCallback(async () => {
+    // If pending local changes or saving, avoid overwriting local edits
+    if (autoSaveTimerRef.current) return;
+
+    try {
+      const { data, error: fetchErr } = await supabase
+        .from('guild_state')
+        .select('*')
+        .eq('id', 1)
+        .maybeSingle();
+
+      if (fetchErr) {
+        console.warn('Realtime sync fetch error:', fetchErr);
+        return;
+      }
+
+      if (data) {
+        applyRemoteData(data);
+      }
+    } catch (e) {
+      console.warn('Realtime silent reload error:', e);
+    }
+  }, [applyRemoteData]);
+
+  // Initial Fetch from Supabase
   const loadFromCloud = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -306,142 +510,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
       if (fetchErr) throw fetchErr;
 
       if (data) {
-        if (data.guild_name) setGuildName(data.guild_name);
-        if (data.file_timestamp) setFileTimestamp(data.file_timestamp);
-        if (Array.isArray(data.members)) setMembers(data.members);
-
-        if (Array.isArray(data.parties)) {
-          const rawParties = data.parties as (Party & { category?: string; teamName?: string; teamField?: FieldZoneKey; teamColor?: string })[];
-
-          // GVG
-          const gvgRaw = rawParties.filter((p) => !p.category || p.category === 'gvg');
-          if (gvgRaw.length > 0) {
-            const teamMap = new Map<string, Team>();
-            gvgRaw.forEach((p) => {
-              const tid = p.teamId || 'team_a';
-              if (!teamMap.has(tid)) {
-                teamMap.set(tid, {
-                  id: tid,
-                  name: p.teamName || (tid === 'team_a' ? 'ทีม A' : tid === 'team_b' ? 'ทีม B' : 'ทีม C'),
-                  field: p.teamField === 'sub' ? 'sub' : 'main',
-                  color: p.teamColor || 'rose',
-                });
-              }
-            });
-            const extractedTeams = Array.from(teamMap.values());
-            setGvgTeams(extractedTeams.length > 0 ? extractedTeams : DEFAULT_GVG_TEAMS);
-            setGvgParties(
-              gvgRaw.map((p) => ({
-                id: p.id,
-                name: p.name || 'ปาร์ตี้',
-                teamId: p.teamId || 'team_a',
-                lane: p.lane || 'lane_mid',
-                slots: Array.isArray(p.slots) ? p.slots.slice(0, 5) : [null, null, null, null, null],
-              }))
-            );
-          }
-
-          // Polarity
-          const polTeamsConfig = rawParties.find((p: any) => p.id === '__polarity_teams_config__') as { teams?: Team[] } | undefined;
-          if (polTeamsConfig && Array.isArray(polTeamsConfig.teams) && polTeamsConfig.teams.length > 0) {
-            setPolarityTeams(polTeamsConfig.teams);
-            try {
-              localStorage.setItem('Moonz_polarity_teams', JSON.stringify(polTeamsConfig.teams));
-            } catch (e) {}
-          }
-
-          const polRaw = rawParties.filter((p) => p.category === 'polarity' && p.id !== '__polarity_teams_config__');
-          if (polRaw.length > 0) {
-            setPolarityParties(polRaw);
-          } else {
-            setPolarityParties(
-              Array.from({ length: 8 }, (_, i) => ({
-                id: `pol_p${i + 1}`,
-                name: `ปาร์ตี้ ${i + 1}`,
-                teamId: 'pol_main',
-                slots: [null, null, null, null, null],
-              }))
-            );
-          }
-
-          // Siege
-          const siegeTeamsConfig = rawParties.find((p: any) => p.id === '__siege_teams_config__') as { teams?: Team[] } | undefined;
-          const siegeRaw = rawParties.filter((p) => p.category === 'siege' && p.id !== '__siege_teams_config__');
-
-          if (siegeTeamsConfig && Array.isArray(siegeTeamsConfig.teams) && siegeTeamsConfig.teams.length > 0) {
-            setSiegeTeams(siegeTeamsConfig.teams);
-            try {
-              localStorage.setItem('Moonz_siege_teams', JSON.stringify(siegeTeamsConfig.teams));
-            } catch (e) {}
-          } else if (siegeRaw.length > 0) {
-            // Reconstruct teams from siege parties metadata if available
-            const teamMap = new Map<string, Team>();
-            siegeRaw.forEach((p) => {
-              const tid = p.teamId || 'siege_team_1';
-              if (!teamMap.has(tid)) {
-                teamMap.set(tid, {
-                  id: tid,
-                  name: p.teamName || (tid === 'siege_team_1' ? 'ทีมปราสาท 1' : `ทีมปราสาท ${tid.replace('siege_team_', '')}`),
-                  field: p.teamField === 'sub' ? 'sub' : 'main',
-                  color: p.teamColor || 'sky',
-                });
-              }
-            });
-            const extracted = Array.from(teamMap.values());
-            if (extracted.length > 0) {
-              setSiegeTeams(extracted);
-              try {
-                localStorage.setItem('Moonz_siege_teams', JSON.stringify(extracted));
-              } catch (e) {}
-            }
-          }
-
-          if (siegeRaw.length > 0) {
-            setSiegeParties(
-              siegeRaw.map((p) => ({
-                id: p.id,
-                name: p.name || 'ปาร์ตี้',
-                teamId: p.teamId || 'siege_team_1',
-                slots: Array.isArray(p.slots) ? p.slots.slice(0, 5) : [null, null, null, null, null],
-              }))
-            );
-          } else {
-            setSiegeParties(
-              Array.from({ length: 8 }, (_, i) => ({
-                id: `siege_p${i + 1}`,
-                name: `ปาร์ตี้ ${i + 1}`,
-                teamId: 'siege_team_1',
-                slots: [null, null, null, null, null],
-              }))
-            );
-          }
-
-          // Preset
-          const presetRaw = rawParties.filter((p) => p.category === 'preset');
-          if (presetRaw.length > 0) {
-            setPresetParties(presetRaw);
-          } else {
-            setPresetParties(
-              Array.from({ length: 8 }, (_, i) => ({
-                id: `preset_p${i + 1}`,
-                name: `ตี้ประจำ ${i + 1}`,
-                teamId: 'preset',
-                slots: [null, null, null, null, null],
-              }))
-            );
-          }
-
-          // Auction Items & Rounds
-          const auctionEntry = rawParties.find((p) => p.id === '__auction_items_config__');
-          if (auctionEntry) {
-            if (Array.isArray((auctionEntry as any).rounds) && (auctionEntry as any).rounds.length > 0) {
-              setAuctionRounds((auctionEntry as any).rounds);
-            }
-            if (Array.isArray((auctionEntry as any).items)) {
-              setAuctionItems((auctionEntry as any).items);
-            }
-          }
-        }
+        applyRemoteData(data);
       }
     } catch (err: unknown) {
       console.error('Failed to load from Supabase:', err);
@@ -451,7 +520,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
       isInitialLoadDone.current = true;
     }
-  }, []);
+  }, [applyRemoteData]);
 
   // Save to Supabase (uses latestStateRef)
   const saveToCloud = useCallback(async () => {
@@ -508,11 +577,18 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
         rounds: state.auctionRounds,
       };
 
+      const queueListsEntry = {
+        id: '__queue_lists_config__',
+        category: '__system__',
+        lists: state.queueLists,
+      };
+
       try {
         localStorage.setItem('Moonz_siege_teams', JSON.stringify(state.siegeTeams));
         localStorage.setItem('Moonz_polarity_teams', JSON.stringify(state.polarityTeams));
         localStorage.setItem('Moonz_auctions', JSON.stringify(state.auctionItems));
         localStorage.setItem('Moonz_auction_rounds', JSON.stringify(state.auctionRounds));
+        localStorage.setItem('Moonz_queue_lists', JSON.stringify(state.queueLists));
       } catch (e) {}
 
       const combinedParties = [
@@ -524,7 +600,11 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
         siegeTeamsEntry,
         polarityTeamsEntry,
         auctionEntry,
+        queueListsEntry,
       ];
+
+      const newUpdatedAt = new Date().toISOString();
+      lastRemoteUpdatedAtRef.current = newUpdatedAt;
 
       const { error: saveErr } = await supabase.from('guild_state').upsert({
         id: 1,
@@ -532,10 +612,23 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
         file_timestamp: state.fileTimestamp,
         members: state.members,
         parties: combinedParties,
-        updated_at: new Date().toISOString(),
+        updated_at: newUpdatedAt,
       });
 
       if (saveErr) throw saveErr;
+
+      // Broadcast realtime event to all other open tabs/windows/devices
+      if (realtimeChannelRef.current) {
+        try {
+          realtimeChannelRef.current.send({
+            type: 'broadcast',
+            event: 'state_sync',
+            payload: { updated_at: newUpdatedAt, senderId: clientSessionId.current },
+          });
+        } catch (bcErr) {
+          console.warn('Realtime broadcast error:', bcErr);
+        }
+      }
 
       const nowStr = new Date().toLocaleTimeString('th-TH');
       setLastSavedAt(nowStr);
@@ -552,8 +645,8 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Debounced Auto Save trigger
-  const triggerAutoSave = useCallback((delayMs: number = 800) => {
-    if (!isInitialLoadDone.current) return;
+  const triggerAutoSave = useCallback((delayMs: number = 400) => {
+    if (!isInitialLoadDone.current || isRemoteSyncingRef.current) return;
     setHasUnsavedChanges(true);
     setSaveStatus('pending');
 
@@ -564,9 +657,9 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
     }, delayMs);
   }, [saveToCloud]);
 
-  // Watch for state changes and auto-save
+  // Watch for state changes and auto-save (skip when sync is coming in from remote)
   useEffect(() => {
-    if (!isInitialLoadDone.current) return;
+    if (!isInitialLoadDone.current || isRemoteSyncingRef.current) return;
     triggerAutoSave(800);
   }, [gvgParties, gvgTeams, members, siegeParties, siegeTeams, polarityParties, polarityTeams, presetParties, triggerAutoSave]);
 
@@ -587,6 +680,97 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     loadFromCloud();
   }, [loadFromCloud]);
+
+  // Multi-tier Realtime Synchronization:
+  // 1. Supabase Realtime channel (postgres_changes + broadcast)
+  // 2. Browser StorageEvent (instant cross-tab update on same computer)
+  // 3. Fallback polling interval (3.5 seconds) ensuring updates even if WebSockets disconnect
+  useEffect(() => {
+    const channel = supabase
+      .channel('moonz_guild_realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'guild_state', filter: 'id=eq.1' },
+        (payload: any) => {
+          if (payload?.new) {
+            if (payload.new.updated_at && payload.new.updated_at === lastRemoteUpdatedAtRef.current) {
+              return;
+            }
+            applyRemoteData(payload.new);
+          } else {
+            silentReloadFromCloud();
+          }
+        }
+      )
+      .on('broadcast', { event: 'state_sync' }, (payload: any) => {
+        if (payload?.payload?.senderId === clientSessionId.current) {
+          return;
+        }
+        silentReloadFromCloud();
+      })
+      .subscribe();
+
+    realtimeChannelRef.current = channel;
+
+    // Cross-tab instant sync
+    const handleStorage = (e: StorageEvent) => {
+      if (!e.newValue) return;
+      if (e.key === 'Moonz_queue_lists') {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed)) {
+            isRemoteSyncingRef.current = true;
+            setQueueLists(parsed);
+            setTimeout(() => { isRemoteSyncingRef.current = false; }, 300);
+          }
+        } catch (_) {}
+      } else if (e.key === 'Moonz_auctions') {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed)) {
+            isRemoteSyncingRef.current = true;
+            setAuctionItems(parsed);
+            setTimeout(() => { isRemoteSyncingRef.current = false; }, 300);
+          }
+        } catch (_) {}
+      } else if (e.key === 'Moonz_auction_rounds') {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed)) {
+            isRemoteSyncingRef.current = true;
+            setAuctionRounds(parsed);
+            setTimeout(() => { isRemoteSyncingRef.current = false; }, 300);
+          }
+        } catch (_) {}
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+
+    // 3.5s Fallback heartbeat polling
+    const pollingInterval = setInterval(async () => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      if (autoSaveTimerRef.current || isRemoteSyncingRef.current) return;
+      try {
+        const { data, error } = await supabase
+          .from('guild_state')
+          .select('updated_at')
+          .eq('id', 1)
+          .maybeSingle();
+
+        if (!error && data?.updated_at && data.updated_at !== lastRemoteUpdatedAtRef.current) {
+          lastRemoteUpdatedAtRef.current = data.updated_at;
+          silentReloadFromCloud();
+        }
+      } catch (_) {}
+    }, 3500);
+
+    return () => {
+      supabase.removeChannel(channel);
+      realtimeChannelRef.current = null;
+      window.removeEventListener('storage', handleStorage);
+      clearInterval(pollingInterval);
+    };
+  }, [applyRemoteData, silentReloadFromCloud]);
 
   // Helper actions for GVG
   const setPartyLane = (partyId: string, lane: LaneKey) => {

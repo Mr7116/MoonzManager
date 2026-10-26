@@ -7,6 +7,7 @@ import { useGuildStore } from '@/lib/guildStore';
 import { useAuth } from '@/lib/auth';
 import JobEmblem from '@/components/tactical/JobEmblem';
 import ThemeToggle from '@/components/layout/ThemeToggle';
+import AutoSaveBadge from '@/components/common/AutoSaveBadge';
 import { AuctionItem, AuctionRound, formatRegistrationTime } from '@/types/auction';
 import TitleSvgIcon from '@/components/icons/TitleSvgIcon';
 import TitleChestSvgIcon from '@/components/icons/TitleChestSvgIcon';
@@ -210,7 +211,8 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
           </div>
 
           {/* Quick Actions */}
-          <div className="flex items-center gap-2 self-start sm:self-center">
+          <div className="flex items-center gap-2 self-start sm:self-center flex-wrap">
+            <AutoSaveBadge />
             <ThemeToggle />
 
             {isAuthenticated ? (
