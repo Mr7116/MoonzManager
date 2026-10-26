@@ -1,11 +1,12 @@
 // Title Items (ไอเทม Title) for Auction System
-// Official icons from roworlddb: icon_item_touxian_01 to 05
+// Official icons from roworlddb: icon_item_touxian_01 to 04
+
 export interface TitleItem {
   id: number;
   name: string;
   nameTh: string;
   category: 'title';
-  quality: 'Gold' | 'Purple' | 'Blue' | 'Green';
+  quality: 'Gold' | 'Purple' | 'Green';
   qualityBadge: string;
   type: string;
   icon: string;
@@ -54,8 +55,8 @@ export const TITLE_ITEMS: TitleItem[] = [
     name: 'Adventure Scrap',
     nameTh: 'Adventure Scrap',
     category: 'title',
-    quality: 'Blue',
-    qualityBadge: 'Title ฟ้า',
+    quality: 'Green',
+    qualityBadge: 'Title เขียว',
     type: 'ไอเทม Title (เศษบันทึก)',
     icon: 'icon_item_touxian_02',
     localIcon: '/images/titles/icon_item_touxian_02.webp',
@@ -82,20 +83,80 @@ export const TITLE_ITEMS: TitleItem[] = [
       'ใช้สำหรับ Level Up Title หรือผสมผสานเป็นไอเทม Title ระดับสูงขึ้น',
     ],
   },
-  {
-    id: 18419001,
-    name: 'Eden Seal',
-    nameTh: 'Eden Seal',
-    category: 'title',
-    quality: 'Purple',
-    qualityBadge: 'Title พิเศษ',
-    type: 'ไอเทม Title (ตราประทับ)',
-    icon: 'icon_item_touxian_05',
-    localIcon: '/images/titles/icon_item_touxian_05.webp',
-    remoteIcon: 'https://roworlddb.com/media/images/item/icon_item_touxian_05.webp',
-    stats: [
-      'Eden Seal ตราประทับกิลด์อีเดน',
-      'เป็นไอเทมที่ขาดไม่ได้สำหรับการผสมผสานไอเทม Title',
-    ],
-  },
 ];
+
+export interface TitleTierStyle {
+  tier: 'gold' | 'purple' | 'green';
+  border: string;
+  bg: string;
+  text: string;
+  badgeBg: string;
+  shadow: string;
+  label: string;
+}
+
+export function getTitleTierStyle(itemNameOrIcon?: string): TitleTierStyle {
+  const str = (itemNameOrIcon || '').toLowerCase();
+
+  // Pioneer Certificate -> กรอบสีทอง
+  if (str.includes('pioneer') || str.includes('touxian_04')) {
+    return {
+      tier: 'gold',
+      border: 'border-amber-400 dark:border-amber-500/70',
+      bg: 'bg-amber-500/15 dark:bg-amber-950/30',
+      text: 'text-amber-600 dark:text-amber-300',
+      badgeBg: 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40',
+      shadow: 'shadow-amber-500/20',
+      label: 'Title ส้มทอง',
+    };
+  }
+
+  // Adventure Journal -> กรอบสีม่วง
+  if (str.includes('journal') || str.includes('touxian_03')) {
+    return {
+      tier: 'purple',
+      border: 'border-purple-400 dark:border-purple-500/70',
+      bg: 'bg-purple-500/15 dark:bg-purple-950/30',
+      text: 'text-purple-600 dark:text-purple-300',
+      badgeBg: 'bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/40',
+      shadow: 'shadow-purple-500/20',
+      label: 'Title ม่วง',
+    };
+  }
+
+  // Adventure Scrap -> กรอบสีเขียว
+  if (str.includes('scrap') || str.includes('touxian_02')) {
+    return {
+      tier: 'green',
+      border: 'border-emerald-400 dark:border-emerald-500/70',
+      bg: 'bg-emerald-500/15 dark:bg-emerald-950/30',
+      text: 'text-emerald-600 dark:text-emerald-400',
+      badgeBg: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/40',
+      shadow: 'shadow-emerald-500/20',
+      label: 'Title เขียว',
+    };
+  }
+
+  // Traveler's Note -> กรอบสีเขียว
+  if (str.includes('note') || str.includes('traveler') || str.includes('touxian_01')) {
+    return {
+      tier: 'green',
+      border: 'border-emerald-400 dark:border-emerald-500/70',
+      bg: 'bg-emerald-500/15 dark:bg-emerald-950/30',
+      text: 'text-emerald-600 dark:text-emerald-400',
+      badgeBg: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/40',
+      shadow: 'shadow-emerald-500/20',
+      label: 'Title เขียว',
+    };
+  }
+
+  return {
+    tier: 'gold',
+    border: 'border-amber-400 dark:border-amber-500/70',
+    bg: 'bg-amber-500/15 dark:bg-amber-950/30',
+    text: 'text-amber-600 dark:text-amber-300',
+    badgeBg: 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40',
+    shadow: 'shadow-amber-500/20',
+    label: 'ไอเทม Title',
+  };
+}

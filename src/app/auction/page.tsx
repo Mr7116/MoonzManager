@@ -16,6 +16,7 @@ import AutoSaveBadge from '@/components/common/AutoSaveBadge';
 import JobEmblem from '@/components/tactical/JobEmblem';
 import TitleSvgIcon from '@/components/icons/TitleSvgIcon';
 import RelicSvgIcon from '@/components/icons/RelicSvgIcon';
+import { getTitleTierStyle } from '@/constants/titleItems';
 
 export default function AuctionPage() {
   const {
@@ -639,9 +640,10 @@ export default function AuctionPage() {
             const isTitle = item.itemCategory === 'title' || (item.cardSlot && item.cardSlot.includes('Title')) || (item.cardQuality && item.cardQuality.includes('Title'));
             const isRelic = !isTitle && (item.itemCategory === 'relic' || item.cardQuality === 'Sage');
             const isCard = !isTitle && !isRelic && (item.itemCategory === 'card' || item.cardQuality === 'Purple');
+            const titleTier = isTitle ? getTitleTierStyle(item.accessoryIcon || item.accessoryName || item.cardQuality) : null;
             const entryCount = (item.entries || []).length;
             const imageSrc = isTitle
-              ? `/images/titles/${item.accessoryIcon}.svg`
+              ? `/images/titles/${item.accessoryIcon}.webp`
               : isRelic
               ? `/images/relics/${item.accessoryIcon}.webp`
               : isCard
@@ -667,7 +669,7 @@ export default function AuctionPage() {
 
                   <div className={`relative w-13 h-13 shrink-0 rounded-xl border flex items-center justify-center shadow-md ${
                     isTitle
-                      ? 'border-amber-500/50 bg-amber-950/20'
+                      ? `${titleTier?.border} ${titleTier?.bg}`
                       : isRelic
                       ? 'border-amber-500/50 bg-amber-950/20'
                       : isCard
@@ -691,8 +693,8 @@ export default function AuctionPage() {
                       }}
                     />
                     {isTitle ? (
-                      <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-amber-950/90 border border-amber-500/60 text-amber-200">
-                        Title
+                      <span className={`absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold border ${titleTier?.badgeBg}`}>
+                        {titleTier?.tier === 'gold' ? 'ทอง' : titleTier?.tier === 'purple' ? 'ม่วง' : 'เขียว'}
                       </span>
                     ) : isRelic ? (
                       <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-amber-950/90 border border-amber-500/60 text-amber-200">
@@ -718,9 +720,9 @@ export default function AuctionPage() {
                       </h4>
 
                       {isTitle ? (
-                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40 flex items-center gap-1">
+                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold border flex items-center gap-1 ${titleTier?.badgeBg}`}>
                           <TitleSvgIcon className="w-3 h-3" />
-                          <span>{item.cardQuality || 'ไอเทม Title'}</span>
+                          <span>{item.cardQuality || titleTier?.label}</span>
                         </span>
                       ) : isRelic ? (
                         <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40 flex items-center gap-1">
@@ -898,9 +900,10 @@ export default function AuctionPage() {
             const isTitle = item.itemCategory === 'title' || (item.cardSlot && item.cardSlot.includes('Title')) || (item.cardQuality && item.cardQuality.includes('Title'));
             const isRelic = !isTitle && (item.itemCategory === 'relic' || item.cardQuality === 'Sage');
             const isCard = !isTitle && !isRelic && (item.itemCategory === 'card' || item.cardQuality === 'Purple');
+            const titleTier = isTitle ? getTitleTierStyle(item.accessoryIcon || item.accessoryName || item.cardQuality) : null;
             const entryCount = (item.entries || []).length;
             const imageSrc = isTitle
-              ? `/images/titles/${item.accessoryIcon}.svg`
+              ? `/images/titles/${item.accessoryIcon}.webp`
               : isRelic
               ? `/images/relics/${item.accessoryIcon}.webp`
               : isCard
@@ -943,9 +946,9 @@ export default function AuctionPage() {
                     )}
 
                     {isTitle ? (
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border flex items-center gap-1 ${titleTier?.badgeBg}`}>
                         <TitleSvgIcon className="w-3 h-3" />
-                        <span>Title</span>
+                        <span>{titleTier?.label}</span>
                       </span>
                     ) : isRelic ? (
                       <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1">
@@ -990,7 +993,7 @@ export default function AuctionPage() {
                   <div className="flex items-start gap-3">
                     <div className={`relative w-16 h-16 shrink-0 rounded-2xl border flex items-center justify-center shadow-lg group-hover:scale-105 transition ${
                       isTitle
-                        ? 'border-amber-500/50 bg-amber-950/20 shadow-amber-500/15'
+                        ? `${titleTier?.border} ${titleTier?.bg} ${titleTier?.shadow}`
                         : isRelic
                         ? 'border-amber-500/50 bg-amber-950/20 shadow-amber-500/15'
                         : isCard
@@ -1014,8 +1017,8 @@ export default function AuctionPage() {
                         }}
                       />
                       {isTitle ? (
-                        <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-amber-950/90 border border-amber-500/60 text-amber-200">
-                          Title
+                        <span className={`absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold border ${titleTier?.badgeBg}`}>
+                          {titleTier?.tier === 'gold' ? 'ทอง' : titleTier?.tier === 'purple' ? 'ม่วง' : 'เขียว'}
                         </span>
                       ) : isRelic ? (
                         <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-amber-950/90 border border-amber-500/60 text-amber-200">
@@ -1039,9 +1042,9 @@ export default function AuctionPage() {
                         {item.accessoryName}
                       </h4>
                       {isTitle ? (
-                        <div className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 mt-0.5 flex items-center gap-1">
+                        <div className={`text-[11px] font-semibold mt-0.5 flex items-center gap-1 ${titleTier?.text}`}>
                           <TitleSvgIcon className="w-3.5 h-3.5 shrink-0" />
-                          <span>{item.cardQuality || item.cardSlot || 'ไอเทม Title'}</span>
+                          <span>{item.cardQuality || item.cardSlot || titleTier?.label}</span>
                         </div>
                       ) : isRelic ? (
                         <div className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 mt-0.5 flex items-center gap-1">
