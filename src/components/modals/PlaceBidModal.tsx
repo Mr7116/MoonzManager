@@ -7,6 +7,7 @@ import { AuctionItem } from '@/types/auction';
 import { Member } from '@/types/member';
 import JobEmblem from '@/components/tactical/JobEmblem';
 import TitleSvgIcon from '@/components/icons/TitleSvgIcon';
+import TitleItemSvg from '@/components/icons/TitleItemSvg';
 import RelicSvgIcon from '@/components/icons/RelicSvgIcon';
 
 interface PlaceBidModalProps {
@@ -128,7 +129,7 @@ export default function PlaceBidModal({
           const isRelic = !isTitle && (auction.itemCategory === 'relic' || auction.cardQuality === 'Sage');
           const isCard = !isTitle && !isRelic && (auction.itemCategory === 'card' || auction.cardQuality === 'Purple');
           const imageSrc = isTitle
-            ? `/images/titles/${auction.accessoryIcon}.png`
+            ? `/images/titles/${auction.accessoryIcon}.svg`
             : isRelic
             ? `/images/relics/${auction.accessoryIcon}.webp`
             : isCard
@@ -142,22 +143,24 @@ export default function PlaceBidModal({
               <div className={`relative w-14 h-14 shrink-0 rounded-xl border flex items-center justify-center ${
                 isTitle ? 'border-amber-500/40 bg-[#0c1220]' : isRelic ? 'border-amber-500/40 bg-[#0c1220]' : isCard ? 'border-purple-500/40 bg-[#0c1220]' : 'border-rose-500/40 bg-[#0c1220]'
               }`}>
-                <Image
-                  src={imageSrc}
-                  alt={auction.accessoryName}
-                  width={48}
-                  height={48}
-                  unoptimized
-                  className="object-contain"
-                  onError={(e) => {
-                    const fallback = isTitle
-                      ? `/images/titles/${auction.accessoryIcon}.png`
-                      : isRelic
-                      ? `https://roworlddb.com/media/images/hallows/${auction.accessoryIcon}.webp`
-                      : `https://roworlddb.com/media/images/item/${auction.accessoryIcon}.webp`;
-                    (e.target as HTMLImageElement).src = fallback;
-                  }}
-                />
+                {isTitle ? (
+                  <TitleItemSvg itemKey={auction.accessoryIcon} className="w-11 h-11 object-contain drop-shadow" />
+                ) : (
+                  <Image
+                    src={imageSrc}
+                    alt={auction.accessoryName}
+                    width={48}
+                    height={48}
+                    unoptimized
+                    className="object-contain"
+                    onError={(e) => {
+                      const fallback = isRelic
+                        ? `https://roworlddb.com/media/images/hallows/${auction.accessoryIcon}.webp`
+                        : `https://roworlddb.com/media/images/item/${auction.accessoryIcon}.webp`;
+                      (e.target as HTMLImageElement).src = fallback;
+                    }}
+                  />
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">

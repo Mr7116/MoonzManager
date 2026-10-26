@@ -23,8 +23,8 @@ export const TITLE_ITEMS: TitleItem[] = [
     qualityBadge: 'Title ส้มทอง',
     type: 'ไอเทม Title (เกียรติบัตร)',
     icon: 'pioneer_certificate',
-    localIcon: '/images/titles/pioneer_certificate.png',
-    remoteIcon: '/images/titles/pioneer_certificate.png',
+    localIcon: '/images/titles/pioneer_certificate.svg',
+    remoteIcon: '/images/titles/pioneer_certificate.svg',
     stats: ['ไอเทม Title (ระดับส้มทอง)', 'ปลดล็อกฉายาเกียรติยศและสเตตัสตัวละคร'],
   },
   {
@@ -36,8 +36,8 @@ export const TITLE_ITEMS: TitleItem[] = [
     qualityBadge: 'Title ม่วง',
     type: 'ไอเทม Title (สมุดบันทึก)',
     icon: 'adventure_journal',
-    localIcon: '/images/titles/adventure_journal.png',
-    remoteIcon: '/images/titles/adventure_journal.png',
+    localIcon: '/images/titles/adventure_journal.svg',
+    remoteIcon: '/images/titles/adventure_journal.svg',
     stats: ['ไอเทม Title (ระดับม่วง)', 'ปลดล็อกฉายาผจญภัยและสเตตัสตัวละคร'],
   },
   {
@@ -49,8 +49,8 @@ export const TITLE_ITEMS: TitleItem[] = [
     qualityBadge: 'Title ฟ้า',
     type: 'ไอเทม Title (เศษบันทึก)',
     icon: 'adventure_scrap',
-    localIcon: '/images/titles/adventure_scrap.png',
-    remoteIcon: '/images/titles/adventure_scrap.png',
+    localIcon: '/images/titles/adventure_scrap.svg',
+    remoteIcon: '/images/titles/adventure_scrap.svg',
     stats: ['ไอเทม Title (ระดับฟ้า)', 'ปลดล็อกฉายานักสำรวจและสเตตัสตัวละคร'],
   },
   {
@@ -62,8 +62,9 @@ export const TITLE_ITEMS: TitleItem[] = [
     qualityBadge: 'Title เขียว',
     type: 'ไอเทม Title (โน้ตนักเดินทาง)',
     icon: 'travelers_note',
-    localIcon: '/images/titles/travelers_note.png',
-    remoteIcon: '/images/titles/travelers_note.png',
+    localIcon: '/images/titles/travelers_note.svg',
+    remoteIcon: '/images/titles/travelers_note.svg',
     stats: ['ไอเทม Title (ระดับเขียว)', 'ปลดล็อกฉายาเริ่มต้นและสเตตัสตัวละคร'],
   },
 ];
+

@@ -73,3 +73,4 @@ export default function TitleSvgIcon({ className = 'w-5 h-5', size = 20 }: Title
     </svg>
   );
 }
+

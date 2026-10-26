@@ -9,6 +9,7 @@ import JobEmblem from '@/components/tactical/JobEmblem';
 import ThemeToggle from '@/components/layout/ThemeToggle';
 import { AuctionItem, AuctionRound } from '@/types/auction';
 import TitleSvgIcon from '@/components/icons/TitleSvgIcon';
+import TitleItemSvg from '@/components/icons/TitleItemSvg';
 import RelicSvgIcon from '@/components/icons/RelicSvgIcon';
 
 interface MemberAuctionViewProps {
@@ -464,7 +465,7 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
               const isRelic = item.itemCategory === 'relic' || item.cardQuality === 'Sage';
               const isTitle = item.itemCategory === 'title' || (item.cardSlot && item.cardSlot.includes('Title')) || (item.cardQuality && item.cardQuality.includes('Title'));
               const imageSrc = isTitle
-                ? `/images/titles/${item.accessoryIcon}.png`
+                ? `/images/titles/${item.accessoryIcon}.svg`
                 : isRelic
                 ? `/images/relics/${item.accessoryIcon}.webp`
                 : isCard
@@ -499,22 +500,24 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
                           ? 'border-purple-500/50 bg-purple-950/20'
                           : 'border-rose-500/40 bg-slate-100 dark:bg-[#080d19]'
                       }`}>
-                        <Image
-                          src={imageSrc}
-                          alt={item.accessoryName}
-                          width={44}
-                          height={44}
-                          unoptimized
-                          className="object-contain drop-shadow"
-                          onError={(e) => {
-                            const fallback = isTitle
-                              ? `/images/titles/${item.accessoryIcon}.png`
-                              : isRelic
-                              ? `https://roworlddb.com/media/images/hallows/${item.accessoryIcon}.webp`
-                              : `https://roworlddb.com/media/images/item/${item.accessoryIcon}.webp`;
-                            (e.target as HTMLImageElement).src = fallback;
-                          }}
-                        />
+                        {isTitle ? (
+                          <TitleItemSvg itemKey={item.accessoryIcon} className="w-10 h-10 object-contain drop-shadow" />
+                        ) : (
+                          <Image
+                            src={imageSrc}
+                            alt={item.accessoryName}
+                            width={44}
+                            height={44}
+                            unoptimized
+                            className="object-contain drop-shadow"
+                            onError={(e) => {
+                              const fallback = isRelic
+                                ? `https://roworlddb.com/media/images/hallows/${item.accessoryIcon}.webp`
+                                : `https://roworlddb.com/media/images/item/${item.accessoryIcon}.webp`;
+                              (e.target as HTMLImageElement).src = fallback;
+                            }}
+                          />
+                        )}
                         {isTitle ? (
                           <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-amber-950/90 border border-amber-500/60 text-amber-200">
                             Title

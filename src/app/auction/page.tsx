@@ -15,6 +15,7 @@ import RoundHistoryModal from '@/components/modals/RoundHistoryModal';
 import AutoSaveBadge from '@/components/common/AutoSaveBadge';
 import JobEmblem from '@/components/tactical/JobEmblem';
 import TitleSvgIcon from '@/components/icons/TitleSvgIcon';
+import TitleItemSvg from '@/components/icons/TitleItemSvg';
 import RelicSvgIcon from '@/components/icons/RelicSvgIcon';
 
 export default function AuctionPage() {
@@ -641,7 +642,7 @@ export default function AuctionPage() {
             const isCard = !isTitle && !isRelic && (item.itemCategory === 'card' || item.cardQuality === 'Purple');
             const entryCount = (item.entries || []).length;
             const imageSrc = isTitle
-              ? `/images/titles/${item.accessoryIcon}.png`
+              ? `/images/titles/${item.accessoryIcon}.svg`
               : isRelic
               ? `/images/relics/${item.accessoryIcon}.webp`
               : isCard
@@ -674,22 +675,24 @@ export default function AuctionPage() {
                       ? 'border-purple-500/50 bg-purple-950/20'
                       : 'border-rose-500/40 bg-slate-100 dark:bg-[#080d19]'
                   }`}>
-                    <Image
-                      src={imageSrc}
-                      alt={item.accessoryName}
-                      width={44}
-                      height={44}
-                      unoptimized
-                      className="object-contain"
-                      onError={(e) => {
-                        const fallback = isTitle
-                          ? `/images/titles/${item.accessoryIcon}.png`
-                          : isRelic
-                          ? `https://roworlddb.com/media/images/hallows/${item.accessoryIcon}.webp`
-                          : `https://roworlddb.com/media/images/item/${item.accessoryIcon}.webp`;
-                        (e.target as HTMLImageElement).src = fallback;
-                      }}
-                    />
+                    {isTitle ? (
+                      <TitleItemSvg itemKey={item.accessoryIcon} className="w-10 h-10 object-contain drop-shadow" />
+                    ) : (
+                      <Image
+                        src={imageSrc}
+                        alt={item.accessoryName}
+                        width={44}
+                        height={44}
+                        unoptimized
+                        className="object-contain"
+                        onError={(e) => {
+                          const fallback = isRelic
+                            ? `https://roworlddb.com/media/images/hallows/${item.accessoryIcon}.webp`
+                            : `https://roworlddb.com/media/images/item/${item.accessoryIcon}.webp`;
+                          (e.target as HTMLImageElement).src = fallback;
+                        }}
+                      />
+                    )}
                     {isTitle ? (
                       <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-amber-950/90 border border-amber-500/60 text-amber-200">
                         Title
@@ -900,7 +903,7 @@ export default function AuctionPage() {
             const isCard = !isTitle && !isRelic && (item.itemCategory === 'card' || item.cardQuality === 'Purple');
             const entryCount = (item.entries || []).length;
             const imageSrc = isTitle
-              ? `/images/titles/${item.accessoryIcon}.png`
+              ? `/images/titles/${item.accessoryIcon}.svg`
               : isRelic
               ? `/images/relics/${item.accessoryIcon}.webp`
               : isCard
@@ -997,22 +1000,24 @@ export default function AuctionPage() {
                         ? 'border-purple-500/50 bg-purple-950/20 shadow-purple-500/15'
                         : 'border-rose-500/50 bg-slate-100 dark:bg-[#080d19] shadow-rose-500/15'
                     }`}>
-                      <Image
-                        src={imageSrc}
-                        alt={item.accessoryName}
-                        width={54}
-                        height={54}
-                        unoptimized
-                        className="object-contain drop-shadow"
-                        onError={(e) => {
-                          const fallback = isTitle
-                            ? `/images/titles/${item.accessoryIcon}.png`
-                            : isRelic
-                            ? `https://roworlddb.com/media/images/hallows/${item.accessoryIcon}.webp`
-                            : `https://roworlddb.com/media/images/item/${item.accessoryIcon}.webp`;
-                          (e.target as HTMLImageElement).src = fallback;
-                        }}
-                      />
+                      {isTitle ? (
+                        <TitleItemSvg itemKey={item.accessoryIcon} className="w-12 h-12 object-contain drop-shadow" />
+                      ) : (
+                        <Image
+                          src={imageSrc}
+                          alt={item.accessoryName}
+                          width={54}
+                          height={54}
+                          unoptimized
+                          className="object-contain drop-shadow"
+                          onError={(e) => {
+                            const fallback = isRelic
+                              ? `https://roworlddb.com/media/images/hallows/${item.accessoryIcon}.webp`
+                              : `https://roworlddb.com/media/images/item/${item.accessoryIcon}.webp`;
+                            (e.target as HTMLImageElement).src = fallback;
+                          }}
+                        />
+                      )}
                       {isTitle ? (
                         <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-amber-950/90 border border-amber-500/60 text-amber-200">
                           Title

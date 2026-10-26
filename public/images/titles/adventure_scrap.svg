@@ -1,0 +1,71 @@
+<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="scrapPaperGrad" x1="14" y1="10" x2="52" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" />
+      <stop offset="0.4" stop-color="#FEFCE8" />
+      <stop offset="0.8" stop-color="#FEF3C7" />
+      <stop offset="1" stop-color="#FDE68A" />
+    </linearGradient>
+    <linearGradient id="scrapPhotoGrad" x1="18" y1="16" x2="42" y2="38" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F8FAFC" />
+      <stop offset="1" stop-color="#E2E8F0" />
+    </linearGradient>
+    <filter id="scrapShadow" x="8" y="8" width="48" height="52" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="1" dy="3" stdDeviation="2.5" flood-color="#0369A1" flood-opacity="0.3" />
+    </filter>
+  </defs>
+
+  <g filter="url(#scrapShadow)">
+    <path
+      d="M16 10 C15 10 14 11 14 12 L14 50 L17 48 L20 51 L23 48 L27 52 L31 47 L35 51 L39 48 L43 52 L47 47 L50 51 L50 12 C50 11 49 10 48 10 Z"
+      fill="url(#scrapPaperGrad)"
+      stroke="#D97706"
+      stroke-width="1.2"
+      stroke-linejoin="round"
+    />
+  </g>
+
+  <g transform="rotate(-3 29 27)">
+    <rect x="18" y="15" width="22" height="19" rx="1.5" fill="url(#scrapPhotoGrad)" stroke="#CBD5E1" stroke-width="0.8" />
+    <rect x="19.5" y="16.5" width="19" height="13" fill="#94A3B8" />
+    <path d="M20 28 L25 21 L29 25 L32 22 L38 28 Z" fill="#64748B" />
+    <circle cx="35" cy="19.5" r="1.5" fill="#FEF08A" />
+  </g>
+
+  <path
+    d="M18 39 Q21 37.5 25 39 T32 38 T39 39 T44 38"
+    stroke="#92400E"
+    stroke-width="1.2"
+    stroke-linecap="round"
+    fill="none"
+  />
+  <path
+    d="M18 43 Q22 42 27 43.5 T35 42.5 T42 43"
+    stroke="#B45309"
+    stroke-width="1"
+    stroke-linecap="round"
+    fill="none"
+  />
+  <path
+    d="M19 47 Q24 45.8 28 47 T36 46"
+    stroke="#D97706"
+    stroke-width="1"
+    stroke-linecap="round"
+    fill="none"
+  />
+
+  <path
+    d="M44 22 L44 11 C44 9 47 9 47 11 L47 23 C47 25 42 25 42 23 L42 13"
+    stroke="#D97706"
+    stroke-width="1.5"
+    stroke-linecap="round"
+    fill="none"
+  />
+  <g filter="drop-shadow(0 1.5px 2px rgba(180, 83, 9, 0.5))">
+    <circle cx="45" cy="11" r="5.5" fill="#F59E0B" stroke="#78350F" stroke-width="0.9" />
+    <circle cx="45" cy="11" r="4.2" fill="#FDE047" />
+    <polygon points="45,8 46.2,10.2 48.5,10.4 46.8,12 47.3,14.2 45,13 42.7,14.2 43.2,12 41.5,10.4 43.8,10.2" fill="#D97706" />
+  </g>
+
+  <path d="M14 26 L17 28 M47 34 L50 36" stroke="#FDE68A" stroke-width="1" stroke-linecap="round" />
+</svg>
