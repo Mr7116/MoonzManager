@@ -6,6 +6,8 @@ import Image from 'next/image';
 import { AuctionItem } from '@/types/auction';
 import { Member } from '@/types/member';
 import JobEmblem from '@/components/tactical/JobEmblem';
+import TitleSvgIcon from '@/components/icons/TitleSvgIcon';
+import RelicSvgIcon from '@/components/icons/RelicSvgIcon';
 
 interface PlaceBidModalProps {
   isOpen: boolean;
@@ -122,9 +124,12 @@ export default function PlaceBidModal({
 
         {/* Item Info Card */}
         {(() => {
-          const isCard = auction.itemCategory === 'card' || auction.cardQuality === 'Purple';
-          const isRelic = auction.itemCategory === 'relic' || auction.cardQuality === 'Sage';
-          const imageSrc = isRelic
+          const isTitle = auction.itemCategory === 'title' || (auction.cardSlot && auction.cardSlot.includes('Title')) || (auction.cardQuality && auction.cardQuality.includes('Title'));
+          const isRelic = !isTitle && (auction.itemCategory === 'relic' || auction.cardQuality === 'Sage');
+          const isCard = !isTitle && !isRelic && (auction.itemCategory === 'card' || auction.cardQuality === 'Purple');
+          const imageSrc = isTitle
+            ? `/images/titles/${auction.accessoryIcon}.png`
+            : isRelic
             ? `/images/relics/${auction.accessoryIcon}.webp`
             : isCard
             ? `/images/cards/${auction.accessoryIcon}.webp`
@@ -132,10 +137,10 @@ export default function PlaceBidModal({
 
           return (
             <div className={`flex items-center gap-3 p-3 rounded-2xl border shadow-inner ${
-              isRelic ? 'border-amber-500/30 bg-amber-950/20' : isCard ? 'border-purple-500/30 bg-purple-950/20' : 'border-rose-500/30 bg-rose-950/20'
+              isTitle ? 'border-amber-500/30 bg-amber-950/20' : isRelic ? 'border-amber-500/30 bg-amber-950/20' : isCard ? 'border-purple-500/30 bg-purple-950/20' : 'border-rose-500/30 bg-rose-950/20'
             }`}>
               <div className={`relative w-14 h-14 shrink-0 rounded-xl border flex items-center justify-center ${
-                isRelic ? 'border-amber-500/40 bg-[#0c1220]' : isCard ? 'border-purple-500/40 bg-[#0c1220]' : 'border-rose-500/40 bg-[#0c1220]'
+                isTitle ? 'border-amber-500/40 bg-[#0c1220]' : isRelic ? 'border-amber-500/40 bg-[#0c1220]' : isCard ? 'border-purple-500/40 bg-[#0c1220]' : 'border-rose-500/40 bg-[#0c1220]'
               }`}>
                 <Image
                   src={imageSrc}
@@ -145,7 +150,9 @@ export default function PlaceBidModal({
                   unoptimized
                   className="object-contain"
                   onError={(e) => {
-                    const fallback = isRelic
+                    const fallback = isTitle
+                      ? `/images/titles/${auction.accessoryIcon}.png`
+                      : isRelic
                       ? `https://roworlddb.com/media/images/hallows/${auction.accessoryIcon}.webp`
                       : `https://roworlddb.com/media/images/item/${auction.accessoryIcon}.webp`;
                     (e.target as HTMLImageElement).src = fallback;
@@ -155,9 +162,15 @@ export default function PlaceBidModal({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <h4 className="font-extrabold text-sm text-white truncate">{auction.accessoryName}</h4>
-                  {isRelic ? (
-                    <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                      🏺 Relic
+                  {isTitle ? (
+                    <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                      <TitleSvgIcon className="w-3 h-3" />
+                      <span>{auction.cardQuality || 'Title'}</span>
+                    </span>
+                  ) : isRelic ? (
+                    <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                      <RelicSvgIcon className="w-3 h-3" />
+                      <span>Relic</span>
                     </span>
                   ) : isCard ? (
                     <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">

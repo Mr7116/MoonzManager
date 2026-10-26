@@ -6,6 +6,8 @@ import Image from 'next/image';
 import { AuctionItem } from '@/types/auction';
 import { Member } from '@/types/member';
 import JobEmblem from '@/components/tactical/JobEmblem';
+import TitleSvgIcon from '@/components/icons/TitleSvgIcon';
+import RelicSvgIcon from '@/components/icons/RelicSvgIcon';
 
 interface RegisterMembersModalProps {
   isOpen: boolean;
@@ -81,9 +83,12 @@ export default function RegisterMembersModal({
 
         {/* Item Summary Bar */}
         {(() => {
-          const isCard = auction.itemCategory === 'card' || auction.cardQuality === 'Purple';
-          const isRelic = auction.itemCategory === 'relic' || auction.cardQuality === 'Sage';
-          const imageSrc = isRelic
+          const isTitle = auction.itemCategory === 'title' || (auction.cardSlot && auction.cardSlot.includes('Title')) || (auction.cardQuality && auction.cardQuality.includes('Title'));
+          const isRelic = !isTitle && (auction.itemCategory === 'relic' || auction.cardQuality === 'Sage');
+          const isCard = !isTitle && !isRelic && (auction.itemCategory === 'card' || auction.cardQuality === 'Purple');
+          const imageSrc = isTitle
+            ? `/images/titles/${auction.accessoryIcon}.png`
+            : isRelic
             ? `/images/relics/${auction.accessoryIcon}.webp`
             : isCard
             ? `/images/cards/${auction.accessoryIcon}.webp`
@@ -91,11 +96,11 @@ export default function RegisterMembersModal({
 
           return (
             <div className={`flex items-center justify-between gap-3 p-3 rounded-2xl border shadow-inner shrink-0 ${
-              isRelic ? 'border-amber-500/30 bg-amber-950/20' : isCard ? 'border-purple-500/30 bg-purple-950/20' : 'border-rose-500/30 bg-rose-950/20'
+              isTitle ? 'border-amber-500/30 bg-amber-950/20' : isRelic ? 'border-amber-500/30 bg-amber-950/20' : isCard ? 'border-purple-500/30 bg-purple-950/20' : 'border-rose-500/30 bg-rose-950/20'
             }`}>
               <div className="flex items-center gap-3">
                 <div className={`relative w-12 h-12 shrink-0 rounded-xl border flex items-center justify-center shadow ${
-                  isRelic ? 'border-amber-500/40 bg-[#0c1220]' : isCard ? 'border-purple-500/40 bg-[#0c1220]' : 'border-rose-500/40 bg-[#0c1220]'
+                  isTitle ? 'border-amber-500/40 bg-[#0c1220]' : isRelic ? 'border-amber-500/40 bg-[#0c1220]' : isCard ? 'border-purple-500/40 bg-[#0c1220]' : 'border-rose-500/40 bg-[#0c1220]'
                 }`}>
                   <Image
                     src={imageSrc}
@@ -105,13 +110,19 @@ export default function RegisterMembersModal({
                     unoptimized
                     className="object-contain"
                     onError={(e) => {
-                      const fallback = isRelic
+                      const fallback = isTitle
+                        ? `/images/titles/${auction.accessoryIcon}.png`
+                        : isRelic
                         ? `https://roworlddb.com/media/images/hallows/${auction.accessoryIcon}.webp`
                         : `https://roworlddb.com/media/images/item/${auction.accessoryIcon}.webp`;
                       (e.target as HTMLImageElement).src = fallback;
                     }}
                   />
-                  {isRelic ? (
+                  {isTitle ? (
+                    <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-amber-950/90 border border-amber-500/60 text-amber-200">
+                      Title
+                    </span>
+                  ) : isRelic ? (
                     <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-amber-950/90 border border-amber-500/60 text-amber-200">
                       Sage
                     </span>
@@ -131,9 +142,15 @@ export default function RegisterMembersModal({
                 <div>
                   <div className="flex items-center gap-2">
                     <h4 className="font-extrabold text-sm sm:text-base text-white">{auction.accessoryName}</h4>
-                    {isRelic ? (
-                      <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                        🏺 Relic · {auction.cardSlot || 'Sage'}
+                    {isTitle ? (
+                      <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1">
+                        <TitleSvgIcon className="w-3 h-3" />
+                        <span>{auction.cardQuality || 'ไอเทม Title'}</span>
+                      </span>
+                    ) : isRelic ? (
+                      <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1">
+                        <RelicSvgIcon className="w-3 h-3" />
+                        <span>Relic · {auction.cardSlot || 'Sage'}</span>
                       </span>
                     ) : isCard ? (
                       <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">
@@ -148,6 +165,8 @@ export default function RegisterMembersModal({
                   <p className="text-xs text-slate-400">
                     {auction.sourceNote
                       ? `🏷️ ${auction.sourceNote}`
+                      : isTitle
+                      ? `${auction.cardQuality || 'ไอเทม Title'}`
                       : isRelic
                       ? `Relic ${auction.cardSlot || ''}`
                       : isCard

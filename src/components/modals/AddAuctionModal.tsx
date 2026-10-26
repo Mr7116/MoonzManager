@@ -7,13 +7,15 @@ import { RED_ACCESSORIES, RedAccessory } from '@/constants/redAccessories';
 import { PURPLE_MVP_CARDS, PurpleMvpCard } from '@/constants/purpleMvpCards';
 import { GVG_BASE_RELICS, GvgBaseRelic } from '@/constants/gvgRelics';
 import { RELIC_AFFIXES, RelicAffix } from '@/constants/relicAffixes';
+import { TITLE_ITEMS, TitleItem } from '@/constants/titleItems';
 import RelicSvgIcon from '@/components/icons/RelicSvgIcon';
+import TitleSvgIcon from '@/components/icons/TitleSvgIcon';
 import { AuctionItem } from '@/types/auction';
 
 export interface SelectableAuctionItem {
   id: number;
   name: string;
-  category: 'accessory' | 'card' | 'relic';
+  category: 'accessory' | 'card' | 'relic' | 'title';
   level?: number;
   slot?: string;
   slotTh?: string;
@@ -43,7 +45,7 @@ interface AddAuctionModalProps {
 }
 
 export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAuctionModalProps) {
-  const [categoryTab, setCategoryTab] = useState<'all' | 'accessory' | 'card' | 'relic'>('all');
+  const [categoryTab, setCategoryTab] = useState<'all' | 'accessory' | 'card' | 'relic' | 'title'>('all');
   const [selectedAffixId, setSelectedAffixId] = useState<string>('sage');
   const [search, setSearch] = useState('');
   const [sourceNote, setSourceNote] = useState<string>('ดรอปจากกิลด์วอร์ (GVG)');
@@ -93,10 +95,23 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
       icon: base.icon,
       localIcon: base.localIcon,
       remoteIcon: base.remoteIcon,
-      stats: [`Relic (${currentAffix.effect})`, ...base.baseStats],
+      stats: [`GVG Relic (${currentAffix.effect})`, ...base.baseStats],
     }));
 
-    return [...accessories, ...cards, ...relics];
+    const titles: SelectableAuctionItem[] = TITLE_ITEMS.map((title) => ({
+      id: title.id,
+      name: title.name,
+      category: 'title' as const,
+      slot: title.type,
+      slotTh: title.type,
+      qualityBadge: title.qualityBadge,
+      icon: title.icon,
+      localIcon: title.localIcon,
+      remoteIcon: title.remoteIcon,
+      stats: title.stats,
+    }));
+
+    return [...accessories, ...cards, ...relics, ...titles];
   }, [currentAffix]);
 
   // Filtered items
@@ -214,7 +229,7 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
         affixName: affix.name,
         affixEffect: affix.effect,
         qualityBadge: `Relic · ${affix.name}`,
-        stats: [`Relic (${affix.effect})`, `สาย: ${affix.name} (${affix.effect})`],
+        stats: [`GVG Relic (${affix.effect})`, `สาย: ${affix.name} (${affix.effect})`],
       };
 
       const copy = { ...prev };
@@ -263,12 +278,16 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
           cardSlot:
             entry.item.category === 'relic'
               ? `${entry.item.affixName || 'Sage'} (${entry.item.affixEffect || ''})`
+              : entry.item.category === 'title'
+              ? 'ไอเทม Title'
               : entry.item.slotTh || entry.item.slot,
           cardQuality:
             entry.item.category === 'card'
               ? 'Purple'
               : entry.item.category === 'relic'
               ? entry.item.affixName || 'Sage'
+              : entry.item.category === 'title'
+              ? entry.item.qualityBadge || 'Title'
               : undefined,
           startPrice: 0,
           minIncrement: 0,
@@ -298,6 +317,10 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
             <div>
               <h3 className="text-lg font-extrabold text-white tracking-wide flex items-center gap-2 flex-wrap">
                 <span>เพิ่มรายการของดรอปเพื่อเปิดสุ่ม (Add Drop Items)</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center gap-1">
+                  <TitleSvgIcon className="w-3.5 h-3.5" />
+                  <span>ไอเทม Title</span>
+                </span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 border border-amber-500/40 text-amber-300">
                   Relic (27 สาย)
                 </span>
@@ -309,7 +332,7 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                 </span>
               </h3>
               <p className="text-xs text-slate-400">
-                คลิกเลือก Relic, เครื่องประดับ หรือการ์ดม่วง MVP เพื่อเพิ่มเป็น List รายการให้สมาชิกกิลด์ส่งรายชื่อเข้ามาสุ่มด้วยวงล้อ
+                คลิกเลือกไอเทม Title, Relic, เครื่องประดับ หรือการ์ดม่วง MVP เพื่อเพิ่มเป็น List รายการให้สมาชิกกิลด์ส่งรายชื่อเข้ามาสุ่มด้วยวงล้อ
               </p>
             </div>
           </div>
@@ -372,6 +395,22 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
 
               <button
                 type="button"
+                onClick={() => setCategoryTab('title')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                  categoryTab === 'title'
+                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black shadow-md shadow-amber-950'
+                    : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+                }`}
+              >
+                <TitleSvgIcon className="w-4 h-4 shrink-0" />
+                <span>🎖️ ไอเทม Title</span>
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/40 text-amber-300">
+                  {TITLE_ITEMS.length}
+                </span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setCategoryTab('relic')}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
                   categoryTab === 'relic'
@@ -380,7 +419,7 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                 }`}
               >
                 <RelicSvgIcon className="w-4 h-4 shrink-0" />
-                <span>🏺 Relic (8 ชิ้น · 27 สาย)</span>
+                <span>🏺 GVG Relic (8 ชิ้น · 27 สาย)</span>
                 <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/40 text-amber-300">
                   {GVG_BASE_RELICS.length}
                 </span>
@@ -474,6 +513,7 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                 const count = entry?.count || 0;
                 const isCard = item.category === 'card';
                 const isRelic = item.category === 'relic';
+                const isTitle = item.category === 'title';
 
                 return (
                   <button
@@ -482,7 +522,9 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                     onClick={() => handleToggleItem(item)}
                     className={`flex flex-col items-center p-2 rounded-xl border text-center transition cursor-pointer relative group ${
                       isSelected
-                        ? isRelic
+                        ? isTitle
+                          ? 'border-amber-400 bg-amber-950/40 ring-1 ring-amber-500 shadow-md shadow-amber-500/20'
+                          : isRelic
                           ? 'border-amber-400 bg-amber-950/40 ring-1 ring-amber-500 shadow-md shadow-amber-500/20'
                           : isCard
                           ? 'border-purple-400 bg-purple-950/40 ring-1 ring-purple-500 shadow-md shadow-purple-500/20'
@@ -502,7 +544,11 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                           (e.target as HTMLImageElement).src = item.remoteIcon;
                         }}
                       />
-                      {isRelic ? (
+                      {isTitle ? (
+                        <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-amber-950/90 border border-amber-500/60 text-amber-200">
+                          Title
+                        </span>
+                      ) : isRelic ? (
                         <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-amber-950/90 border border-amber-500/60 text-amber-200">
                           {item.affixName || 'Sage'}
                         </span>
@@ -523,17 +569,29 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
 
                     <span
                       className={`text-[9px] font-semibold mt-0.5 truncate w-full ${
-                        isRelic ? 'text-amber-400' : isCard ? 'text-purple-400' : 'text-rose-400'
+                        isTitle
+                          ? 'text-amber-300'
+                          : isRelic
+                          ? 'text-amber-400'
+                          : isCard
+                          ? 'text-purple-400'
+                          : 'text-rose-400'
                       }`}
                       title={isRelic ? item.affixEffect : undefined}
                     >
-                      {isRelic ? item.affixEffect || 'Relic' : isCard ? 'MVP ม่วง' : 'เครื่องประดับ'}
+                      {isTitle
+                        ? item.qualityBadge || 'ไอเทม Title'
+                        : isRelic
+                        ? item.affixEffect || 'GVG Relic'
+                        : isCard
+                        ? 'MVP ม่วง'
+                        : 'เครื่องประดับ'}
                     </span>
 
                     {isSelected && (
                       <span
                         className={`absolute top-1 right-1 flex items-center justify-center px-1.5 py-0.2 rounded-full text-white text-[10px] font-bold shadow ${
-                          isRelic
+                          isTitle || isRelic
                             ? 'bg-amber-400 text-slate-950 font-black'
                             : isCard
                             ? 'bg-purple-600 text-white'
@@ -577,11 +635,14 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                 {selectedEntries.map((entry) => {
                   const isCard = entry.item.category === 'card';
                   const isRelic = entry.item.category === 'relic';
+                  const isTitle = entry.item.category === 'title';
                   return (
                     <div
                       key={entry.entryKey}
                       className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-2.5 rounded-2xl border transition ${
-                        isRelic
+                        isTitle
+                          ? 'border-amber-500/30 bg-[#161208] hover:border-amber-500/50'
+                          : isRelic
                           ? 'border-amber-500/30 bg-[#161208] hover:border-amber-500/50'
                           : isCard
                           ? 'border-purple-500/30 bg-[#0e0c1f] hover:border-purple-500/50'
@@ -592,7 +653,9 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                       <div className="flex items-center gap-3 min-w-0">
                         <div
                           className={`relative w-11 h-11 shrink-0 rounded-xl border flex items-center justify-center ${
-                            isRelic
+                            isTitle
+                              ? 'border-amber-500/40 bg-amber-950/30'
+                              : isRelic
                               ? 'border-amber-500/40 bg-amber-950/30'
                               : isCard
                               ? 'border-purple-500/40 bg-purple-950/30'
@@ -610,7 +673,11 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                               (e.target as HTMLImageElement).src = entry.item.remoteIcon;
                             }}
                           />
-                          {isRelic ? (
+                          {isTitle ? (
+                            <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-amber-950/90 border border-amber-500/60 text-amber-200">
+                              Title
+                            </span>
+                          ) : isRelic ? (
                             <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-amber-950/90 border border-amber-500/60 text-amber-200">
                               {entry.item.affixName || 'Sage'}
                             </span>
@@ -628,9 +695,14 @@ export default function AddAuctionModal({ isOpen, onClose, onConfirm }: AddAucti
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <h4 className="font-extrabold text-sm text-white truncate">{entry.item.name}</h4>
-                            {isRelic ? (
+                            {isTitle ? (
+                              <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1">
+                                <TitleSvgIcon className="w-3 h-3" />
+                                <span>{entry.item.qualityBadge}</span>
+                              </span>
+                            ) : isRelic ? (
                               <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                                🏺 Relic
+                                🏺 GVG Relic
                               </span>
                             ) : isCard ? (
                               <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">

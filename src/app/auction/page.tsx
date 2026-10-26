@@ -14,6 +14,8 @@ import CreateRoundModal from '@/components/modals/CreateRoundModal';
 import RoundHistoryModal from '@/components/modals/RoundHistoryModal';
 import AutoSaveBadge from '@/components/common/AutoSaveBadge';
 import JobEmblem from '@/components/tactical/JobEmblem';
+import TitleSvgIcon from '@/components/icons/TitleSvgIcon';
+import RelicSvgIcon from '@/components/icons/RelicSvgIcon';
 
 export default function AuctionPage() {
   const {
@@ -634,10 +636,13 @@ export default function AuctionPage() {
             const isPending = item.status === 'pending';
             const isActive = item.status === 'active';
             const isEnded = item.status === 'ended';
-            const isCard = item.itemCategory === 'card' || item.cardQuality === 'Purple';
-            const isRelic = item.itemCategory === 'relic' || item.cardQuality === 'Sage';
+            const isTitle = item.itemCategory === 'title' || (item.cardSlot && item.cardSlot.includes('Title')) || (item.cardQuality && item.cardQuality.includes('Title'));
+            const isRelic = !isTitle && (item.itemCategory === 'relic' || item.cardQuality === 'Sage');
+            const isCard = !isTitle && !isRelic && (item.itemCategory === 'card' || item.cardQuality === 'Purple');
             const entryCount = (item.entries || []).length;
-            const imageSrc = isRelic
+            const imageSrc = isTitle
+              ? `/images/titles/${item.accessoryIcon}.png`
+              : isRelic
               ? `/images/relics/${item.accessoryIcon}.webp`
               : isCard
               ? `/images/cards/${item.accessoryIcon}.webp`
@@ -661,7 +666,9 @@ export default function AuctionPage() {
                   </span>
 
                   <div className={`relative w-13 h-13 shrink-0 rounded-xl border flex items-center justify-center shadow-md ${
-                    isRelic
+                    isTitle
+                      ? 'border-amber-500/50 bg-amber-950/20'
+                      : isRelic
                       ? 'border-amber-500/50 bg-amber-950/20'
                       : isCard
                       ? 'border-purple-500/50 bg-purple-950/20'
@@ -675,13 +682,19 @@ export default function AuctionPage() {
                       unoptimized
                       className="object-contain"
                       onError={(e) => {
-                        const fallback = isRelic
+                        const fallback = isTitle
+                          ? `/images/titles/${item.accessoryIcon}.png`
+                          : isRelic
                           ? `https://roworlddb.com/media/images/hallows/${item.accessoryIcon}.webp`
                           : `https://roworlddb.com/media/images/item/${item.accessoryIcon}.webp`;
                         (e.target as HTMLImageElement).src = fallback;
                       }}
                     />
-                    {isRelic ? (
+                    {isTitle ? (
+                      <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-amber-950/90 border border-amber-500/60 text-amber-200">
+                        Title
+                      </span>
+                    ) : isRelic ? (
                       <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-amber-950/90 border border-amber-500/60 text-amber-200">
                         Sage
                       </span>
@@ -704,9 +717,14 @@ export default function AuctionPage() {
                         {item.accessoryName}
                       </h4>
 
-                      {isRelic ? (
+                      {isTitle ? (
                         <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40 flex items-center gap-1">
-                          <span>🏺</span>
+                          <TitleSvgIcon className="w-3 h-3" />
+                          <span>{item.cardQuality || 'ไอเทม Title'}</span>
+                        </span>
+                      ) : isRelic ? (
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40 flex items-center gap-1">
+                          <RelicSvgIcon className="w-3 h-3" />
                           <span>Relic</span>
                         </span>
                       ) : isCard ? (
@@ -877,10 +895,13 @@ export default function AuctionPage() {
             const isPending = item.status === 'pending';
             const isActive = item.status === 'active';
             const isEnded = item.status === 'ended';
-            const isCard = item.itemCategory === 'card' || item.cardQuality === 'Purple';
-            const isRelic = item.itemCategory === 'relic' || item.cardQuality === 'Sage';
+            const isTitle = item.itemCategory === 'title' || (item.cardSlot && item.cardSlot.includes('Title')) || (item.cardQuality && item.cardQuality.includes('Title'));
+            const isRelic = !isTitle && (item.itemCategory === 'relic' || item.cardQuality === 'Sage');
+            const isCard = !isTitle && !isRelic && (item.itemCategory === 'card' || item.cardQuality === 'Purple');
             const entryCount = (item.entries || []).length;
-            const imageSrc = isRelic
+            const imageSrc = isTitle
+              ? `/images/titles/${item.accessoryIcon}.png`
+              : isRelic
               ? `/images/relics/${item.accessoryIcon}.webp`
               : isCard
               ? `/images/cards/${item.accessoryIcon}.webp`
@@ -921,9 +942,15 @@ export default function AuctionPage() {
                       </span>
                     )}
 
-                    {isRelic ? (
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
-                        Relic
+                    {isTitle ? (
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                        <TitleSvgIcon className="w-3 h-3" />
+                        <span>Title</span>
+                      </span>
+                    ) : isRelic ? (
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                        <RelicSvgIcon className="w-3 h-3" />
+                        <span>Relic</span>
                       </span>
                     ) : isCard ? (
                       <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30">
@@ -962,7 +989,9 @@ export default function AuctionPage() {
                 <div className="py-3.5 space-y-3 flex-1">
                   <div className="flex items-start gap-3">
                     <div className={`relative w-16 h-16 shrink-0 rounded-2xl border flex items-center justify-center shadow-lg group-hover:scale-105 transition ${
-                      isRelic
+                      isTitle
+                        ? 'border-amber-500/50 bg-amber-950/20 shadow-amber-500/15'
+                        : isRelic
                         ? 'border-amber-500/50 bg-amber-950/20 shadow-amber-500/15'
                         : isCard
                         ? 'border-purple-500/50 bg-purple-950/20 shadow-purple-500/15'
@@ -976,13 +1005,19 @@ export default function AuctionPage() {
                         unoptimized
                         className="object-contain drop-shadow"
                         onError={(e) => {
-                          const fallback = isRelic
+                          const fallback = isTitle
+                            ? `/images/titles/${item.accessoryIcon}.png`
+                            : isRelic
                             ? `https://roworlddb.com/media/images/hallows/${item.accessoryIcon}.webp`
                             : `https://roworlddb.com/media/images/item/${item.accessoryIcon}.webp`;
                           (e.target as HTMLImageElement).src = fallback;
                         }}
                       />
-                      {isRelic ? (
+                      {isTitle ? (
+                        <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-amber-950/90 border border-amber-500/60 text-amber-200">
+                          Title
+                        </span>
+                      ) : isRelic ? (
                         <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-amber-950/90 border border-amber-500/60 text-amber-200">
                           Sage
                         </span>
@@ -1003,9 +1038,15 @@ export default function AuctionPage() {
                       <h4 className="font-extrabold text-base text-slate-900 dark:text-white tracking-wide truncate" title={item.accessoryName}>
                         {item.accessoryName}
                       </h4>
-                      {isRelic ? (
-                        <div className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 mt-0.5">
-                          🏺 {item.cardSlot || 'Relic'}
+                      {isTitle ? (
+                        <div className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 mt-0.5 flex items-center gap-1">
+                          <TitleSvgIcon className="w-3.5 h-3.5 shrink-0" />
+                          <span>{item.cardQuality || item.cardSlot || 'ไอเทม Title'}</span>
+                        </div>
+                      ) : isRelic ? (
+                        <div className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 mt-0.5 flex items-center gap-1">
+                          <RelicSvgIcon className="w-3.5 h-3.5 shrink-0" />
+                          <span>{item.cardSlot || 'Relic'}</span>
                         </div>
                       ) : isCard ? (
                         <div className="text-[11px] font-semibold text-purple-600 dark:text-purple-400 mt-0.5">

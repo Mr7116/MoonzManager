@@ -8,6 +8,8 @@ import { useAuth } from '@/lib/auth';
 import JobEmblem from '@/components/tactical/JobEmblem';
 import ThemeToggle from '@/components/layout/ThemeToggle';
 import { AuctionItem, AuctionRound } from '@/types/auction';
+import TitleSvgIcon from '@/components/icons/TitleSvgIcon';
+import RelicSvgIcon from '@/components/icons/RelicSvgIcon';
 
 interface MemberAuctionViewProps {
   onSwitchToAdmin?: () => void;
@@ -460,7 +462,10 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
               const isExpanded = expandedItemId === item.id;
               const isCard = item.itemCategory === 'card' || item.cardQuality === 'Purple';
               const isRelic = item.itemCategory === 'relic' || item.cardQuality === 'Sage';
-              const imageSrc = isRelic
+              const isTitle = item.itemCategory === 'title' || (item.cardSlot && item.cardSlot.includes('Title')) || (item.cardQuality && item.cardQuality.includes('Title'));
+              const imageSrc = isTitle
+                ? `/images/titles/${item.accessoryIcon}.png`
+                : isRelic
                 ? `/images/relics/${item.accessoryIcon}.webp`
                 : isCard
                 ? `/images/cards/${item.accessoryIcon}.webp`
@@ -486,7 +491,9 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
 
                       {/* Icon */}
                       <div className={`relative w-13 h-13 shrink-0 rounded-xl border flex items-center justify-center shadow-md ${
-                        isRelic
+                        isTitle
+                          ? 'border-amber-500/50 bg-amber-950/20'
+                          : isRelic
                           ? 'border-amber-500/50 bg-amber-950/20'
                           : isCard
                           ? 'border-purple-500/50 bg-purple-950/20'
@@ -500,13 +507,19 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
                           unoptimized
                           className="object-contain drop-shadow"
                           onError={(e) => {
-                            const fallback = isRelic
+                            const fallback = isTitle
+                              ? `/images/titles/${item.accessoryIcon}.png`
+                              : isRelic
                               ? `https://roworlddb.com/media/images/hallows/${item.accessoryIcon}.webp`
                               : `https://roworlddb.com/media/images/item/${item.accessoryIcon}.webp`;
                             (e.target as HTMLImageElement).src = fallback;
                           }}
                         />
-                        {isRelic ? (
+                        {isTitle ? (
+                          <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-amber-950/90 border border-amber-500/60 text-amber-200">
+                            Title
+                          </span>
+                        ) : isRelic ? (
                           <span className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-amber-950/90 border border-amber-500/60 text-amber-200">
                             Sage
                           </span>
@@ -530,9 +543,15 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
                             {item.accessoryName}
                           </h4>
 
-                          {isRelic ? (
-                            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40">
-                              🏺 Relic · {item.cardSlot || 'Sage'}
+                          {isTitle ? (
+                            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40 flex items-center gap-1">
+                              <TitleSvgIcon className="w-3 h-3" />
+                              <span>{item.cardQuality || 'ไอเทม Title'}</span>
+                            </span>
+                          ) : isRelic ? (
+                            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40 flex items-center gap-1">
+                              <RelicSvgIcon className="w-3 h-3" />
+                              <span>Relic · {item.cardSlot || 'Sage'}</span>
                             </span>
                           ) : isCard ? (
                             <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/40">
