@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { Member } from '@/types/member';
 import { Party, Team, LaneKey, FieldZoneKey } from '@/types/party';
 import { AuctionItem, AuctionEntry, AuctionRound, BidRecord } from '@/types/auction';
+import { QueueList, QueueEntry } from '@/types/queue';
 
 export interface GuildState {
   guildName: string;
@@ -89,6 +90,18 @@ export interface GuildState {
   closeAuction: (auctionId: string, winnerMemberId?: string) => void;
   deleteAuctionItem: (auctionId: string) => void;
   cancelAuctionItem: (auctionId: string) => void;
+
+  // Queue Management
+  queueLists: QueueList[];
+  createQueueList: (data: Omit<QueueList, 'id' | 'createdAt' | 'entries'>) => string;
+  updateQueueList: (id: string, updates: Partial<QueueList>) => void;
+  deleteQueueList: (id: string) => void;
+  addMemberToQueue: (queueId: string, memberId: string, note?: string) => { success: boolean; message: string };
+  removeMemberFromQueue: (queueId: string, entryId: string) => void;
+  removeMemberByMemberIdFromQueue: (queueId: string, memberId: string) => void;
+  reorderQueueEntries: (queueId: string, entries: QueueEntry[]) => void;
+  clearQueueEntries: (queueId: string) => void;
+  setQueueStatus: (queueId: string, status: 'open' | 'in_progress' | 'closed') => void;
 }
 
 const DEFAULT_GVG_TEAMS: Team[] = [
@@ -210,6 +223,27 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
     }
   }, [auctionRounds]);
 
+  const [queueLists, setQueueLists] = useState<QueueList[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('Moonz_queue_lists');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      } catch (e) {}
+    }
+    return [];
+  });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('Moonz_queue_lists', JSON.stringify(queueLists));
+      } catch (e) {}
+    }
+  }, [queueLists]);
+
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
@@ -235,6 +269,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
     auctionItems,
     auctionRounds,
     activeRoundId,
+    queueLists,
   });
 
   useEffect(() => {
@@ -252,8 +287,9 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
       auctionItems,
       auctionRounds,
       activeRoundId,
+      queueLists,
     };
-  }, [guildName, fileTimestamp, members, gvgTeams, gvgParties, siegeTeams, siegeParties, polarityTeams, polarityParties, presetParties, auctionItems, auctionRounds, activeRoundId]);
+  }, [guildName, fileTimestamp, members, gvgTeams, gvgParties, siegeTeams, siegeParties, polarityTeams, polarityParties, presetParties, auctionItems, auctionRounds, activeRoundId, queueLists]);
 
   // Fetch from Supabase
   const loadFromCloud = useCallback(async () => {
@@ -1125,6 +1161,137 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
     triggerAutoSave();
   };
 
+  // Queue Operations
+  const createQueueList = (data: Omit<QueueList, 'id' | 'createdAt' | 'entries'>): string => {
+    const newId = `queue_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const newList: QueueList = {
+      ...data,
+      id: newId,
+      createdAt: new Date().toISOString(),
+      entries: [],
+    };
+    setQueueLists((prev) => [newList, ...prev]);
+    triggerAutoSave();
+    return newId;
+  };
+
+  const updateQueueList = (id: string, updates: Partial<QueueList>) => {
+    setQueueLists((prev) =>
+      prev.map((q) => (q.id === id ? { ...q, ...updates, updatedAt: new Date().toISOString() } : q))
+    );
+    triggerAutoSave();
+  };
+
+  const deleteQueueList = (id: string) => {
+    setQueueLists((prev) => prev.filter((q) => q.id !== id));
+    triggerAutoSave();
+  };
+
+  const addMemberToQueue = (queueId: string, memberId: string, note?: string): { success: boolean; message: string } => {
+    const member = latestStateRef.current.members.find((m) => m.id === memberId);
+    if (!member) return { success: false, message: 'ไม่พบข้อมูลสมาชิก' };
+
+    let added = false;
+    let errMessage = '';
+    let newPosition = 1;
+
+    setQueueLists((prev) =>
+      prev.map((q) => {
+        if (q.id !== queueId) return q;
+        if (q.status === 'closed') {
+          errMessage = 'คิวนี้ปิดรับแล้ว';
+          return q;
+        }
+        const currentEntries = q.entries || [];
+        if (q.maxCapacity && q.maxCapacity > 0 && currentEntries.length >= q.maxCapacity) {
+          errMessage = 'คิวเต็มตามจำนวนที่กำหนดแล้ว';
+          return q;
+        }
+
+        const newEntry: QueueEntry = {
+          id: `qentry_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+          memberId: member.id,
+          memberName: member.name,
+          memberJob: member.job,
+          joinedAt: new Date().toISOString(),
+          note: note?.trim() || undefined,
+        };
+
+        newPosition = currentEntries.length + 1;
+        added = true;
+        return {
+          ...q,
+          entries: [...currentEntries, newEntry],
+          updatedAt: new Date().toISOString(),
+        };
+      })
+    );
+
+    if (added) {
+      triggerAutoSave();
+      return { success: true, message: `เข้าร่วมคิวสำเร็จ! (อันดับที่ #${newPosition})` };
+    }
+    return { success: false, message: errMessage || 'ไม่สามารถเข้าร่วมคิวได้' };
+  };
+
+  const removeMemberFromQueue = (queueId: string, entryId: string) => {
+    setQueueLists((prev) =>
+      prev.map((q) => {
+        if (q.id !== queueId) return q;
+        return {
+          ...q,
+          entries: (q.entries || []).filter((e) => e.id !== entryId),
+          updatedAt: new Date().toISOString(),
+        };
+      })
+    );
+    triggerAutoSave();
+  };
+
+  const removeMemberByMemberIdFromQueue = (queueId: string, memberId: string) => {
+    setQueueLists((prev) =>
+      prev.map((q) => {
+        if (q.id !== queueId) return q;
+        return {
+          ...q,
+          entries: (q.entries || []).filter((e) => e.memberId !== memberId),
+          updatedAt: new Date().toISOString(),
+        };
+      })
+    );
+    triggerAutoSave();
+  };
+
+  const reorderQueueEntries = (queueId: string, entries: QueueEntry[]) => {
+    setQueueLists((prev) =>
+      prev.map((q) => (q.id === queueId ? { ...q, entries, updatedAt: new Date().toISOString() } : q))
+    );
+    triggerAutoSave();
+  };
+
+  const clearQueueEntries = (queueId: string) => {
+    setQueueLists((prev) =>
+      prev.map((q) => (q.id === queueId ? { ...q, entries: [], updatedAt: new Date().toISOString() } : q))
+    );
+    triggerAutoSave();
+  };
+
+  const setQueueStatus = (queueId: string, status: 'open' | 'in_progress' | 'closed') => {
+    setQueueLists((prev) =>
+      prev.map((q) =>
+        q.id === queueId
+          ? {
+              ...q,
+              status,
+              closedAt: status === 'closed' ? new Date().toISOString() : undefined,
+              updatedAt: new Date().toISOString(),
+            }
+          : q
+      )
+    );
+    triggerAutoSave();
+  };
+
   return (
     <GuildContext.Provider
       value={{
@@ -1201,6 +1368,16 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
         closeAuction,
         deleteAuctionItem,
         cancelAuctionItem,
+        queueLists,
+        createQueueList,
+        updateQueueList,
+        deleteQueueList,
+        addMemberToQueue,
+        removeMemberFromQueue,
+        removeMemberByMemberIdFromQueue,
+        reorderQueueEntries,
+        clearQueueEntries,
+        setQueueStatus,
       }}
     >
       {children}

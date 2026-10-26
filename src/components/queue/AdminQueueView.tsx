@@ -1,0 +1,593 @@
+'use client';
+
+import React, { useState, useMemo } from 'react';
+import Link from 'next/link';
+import { useGuildStore } from '@/lib/guildStore';
+import JobEmblem from '@/components/tactical/JobEmblem';
+import AutoSaveBadge from '@/components/common/AutoSaveBadge';
+import ThemeToggle from '@/components/layout/ThemeToggle';
+import { QueueList, QueueEntry, formatQueueTime } from '@/types/queue';
+import { getQueuePreset } from '@/constants/queuePresets';
+import CreateQueueModal from './CreateQueueModal';
+
+interface AdminQueueViewProps {
+  onSwitchToMember: () => void;
+}
+
+export default function AdminQueueView({ onSwitchToMember }: AdminQueueViewProps) {
+  const {
+    guildName,
+    members,
+    queueLists,
+    createQueueList,
+    deleteQueueList,
+    addMemberToQueue,
+    removeMemberFromQueue,
+    reorderQueueEntries,
+    clearQueueEntries,
+    setQueueStatus,
+  } = useGuildStore();
+
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'all' | 'open' | 'in_progress' | 'vanished' | 'apocalypse'>('all');
+  const [manualAddQueueId, setManualAddQueueId] = useState<string | null>(null);
+  const [memberSearch, setMemberSearch] = useState('');
+  const [toastMsg, setToastMsg] = useState<{ text: string; isError?: boolean } | null>(null);
+
+  const showToast = (text: string, isError = false) => {
+    setToastMsg({ text, isError });
+    setTimeout(() => {
+      setToastMsg((prev) => (prev?.text === text ? null : prev));
+    }, 2500);
+  };
+
+  // Filtered Queue Lists
+  const displayLists = useMemo(() => {
+    let lists = [...queueLists];
+    if (activeTab === 'open') {
+      lists = lists.filter((q) => q.status === 'open');
+    } else if (activeTab === 'in_progress') {
+      lists = lists.filter((q) => q.status === 'in_progress');
+    } else if (activeTab === 'vanished') {
+      lists = lists.filter((q) => q.dungeonCategory === 'vanished');
+    } else if (activeTab === 'apocalypse') {
+      lists = lists.filter((q) => q.dungeonCategory === 'apocalypse');
+    }
+    return lists;
+  }, [queueLists, activeTab]);
+
+  // Overall Stats
+  const totalQueuedMembers = useMemo(() => {
+    return queueLists.reduce((sum, q) => sum + (q.entries?.length || 0), 0);
+  }, [queueLists]);
+
+  const activeQueuesCount = useMemo(() => {
+    return queueLists.filter((q) => q.status === 'open').length;
+  }, [queueLists]);
+
+  // Move queue entry up/down
+  const handleMoveEntry = (queueId: string, entryIdx: number, direction: 'up' | 'down') => {
+    const queue = queueLists.find((q) => q.id === queueId);
+    if (!queue) return;
+    const entries = [...queue.entries];
+    const targetIdx = direction === 'up' ? entryIdx - 1 : entryIdx + 1;
+    if (targetIdx < 0 || targetIdx >= entries.length) return;
+
+    const temp = entries[entryIdx];
+    entries[entryIdx] = entries[targetIdx];
+    entries[targetIdx] = temp;
+
+    reorderQueueEntries(queueId, entries);
+    showToast('ปรับลำดับคิวเรียบร้อย');
+  };
+
+  // Copy list formatted for Discord / Line
+  const handleCopyQueueList = (queue: QueueList) => {
+    const entries = queue.entries || [];
+    const partySize = queue.maxPartySize || 5;
+    const lines: string[] = [];
+    lines.push(`📋 [คิว] ${queue.title} (${entries.length} คน)`);
+    if (queue.note) lines.push(`💬 หมายเหตุ: ${queue.note}`);
+    lines.push('------------------------');
+
+    if (entries.length === 0) {
+      lines.push('ยังไม่มีผู้ลงชื่อในคิว');
+    } else {
+      const partiesCount = Math.ceil(entries.length / partySize);
+      for (let p = 0; p < partiesCount; p++) {
+        lines.push(`🛡️ ปาร์ตี้ที่ ${p + 1}:`);
+        const partySlice = entries.slice(p * partySize, (p + 1) * partySize);
+        partySlice.forEach((e, idx) => {
+          const num = p * partySize + idx + 1;
+          const time = formatQueueTime(e.joinedAt);
+          lines.push(`  ${num}. ${e.memberName} (${e.memberJob || 'ไม่ระบุ'}) ${time ? `[${time}]` : ''}`);
+        });
+      }
+    }
+
+    navigator.clipboard.writeText(lines.join('\n'));
+    showToast('คัดลอกรายชื่อคิวลงคลิปบอร์ดแล้ว (พร้อมวางใน Discord/LINE) 📋');
+  };
+
+  const filteredMembersForAdd = useMemo(() => {
+    const q = memberSearch.trim().toLowerCase();
+    if (!q) return members;
+    return members.filter((m) => {
+      const matchName = m.name.toLowerCase().includes(q);
+      const matchJob = m.job ? m.job.toLowerCase().includes(q) : false;
+      return matchName || matchJob;
+    });
+  }, [members, memberSearch]);
+
+  const activeQueueForAdd = useMemo(() => {
+    return queueLists.find((q) => q.id === manualAddQueueId);
+  }, [queueLists, manualAddQueueId]);
+
+  return (
+    <div className="mx-auto max-w-[1700px] px-3 py-4 sm:px-6 space-y-5">
+      {/* Toast Notification */}
+      {toastMsg && (
+        <div
+          className={`fixed bottom-5 right-5 z-50 max-w-md rounded-2xl border p-4 text-xs sm:text-sm font-bold shadow-2xl transition-all ${
+            toastMsg.isError
+              ? 'bg-rose-950/90 text-rose-200 border-rose-500/60'
+              : 'bg-indigo-900/90 text-indigo-100 border-indigo-500/60'
+          }`}
+        >
+          {toastMsg.text}
+        </div>
+      )}
+
+      {/* TOP BAR */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-[#0c101d]/90 backdrop-blur-md shadow-sm">
+        <div className="flex items-center gap-3">
+          <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 text-2xl text-white shadow-lg shadow-indigo-950/40">
+            📋
+          </span>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-wide">
+                ระบบจัดการคิวลงดันเจี้ยน (Queue Manager)
+              </h1>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+                Admin
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              สร้าง List คิว มายาสิ้นสูญ / Apocalypse และจัดปาร์ตี้อัตโนมัติตามลำดับเวลากด
+            </p>
+          </div>
+        </div>
+
+        {/* Action Controls */}
+        <div className="flex flex-wrap items-center gap-2 self-start md:self-center">
+          <AutoSaveBadge />
+          <ThemeToggle />
+
+          <button
+            type="button"
+            onClick={onSwitchToMember}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-white text-xs font-bold transition cursor-pointer"
+            title="ดูหน้าจอเหมือนสมาชิกทั่วไปที่ไม่ได้ Login"
+          >
+            <span>👁️</span>
+            <span>มุมมองสมาชิก (คนทั่วไป)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsCreateModalOpen(true)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white text-xs sm:text-sm font-extrabold shadow-lg shadow-indigo-950/50 transition cursor-pointer active:scale-95"
+          >
+            <span>+</span>
+            <span>สร้าง List คิวใหม่</span>
+          </button>
+        </div>
+      </div>
+
+      {/* QUICK STATS CARDS */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c101d] shadow-sm">
+          <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 block">List คิวทั้งหมด</span>
+          <span className="text-2xl font-black text-slate-900 dark:text-white font-mono mt-0.5 block">
+            {queueLists.length}
+          </span>
+        </div>
+
+        <div className="p-3.5 rounded-2xl border border-emerald-500/30 bg-emerald-50/40 dark:bg-emerald-950/20 shadow-sm">
+          <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 block">คิวที่เปิดรับอยู่</span>
+          <span className="text-2xl font-black text-emerald-600 dark:text-emerald-300 font-mono mt-0.5 block">
+            {activeQueuesCount}
+          </span>
+        </div>
+
+        <div className="p-3.5 rounded-2xl border border-indigo-500/30 bg-indigo-50/40 dark:bg-indigo-950/20 shadow-sm">
+          <span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 block">สมาชิกรอในคิวรวม</span>
+          <span className="text-2xl font-black text-indigo-600 dark:text-indigo-300 font-mono mt-0.5 block">
+            {totalQueuedMembers} <span className="text-xs font-normal text-slate-400">คน</span>
+          </span>
+        </div>
+
+        <div className="p-3.5 rounded-2xl border border-purple-500/30 bg-purple-50/40 dark:bg-purple-950/20 shadow-sm">
+          <span className="text-[11px] font-bold text-purple-600 dark:text-purple-400 block">ปาร์ตี้ที่จัดได้รวม</span>
+          <span className="text-2xl font-black text-purple-600 dark:text-purple-300 font-mono mt-0.5 block">
+            {Math.floor(totalQueuedMembers / 5)} <span className="text-xs font-normal text-slate-400">ตี้ (5คน)</span>
+          </span>
+        </div>
+      </div>
+
+      {/* FILTER TABS */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-1.5 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c101d] shadow-sm">
+          {[
+            { id: 'all', label: 'ทั้งหมด', count: queueLists.length },
+            { id: 'open', label: '🟢 เปิดรับคิว', count: queueLists.filter((q) => q.status === 'open').length },
+            { id: 'in_progress', label: '⏳ กำลังลงดัน', count: queueLists.filter((q) => q.status === 'in_progress').length },
+            { id: 'vanished', label: '🌀 มายาสิ้นสูญ', count: queueLists.filter((q) => q.dungeonCategory === 'vanished').length },
+            { id: 'apocalypse', label: '⚔️ Apocalypse', count: queueLists.filter((q) => q.dungeonCategory === 'apocalypse').length },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id as typeof activeTab)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                activeTab === tab.id
+                  ? 'bg-indigo-600 text-white shadow'
+                  : 'bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <span>{tab.label}</span>
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/30 text-white">
+                {tab.count}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* LIST OF QUEUES */}
+      {displayLists.length === 0 ? (
+        <div className="rounded-3xl border border-dashed border-slate-300 dark:border-slate-800 bg-white/40 dark:bg-transparent p-14 text-center space-y-3">
+          <span className="text-4xl">📋</span>
+          <h4 className="text-base font-bold text-slate-800 dark:text-slate-300">
+            ยังไม่มีรายการคิว
+          </h4>
+          <p className="text-xs text-slate-500 max-w-md mx-auto">
+            กดปุ่ม &ldquo;สร้าง List คิวใหม่&rdquo; ด้านบน เพื่อสร้างคิว มายาสิ้นสูญ หรือ Apocalypse ให้สมาชิกในกิลด์ส่งรายชื่อเข้ามา
+          </p>
+          <button
+            type="button"
+            onClick={() => setIsCreateModalOpen(true)}
+            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-xs font-black text-white shadow-lg transition cursor-pointer"
+          >
+            + สร้าง List คิวแรก
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {displayLists.map((queue) => {
+            const preset = getQueuePreset(queue.dungeonType);
+            const entries = queue.entries || [];
+            const isOpen = queue.status === 'open';
+            const isInProgress = queue.status === 'in_progress';
+            const isClosed = queue.status === 'closed';
+
+            const partySize = queue.maxPartySize || 5;
+            const partiesCount = Math.max(1, Math.ceil(entries.length / partySize));
+            const isCapacityFull = !!(queue.maxCapacity && queue.maxCapacity > 0 && entries.length >= queue.maxCapacity);
+
+            return (
+              <div
+                key={queue.id}
+                className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c101d] p-4 sm:p-5 shadow-sm space-y-4 transition hover:border-slate-400 dark:hover:border-slate-700"
+              >
+                {/* Header: Title + Status + Actions */}
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800/80">
+                  <div className="flex items-start gap-3 min-w-0">
+                    <span className="text-2xl sm:text-3xl shrink-0 p-2 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                      {preset?.icon || '📋'}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white tracking-wide truncate">
+                          {queue.title}
+                        </h3>
+
+                        {/* Level / Difficulty badge */}
+                        {preset && (
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${preset.badgeBg} ${preset.badgeColor} ${preset.badgeBorder}`}>
+                            {preset.level || preset.difficulty}
+                          </span>
+                        )}
+
+                        {/* Status Switcher */}
+                        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 p-0.5 rounded-xl border border-slate-300 dark:border-slate-700">
+                          <button
+                            type="button"
+                            onClick={() => setQueueStatus(queue.id, 'open')}
+                            className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition cursor-pointer ${
+                              isOpen
+                                ? 'bg-emerald-600 text-white shadow'
+                                : 'text-slate-400 hover:text-white'
+                            }`}
+                          >
+                            🟢 เปิดรับ
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setQueueStatus(queue.id, 'in_progress')}
+                            className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition cursor-pointer ${
+                              isInProgress
+                                ? 'bg-purple-600 text-white shadow'
+                                : 'text-slate-400 hover:text-white'
+                            }`}
+                          >
+                            ⏳ กำลังลง
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setQueueStatus(queue.id, 'closed')}
+                            className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition cursor-pointer ${
+                              isClosed
+                                ? 'bg-slate-700 text-white shadow'
+                                : 'text-slate-400 hover:text-white'
+                            }`}
+                          >
+                            🔒 ปิดคิว
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Meta info */}
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400 mt-1">
+                        <span>👥 ปาร์ตี้ละ <strong>{partySize}</strong> คน</span>
+                        <span>
+                          คิวปัจจุบัน: <strong className="text-indigo-400 font-mono">{entries.length}</strong>
+                          {queue.maxCapacity ? `/${queue.maxCapacity}` : ''} คน
+                        </span>
+                        {queue.note && <span>💬 <strong>{queue.note}</strong></span>}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Top-Right Tools */}
+                  <div className="flex flex-wrap items-center gap-1.5 shrink-0 self-end lg:self-center">
+                    <button
+                      type="button"
+                      onClick={() => setManualAddQueueId(queue.id)}
+                      className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-white text-xs font-bold border border-slate-300 dark:border-slate-700 flex items-center gap-1 transition cursor-pointer"
+                      title="เพิ่มสมาชิกเข้าคิวนี้แทน"
+                    >
+                      <span>👤+</span>
+                      <span>เพิ่มสมาชิกแทน</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleCopyQueueList(queue)}
+                      className="px-3 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 text-xs font-bold flex items-center gap-1 transition cursor-pointer"
+                      title="คัดลอกรายชื่อส่งใน Discord/LINE"
+                    >
+                      <span>📋</span>
+                      <span>คัดลอกส่ง Discord/LINE</span>
+                    </button>
+
+                    {entries.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (window.confirm(`ล้างรายชื่อคิวทั้งหมดของ "${queue.title}" ใช่หรือไม่?`)) {
+                            clearQueueEntries(queue.id);
+                          }
+                        }}
+                        className="px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-bold transition cursor-pointer"
+                        title="ล้างคิวทั้งหมด"
+                      >
+                        ล้างคิว
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (window.confirm(`คุณแน่ใจว่าต้องการลบ List คิว "${queue.title}" หรือไม่?`)) {
+                          deleteQueueList(queue.id);
+                        }
+                      }}
+                      className="p-1.5 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer"
+                      title="ลบ List นี้"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+
+                {/* ENTRIES LIST WITH AUTO PARTY BREAKDOWN */}
+                {entries.length === 0 ? (
+                  <div className="p-6 text-center text-xs text-slate-400 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
+                    ยังไม่มีคนกดต่อคิวในรายการนี้ (สามารถกดปุ่ม &ldquo;👤+ เพิ่มสมาชิกแทน&rdquo; หรือรอสมาชิกกดเข้ามา)
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {Array.from({ length: partiesCount }).map((_, pIdx) => {
+                      const startIdx = pIdx * partySize;
+                      const partyEntries = entries.slice(startIdx, startIdx + partySize);
+                      const isPartyFull = partyEntries.length === partySize;
+
+                      return (
+                        <div
+                          key={pIdx}
+                          className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-[#090d18] p-3 space-y-2"
+                        >
+                          <div className="flex items-center justify-between text-xs font-bold">
+                            <span className="text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                              <span className="text-base">🛡️</span>
+                              <span>ปาร์ตี้ที่ {pIdx + 1}</span>
+                              <span className="text-[11px] font-mono font-semibold text-slate-400">
+                                ({partyEntries.length}/{partySize} คน)
+                              </span>
+                            </span>
+                            {isPartyFull ? (
+                              <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 font-bold border border-emerald-500/30">
+                                ✓ ปาร์ตี้เต็ม (พร้อมลุย)
+                              </span>
+                            ) : (
+                              <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-600 dark:text-amber-300 font-bold border border-amber-500/30">
+                                ว่างอีก {partySize - partyEntries.length} คน
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Member Slots */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2">
+                            {partyEntries.map((entry, subIdx) => {
+                              const overallIdx = startIdx + subIdx;
+                              const timeStr = formatQueueTime(entry.joinedAt);
+
+                              return (
+                                <div
+                                  key={entry.id}
+                                  className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between gap-1.5 text-xs shadow-sm hover:border-slate-700 transition"
+                                >
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <span className="w-5 text-right font-mono font-black text-slate-400 shrink-0">
+                                      #{overallIdx + 1}
+                                    </span>
+                                    {entry.memberJob && (
+                                      <JobEmblem job={entry.memberJob} size={20} />
+                                    )}
+                                    <div className="min-w-0">
+                                      <div className="font-bold truncate text-slate-900 dark:text-white" title={entry.memberName}>
+                                        {entry.memberName}
+                                      </div>
+                                      {timeStr && (
+                                        <div className="text-[10px] text-slate-400 font-mono flex items-center gap-0.5">
+                                          <span>🕒</span>
+                                          <span>{timeStr}</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Entry Controls: Move / Delete */}
+                                  <div className="flex items-center gap-0.5 shrink-0">
+                                    <button
+                                      type="button"
+                                      disabled={overallIdx === 0}
+                                      onClick={() => handleMoveEntry(queue.id, overallIdx, 'up')}
+                                      className="p-1 text-[10px] text-slate-400 hover:text-white disabled:opacity-20 cursor-pointer"
+                                      title="เลื่อนคิวขึ้น"
+                                    >
+                                      ▲
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={overallIdx === entries.length - 1}
+                                      onClick={() => handleMoveEntry(queue.id, overallIdx, 'down')}
+                                      className="p-1 text-[10px] text-slate-400 hover:text-white disabled:opacity-20 cursor-pointer"
+                                      title="เลื่อนคิวลง"
+                                    >
+                                      ▼
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => removeMemberFromQueue(queue.id, entry.id)}
+                                      className="p-1 text-xs text-slate-400 hover:text-rose-400 cursor-pointer"
+                                      title="ลบออกจากคิว"
+                                    >
+                                      ✕
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* CREATE QUEUE MODAL */}
+      <CreateQueueModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onCreate={(data) => {
+          createQueueList(data);
+          showToast(`สร้างคิว "${data.title}" เรียบร้อยแล้ว! 🚀`);
+        }}
+      />
+
+      {/* MANUAL ENROLL MODAL */}
+      {manualAddQueueId && activeQueueForAdd && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 p-3 sm:p-5 backdrop-blur-md overflow-y-auto">
+          <div className="relative w-full max-w-lg rounded-3xl border border-indigo-500/30 bg-[#0d121f] p-5 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div>
+                <h4 className="font-extrabold text-base text-white">
+                  เพิ่มสมาชิกเข้าคิวแทน
+                </h4>
+                <p className="text-xs text-slate-400">
+                  {activeQueueForAdd.title} ({activeQueueForAdd.entries?.length || 0} คน)
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setManualAddQueueId(null)}
+                className="text-slate-400 hover:text-white text-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            <input
+              type="text"
+              placeholder="ค้นหาชื่อตัวละคร หรือ อาชีพ..."
+              value={memberSearch}
+              onChange={(e) => setMemberSearch(e.target.value)}
+              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+            />
+
+            <div className="max-h-64 overflow-y-auto space-y-1.5 pr-1 scrollbar-thin">
+              {filteredMembersForAdd.map((m) => {
+                const isAlready = (activeQueueForAdd.entries || []).some((e) => e.memberId === m.id);
+
+                return (
+                  <div
+                    key={m.id}
+                    className="flex items-center justify-between p-2 rounded-xl border border-slate-800 bg-slate-950/60 hover:border-slate-700 text-xs"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      {m.job && <JobEmblem job={m.job} size={22} />}
+                      <div className="min-w-0">
+                        <div className="font-bold text-white truncate">{m.name}</div>
+                        {m.job && <div className="text-[10px] text-slate-400">{m.job}</div>}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const res = addMemberToQueue(activeQueueForAdd.id, m.id);
+                        showToast(res.message, !res.success);
+                        setManualAddQueueId(null);
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold cursor-pointer transition"
+                    >
+                      {isAlready ? '+ เพิ่มชื่ออีก' : '+ เพิ่มเข้าคิว'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

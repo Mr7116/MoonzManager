@@ -21,6 +21,7 @@ const navItems: NavItem[] = [
   { label: 'จัดการสมาชิก', href: '/roster', icon: '🛡️' },
   { label: 'กิจกรรมประจำสัปดาห์', href: '/events', icon: '📅' },
   { label: 'ประมูลไอเทม', href: '/auction', icon: '💎' },
+  { label: 'จัดการคิว', href: '/queue', icon: '📋' },
 ];
 
 export default function Navbar() {
