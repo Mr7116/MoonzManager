@@ -24,6 +24,7 @@ export default function AdminQueueView({ onSwitchToMember }: AdminQueueViewProps
     addMemberToQueue,
     removeMemberFromQueue,
     reorderQueueEntries,
+    toggleQueueEntryCompleted,
     clearQueueEntries,
     setQueueStatus,
   } = useGuildStore();
@@ -94,7 +95,8 @@ export default function AdminQueueView({ onSwitchToMember }: AdminQueueViewProps
     } else {
       entries.forEach((e, idx) => {
         const time = formatQueueTime(e.joinedAt);
-        lines.push(`${idx + 1}. ${e.memberName} (${e.memberJob || 'ไม่ระบุ'})${time ? ` - ${time}` : ''}`);
+        const status = e.isCompleted ? ' [✓ ผ่านแล้ว]' : '';
+        lines.push(`${idx + 1}. ${e.memberName} (${e.memberJob || 'ไม่ระบุ'})${time ? ` - ${time}` : ''}${status}`);
       });
     }
 
@@ -428,16 +430,23 @@ export default function AdminQueueView({ onSwitchToMember }: AdminQueueViewProps
                     <div className="space-y-1.5 max-h-[460px] overflow-y-auto pr-1 scrollbar-thin">
                       {entries.map((entry, idx) => {
                         const timeStr = formatQueueTime(entry.joinedAt);
+                        const isDone = !!entry.isCompleted;
 
                         return (
                           <div
                             key={entry.id}
-                            className="p-2.5 sm:p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 flex items-center justify-between gap-3 text-xs sm:text-sm hover:border-slate-300 dark:hover:border-slate-700 transition"
+                            className={`p-2.5 sm:p-3 rounded-2xl border flex items-center justify-between gap-3 text-xs sm:text-sm transition ${
+                              isDone
+                                ? 'border-emerald-500/50 bg-emerald-500/10 text-slate-800 dark:text-slate-200 shadow-sm'
+                                : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 text-slate-800 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-700'
+                            }`}
                           >
                             <div className="flex items-center gap-3 min-w-0">
                               <span
                                 className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center font-mono font-black text-xs shrink-0 ${
-                                  idx === 0
+                                  isDone
+                                    ? 'bg-emerald-500/20 text-emerald-500 border border-emerald-500/40'
+                                    : idx === 0
                                     ? 'bg-amber-500/20 text-amber-500 border border-amber-500/40'
                                     : idx === 1
                                     ? 'bg-slate-300/30 text-slate-400 border border-slate-400/40'
@@ -446,14 +455,21 @@ export default function AdminQueueView({ onSwitchToMember }: AdminQueueViewProps
                                     : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
                                 }`}
                               >
-                                #{idx + 1}
+                                {isDone ? '✓' : `#${idx + 1}`}
                               </span>
                               {entry.memberJob && (
                                 <JobEmblem job={entry.memberJob} size={26} />
                               )}
                               <div className="min-w-0">
-                                <div className="font-bold truncate text-slate-900 dark:text-white" title={entry.memberName}>
-                                  {entry.memberName}
+                                <div className="flex items-center gap-1.5 font-bold truncate text-slate-900 dark:text-white" title={entry.memberName}>
+                                  <span className={isDone ? 'text-emerald-600 dark:text-emerald-400 font-extrabold' : ''}>
+                                    {entry.memberName}
+                                  </span>
+                                  {isDone && (
+                                    <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/40 shrink-0">
+                                      ✓ ผ่านแล้ว
+                                    </span>
+                                  )}
                                 </div>
                                 {entry.memberJob && (
                                   <div className="text-[11px] text-slate-500 dark:text-slate-400">
@@ -464,6 +480,38 @@ export default function AdminQueueView({ onSwitchToMember }: AdminQueueViewProps
                             </div>
 
                             <div className="flex items-center gap-2 shrink-0">
+                              {/* ปุ่มติ๊กถูก (คนนี้ผ่านเรียบร้อย) */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  toggleQueueEntryCompleted(queue.id, entry.id);
+                                  showToast(
+                                    isDone
+                                      ? `ยกเลิกสถานะผ่านของ "${entry.memberName}"`
+                                      : `บันทึก "${entry.memberName}" ผ่านเรียบร้อยแล้ว! ✅`
+                                  );
+                                }}
+                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs font-bold transition cursor-pointer active:scale-95 shadow-sm ${
+                                  isDone
+                                    ? 'border-emerald-500 bg-emerald-500/25 text-emerald-600 dark:text-emerald-300 ring-1 ring-emerald-500/40'
+                                    : 'border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-emerald-50 dark:bg-slate-950 dark:hover:bg-emerald-950/40 text-slate-400 hover:text-emerald-500 hover:border-emerald-500/50'
+                                }`}
+                                title={isDone ? 'ผ่านเรียบร้อยแล้ว (คลิกเพื่อยกเลิก)' : 'คลิกเพื่อติ๊กถูก: คนนี้ผ่านเรียบร้อยแล้ว'}
+                              >
+                                <span
+                                  className={`w-4 h-4 rounded-md flex items-center justify-center text-[11px] font-black transition ${
+                                    isDone
+                                      ? 'bg-emerald-500 text-slate-950'
+                                      : 'border border-slate-400 dark:border-slate-600 text-transparent hover:text-emerald-500'
+                                  }`}
+                                >
+                                  ✓
+                                </span>
+                                <span className="text-[11px] hidden sm:inline">
+                                  {isDone ? 'ผ่านแล้ว' : 'ผ่าน'}
+                                </span>
+                              </button>
+
                               {timeStr && (
                                 <span className="text-xs text-slate-500 dark:text-slate-400 font-mono flex items-center gap-1 bg-slate-100 dark:bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-200 dark:border-slate-800">
                                   <span>🕒</span>

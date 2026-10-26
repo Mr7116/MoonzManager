@@ -14,6 +14,8 @@ export interface QueueEntry {
   memberName: string;
   memberJob?: string;
   joinedAt: string; // ISO 8601 string
+  isCompleted?: boolean; // ติ๊กถูก บอกว่าคนนี้ผ่านเรียบร้อยแล้ว
+  completedAt?: string;
   note?: string;
 }
 

@@ -100,6 +100,7 @@ export interface GuildState {
   removeMemberFromQueue: (queueId: string, entryId: string) => void;
   removeMemberByMemberIdFromQueue: (queueId: string, memberId: string) => void;
   reorderQueueEntries: (queueId: string, entries: QueueEntry[]) => void;
+  toggleQueueEntryCompleted: (queueId: string, entryId: string) => void;
   clearQueueEntries: (queueId: string) => void;
   setQueueStatus: (queueId: string, status: 'open' | 'in_progress' | 'closed') => void;
 }
@@ -1269,6 +1270,25 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
     triggerAutoSave();
   };
 
+  const toggleQueueEntryCompleted = (queueId: string, entryId: string) => {
+    setQueueLists((prev) =>
+      prev.map((q) => {
+        if (q.id !== queueId) return q;
+        const updatedEntries = q.entries.map((e) => {
+          if (e.id !== entryId) return e;
+          const willBeCompleted = !e.isCompleted;
+          return {
+            ...e,
+            isCompleted: willBeCompleted,
+            completedAt: willBeCompleted ? new Date().toISOString() : undefined,
+          };
+        });
+        return { ...q, entries: updatedEntries, updatedAt: new Date().toISOString() };
+      })
+    );
+    triggerAutoSave();
+  };
+
   const clearQueueEntries = (queueId: string) => {
     setQueueLists((prev) =>
       prev.map((q) => (q.id === queueId ? { ...q, entries: [], updatedAt: new Date().toISOString() } : q))
@@ -1376,6 +1396,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
         removeMemberFromQueue,
         removeMemberByMemberIdFromQueue,
         reorderQueueEntries,
+        toggleQueueEntryCompleted,
         clearQueueEntries,
         setQueueStatus,
       }}

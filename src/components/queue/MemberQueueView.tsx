@@ -499,10 +499,17 @@ export default function MemberQueueView({ onSwitchToAdmin }: MemberQueueViewProp
                                 )}
                                 <div className="min-w-0">
                                   <div className="flex items-center gap-1.5 font-bold truncate text-slate-900 dark:text-white">
-                                    <span className="truncate">{entry.memberName}</span>
+                                    <span className={`truncate ${entry.isCompleted ? 'text-emerald-600 dark:text-emerald-400 font-extrabold' : ''}`}>
+                                      {entry.memberName}
+                                    </span>
                                     {isMe && (
                                       <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/40 shrink-0">
                                         (คุณ)
+                                      </span>
+                                    )}
+                                    {entry.isCompleted && (
+                                      <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/40 shrink-0">
+                                        ✓ ผ่านเรียบร้อย
                                       </span>
                                     )}
                                   </div>
@@ -515,6 +522,11 @@ export default function MemberQueueView({ onSwitchToAdmin }: MemberQueueViewProp
                               </div>
 
                               <div className="flex items-center gap-2 shrink-0">
+                                {entry.isCompleted && (
+                                  <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1 sm:hidden">
+                                    ✓ ผ่าน
+                                  </span>
+                                )}
                                 {timeStr && (
                                   <span className="text-xs text-slate-500 dark:text-slate-400 font-mono flex items-center gap-1 bg-slate-100 dark:bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-200 dark:border-slate-800">
                                     <span>🕒</span>
