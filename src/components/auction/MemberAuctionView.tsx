@@ -41,7 +41,6 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
   const [itemSearch, setItemSearch] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'active' | 'my' | 'all'>('active');
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
-  const [toastMsg, setToastMsg] = useState<{ text: string; isError?: boolean } | null>(null);
   const [isMounted, setIsMounted] = useState<boolean>(false);
 
   useEffect(() => {
@@ -131,27 +130,19 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
     );
   }, [members, memberSearch]);
 
-  // Show temporary toast message
-  const showToast = (text: string, isError = false) => {
-    setToastMsg({ text, isError });
-    setTimeout(() => {
-      setToastMsg((prev) => (prev?.text === text ? null : prev));
-    }, 3000);
-  };
-
   // Join item
   const handleJoin = (item: AuctionItem) => {
     if (!currentMember) {
-      showToast('กรุณาเลือกชื่อของคุณด้านบนก่อน', true);
+      alert('กรุณาเลือกชื่อของคุณด้านบนก่อน');
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
     if (item.status !== 'active') {
-      showToast('รายการนี้ยังไม่เปิดรับรายชื่อ หรือสุ่มเสร็จแล้ว', true);
+      alert('รายการนี้ยังไม่เปิดรับรายชื่อ หรือสุ่มเสร็จแล้ว');
       return;
     }
     if (item.maxEntries && item.maxEntries > 0 && (item.entries || []).length >= item.maxEntries) {
-      showToast('ขออภัย รายการนี้มีคนลงชื่อครบตามโควตาแล้ว', true);
+      alert('ขออภัย รายการนี้มีคนลงชื่อครบตามโควตาแล้ว');
       return;
     }
 
@@ -162,27 +153,18 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
     if (!allowMultiple) {
       const alreadyRegistered = (item.entries || []).some((e) => e.memberId === currentMember.id);
       if (alreadyRegistered) {
-        showToast('ไอเทมนี้สามารถลงชื่อได้เพียงคนละ 1 ครั้งเท่านั้น', true);
+        alert('ไอเทมนี้สามารถลงชื่อได้เพียงคนละ 1 ครั้งเท่านั้น');
         return;
       }
     }
 
     addMemberToAuction(item.id, currentMember.id);
-    showToast(
-      isTitle
-        ? `กดรับสิทธิ์ "${item.accessoryName}" สำเร็จ! 👑`
-        : isChest
-        ? `ลงชื่อลุ้นรับ "${item.accessoryName}" สำเร็จ! 📦`
-        : `ลงชื่อลุ้นรับ "${item.accessoryName}" สำเร็จ! 🎉`
-    );
   };
 
   // Leave one entry (or all if only 1)
   const handleLeaveOne = (item: AuctionItem) => {
     if (!currentMember) return;
-    const isTitle = item.itemCategory === 'title' || (item.cardSlot && item.cardSlot.includes('Title')) || (item.cardQuality && item.cardQuality.includes('Title'));
     removeOneMemberEntryFromAuction(item.id, currentMember.id);
-    showToast(`ยกเลิกลด 1 สิทธิ์ของ "${item.accessoryName}" เรียบร้อยแล้ว`);
   };
 
   // Leave item (all)
@@ -194,25 +176,11 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
       )
     ) {
       removeMemberFromAuction(item.id, currentMember.id);
-      showToast(`ยกเลิกการลงชื่อ "${item.accessoryName}" เรียบร้อยแล้ว`);
     }
   };
 
   return (
     <div suppressHydrationWarning className="mx-auto max-w-4xl px-3 py-4 sm:px-6 space-y-5 pb-16">
-      {/* Toast Notification */}
-      {toastMsg && (
-        <div
-          className={`fixed bottom-5 right-5 z-50 max-w-md rounded-2xl p-4 text-xs sm:text-sm font-bold shadow-2xl transition-all border animate-bounce ${
-            toastMsg.isError
-              ? 'bg-rose-900/90 text-rose-100 border-rose-500/60'
-              : 'bg-emerald-900/90 text-emerald-100 border-emerald-500/60'
-          }`}
-        >
-          {toastMsg.text}
-        </div>
-      )}
-
       {/* Top Bar / Header */}
       <div className="flex flex-col gap-3 rounded-3xl border border-rose-300 dark:border-rose-500/30 bg-white dark:bg-[#0d121f] p-4 sm:p-5 shadow-sm dark:shadow-xl">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
