@@ -120,32 +120,41 @@ export default function RegisterMembersModal({
                 <div className={`relative w-12 h-12 shrink-0 rounded-xl border flex items-center justify-center shadow ${
                   isTitle ? `${titleTier?.border} bg-[#0c1220]` : isChest ? `${chestTier?.border} bg-[#0c1220]` : isPet ? `${petTier?.border} bg-[#0c1220]` : isRelic ? 'border-amber-500/40 bg-[#0c1220]' : isCard ? 'border-purple-500/40 bg-[#0c1220]' : 'border-rose-500/40 bg-[#0c1220]'
                 }`}>
-                  <Image
-                    src={imageSrc}
-                    alt={auction.accessoryName}
-                    width={40}
-                    height={40}
-                    unoptimized
-                    className="object-contain drop-shadow"
-                    onError={(e) => {
-                      const fallback = isTitle
-                        ? `https://roworlddb.com/media/images/item/${auction.accessoryIcon}.webp`
-                        : isChest
-                        ? (auction.accessoryIcon.includes('title_chest')
-                            ? `/images/chests/${auction.accessoryIcon}.svg`
-                            : auction.accessoryIcon.includes('stonebox') || auction.accessoryIcon.includes('gem')
-                            ? `https://roworlddb.com/media/images/item/icon_item_stonebox_14.webp`
-                            : `https://roworlddb.com/media/images/item/icon_item_bx_fy.webp`)
-                        : isPet
-                        ? (auction.accessoryIcon.includes('mfmm')
-                            ? `https://roworlddb.com/media/images/icon/pet/${auction.accessoryIcon}.webp`
-                            : `https://roworlddb.com/media/images/pet/${auction.accessoryIcon}.webp`)
-                        : isRelic
-                        ? `https://roworlddb.com/media/images/hallows/${auction.accessoryIcon}.webp`
-                        : `https://roworlddb.com/media/images/item/${auction.accessoryIcon}.webp`;
-                      (e.target as HTMLImageElement).src = fallback;
-                    }}
-                  />
+                  {auction.accessoryIcon.includes('title_chest') ? (
+                    <TitleChestSvgIcon
+                      variant={chestTier?.tier || 'gold'}
+                      className="w-10 h-10 drop-shadow"
+                    />
+                  ) : (
+                    <Image
+                      src={imageSrc}
+                      alt={auction.accessoryName}
+                      width={40}
+                      height={40}
+                      unoptimized
+                      className="object-contain drop-shadow"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.onerror = null;
+                        const fallback = isTitle
+                          ? `https://roworlddb.com/media/images/item/${auction.accessoryIcon}.webp`
+                          : isChest
+                          ? (auction.accessoryIcon.includes('title_chest')
+                              ? `/images/chests/${auction.accessoryIcon}.svg`
+                              : auction.accessoryIcon.includes('stonebox') || auction.accessoryIcon.includes('gem')
+                              ? `https://roworlddb.com/media/images/item/icon_item_stonebox_14.webp`
+                              : `https://roworlddb.com/media/images/item/icon_item_bx_fy.webp`)
+                          : isPet
+                          ? (auction.accessoryIcon.includes('mfmm')
+                              ? `https://roworlddb.com/media/images/icon/pet/${auction.accessoryIcon}.webp`
+                              : `https://roworlddb.com/media/images/pet/${auction.accessoryIcon}.webp`)
+                          : isRelic
+                          ? `https://roworlddb.com/media/images/hallows/${auction.accessoryIcon}.webp`
+                          : `https://roworlddb.com/media/images/item/${auction.accessoryIcon}.webp`;
+                        target.src = fallback;
+                      }}
+                    />
+                  )}
                   {isTitle ? (
                     <span className={`absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold border ${titleTier?.badgeBg}`}>
                       {titleTier?.tier === 'gold' ? 'ทอง' : titleTier?.tier === 'purple' ? 'ม่วง' : titleTier?.tier === 'blue' ? 'ฟ้า' : 'เขียว'}

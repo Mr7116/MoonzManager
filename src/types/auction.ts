@@ -74,6 +74,7 @@ export function formatRegistrationTime(isoStr?: string): string {
     if (isNaN(d.getTime())) return '';
     return (
       d.toLocaleTimeString('th-TH', {
+        timeZone: 'Asia/Bangkok',
         hour: '2-digit',
         minute: '2-digit',
         second: '2-digit',
@@ -90,8 +91,13 @@ export function formatRegistrationDateTime(isoStr?: string): string {
   try {
     const d = new Date(isoStr);
     if (isNaN(d.getTime())) return '';
-    const datePart = d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+    const datePart = d.toLocaleDateString('th-TH', {
+      timeZone: 'Asia/Bangkok',
+      day: 'numeric',
+      month: 'short',
+    });
     const timePart = d.toLocaleTimeString('th-TH', {
+      timeZone: 'Asia/Bangkok',
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',

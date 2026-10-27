@@ -42,6 +42,11 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
   const [activeTab, setActiveTab] = useState<'active' | 'my' | 'all'>('active');
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
   const [toastMsg, setToastMsg] = useState<{ text: string; isError?: boolean } | null>(null);
+  const [isMounted, setIsMounted] = useState<boolean>(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Restore saved member from localStorage
   useEffect(() => {
@@ -194,7 +199,7 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
   };
 
   return (
-    <div className="mx-auto max-w-4xl px-3 py-4 sm:px-6 space-y-5 pb-16">
+    <div suppressHydrationWarning className="mx-auto max-w-4xl px-3 py-4 sm:px-6 space-y-5 pb-16">
       {/* Toast Notification */}
       {toastMsg && (
         <div
@@ -554,41 +559,49 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
                           ? 'border-purple-500/50 bg-purple-950/20'
                           : 'border-rose-500/40 bg-slate-100 dark:bg-[#080d19]'
                       }`}>
-                        <Image
-                          src={imageSrc}
-                          alt={item.accessoryName}
-                          width={44}
-                          height={44}
-                          unoptimized
-                          className="object-contain drop-shadow"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            const icon = item.accessoryIcon || '';
-                            if (icon.includes('title_chest')) {
-                              target.src = `/images/chests/${icon}.png`;
-                              return;
-                            }
-                            if (isChest) {
-                              target.src = `/images/chests/icon_item_bx_fy.webp`;
-                              return;
-                            }
-                            if (isTitle) {
-                              target.src = `/images/titles/${icon}.webp`;
-                              return;
-                            }
-                            if (isPet) {
-                              target.src = icon.includes('mfmm')
-                                ? `https://roworlddb.com/media/images/icon/pet/${icon}.webp`
-                                : `https://roworlddb.com/media/images/pet/${icon}.webp`;
-                              return;
-                            }
-                            if (isRelic) {
-                              target.src = `https://roworlddb.com/media/images/hallows/${icon}.webp`;
-                              return;
-                            }
-                            target.src = `https://roworlddb.com/media/images/item/${icon}.webp`;
-                          }}
-                        />
+                        {item.accessoryIcon.includes('title_chest') ? (
+                          <TitleChestSvgIcon
+                            variant={chestTier?.tier || 'gold'}
+                            className="w-10 h-10 drop-shadow"
+                          />
+                        ) : (
+                          <Image
+                            src={imageSrc}
+                            alt={item.accessoryName}
+                            width={44}
+                            height={44}
+                            unoptimized
+                            className="object-contain drop-shadow"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.onerror = null;
+                              const icon = item.accessoryIcon || '';
+                              if (icon.includes('title_chest')) {
+                                target.src = `/images/chests/${icon}.svg`;
+                                return;
+                              }
+                              if (isChest) {
+                                target.src = `/images/chests/icon_item_bx_fy.webp`;
+                                return;
+                              }
+                              if (isTitle) {
+                                target.src = `/images/titles/${icon}.webp`;
+                                return;
+                              }
+                              if (isPet) {
+                                target.src = icon.includes('mfmm')
+                                  ? `https://roworlddb.com/media/images/icon/pet/${icon}.webp`
+                                  : `https://roworlddb.com/media/images/pet/${icon}.webp`;
+                                return;
+                              }
+                              if (isRelic) {
+                                target.src = `https://roworlddb.com/media/images/hallows/${icon}.webp`;
+                                return;
+                              }
+                              target.src = `https://roworlddb.com/media/images/item/${icon}.webp`;
+                            }}
+                          />
+                        )}
                         {isTitle ? (
                           <span className={`absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold border ${titleTier?.badgeBg}`}>
                             {titleTier?.tier === 'gold' ? 'ทอง' : titleTier?.tier === 'purple' ? 'ม่วง' : titleTier?.tier === 'blue' ? 'ฟ้า' : 'เขียว'}

@@ -13,9 +13,11 @@ export default function LiveClock({
   showDayOfWeek = true,
   variant = 'badge',
 }: LiveClockProps) {
+  const [mounted, setMounted] = useState(false);
   const [now, setNow] = useState<Date | null>(null);
 
   useEffect(() => {
+    setMounted(true);
     setNow(new Date());
     const interval = setInterval(() => {
       setNow(new Date());
@@ -23,11 +25,23 @@ export default function LiveClock({
     return () => clearInterval(interval);
   }, []);
 
-  if (!now) {
+  if (!mounted || !now) {
+    if (variant === 'compact') {
+      return (
+        <div
+          suppressHydrationWarning
+          className={`inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700/80 bg-white dark:bg-[#070b14] px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 shadow-sm ${className}`}
+        >
+          <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 shrink-0"></span>
+          <span suppressHydrationWarning className="font-bold text-slate-400 dark:text-slate-500">กำลังโหลด...</span>
+        </div>
+      );
+    }
     // Skeleton placeholder to prevent Next.js SSR hydration mismatch
     return (
       <div
-        className={`inline-flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/60 px-3.5 py-1.5 text-xs text-slate-400 animate-pulse ${className}`}
+        suppressHydrationWarning
+        className={`inline-flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/60 px-3.5 py-1.5 text-xs text-slate-400 ${className}`}
       >
         <span className="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-700" />
         <span>กำลังโหลดเวลา...</span>
@@ -47,16 +61,18 @@ export default function LiveClock({
   ];
   const dayName = thaiDays[now.getDay()];
 
-  // Date formatted in Thai: วันที่ เดือน ปี พ.ศ.
+  // Date formatted in Thai: วันที่ เดือน ปี พ.ศ. (Bangkok timezone)
   const dateStr = now.toLocaleDateString('th-TH', {
+    timeZone: 'Asia/Bangkok',
     day: 'numeric',
     month: 'short',
     year: 'numeric',
   });
 
-  // Time formatted in Thai: HH:mm:ss น.
+  // Time formatted in Thai: HH:mm:ss น. (Bangkok timezone)
   const timeStr =
     now.toLocaleTimeString('th-TH', {
+      timeZone: 'Asia/Bangkok',
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',

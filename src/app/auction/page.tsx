@@ -693,32 +693,41 @@ export default function AuctionPage() {
                       ? 'border-purple-500/50 bg-purple-950/20'
                       : 'border-rose-500/40 bg-slate-100 dark:bg-[#080d19]'
                   }`}>
-                    <Image
-                      src={imageSrc}
-                      alt={item.accessoryName}
-                      width={44}
-                      height={44}
-                      unoptimized
-                      className="object-contain drop-shadow"
-                      onError={(e) => {
-                        const fallback = isTitle
-                          ? `https://roworlddb.com/media/images/item/${item.accessoryIcon}.webp`
-                          : isChest
-                          ? (item.accessoryIcon.includes('title_chest')
-                              ? `/images/chests/${item.accessoryIcon}.svg`
-                              : item.accessoryIcon.includes('stonebox') || item.accessoryIcon.includes('gem')
-                              ? `https://roworlddb.com/media/images/item/icon_item_stonebox_14.webp`
-                              : `https://roworlddb.com/media/images/item/icon_item_bx_fy.webp`)
-                          : isPet
-                          ? (item.accessoryIcon.includes('mfmm')
-                              ? `https://roworlddb.com/media/images/icon/pet/${item.accessoryIcon}.webp`
-                              : `https://roworlddb.com/media/images/pet/${item.accessoryIcon}.webp`)
-                          : isRelic
-                          ? `https://roworlddb.com/media/images/hallows/${item.accessoryIcon}.webp`
-                          : `https://roworlddb.com/media/images/item/${item.accessoryIcon}.webp`;
-                        (e.target as HTMLImageElement).src = fallback;
-                      }}
-                    />
+                    {item.accessoryIcon.includes('title_chest') ? (
+                      <TitleChestSvgIcon
+                        variant={chestTier?.tier || 'gold'}
+                        className="w-10 h-10 drop-shadow"
+                      />
+                    ) : (
+                      <Image
+                        src={imageSrc}
+                        alt={item.accessoryName}
+                        width={44}
+                        height={44}
+                        unoptimized
+                        className="object-contain drop-shadow"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.onerror = null;
+                          const fallback = isTitle
+                            ? `https://roworlddb.com/media/images/item/${item.accessoryIcon}.webp`
+                            : isChest
+                            ? (item.accessoryIcon.includes('title_chest')
+                                ? `/images/chests/${item.accessoryIcon}.svg`
+                                : item.accessoryIcon.includes('stonebox') || item.accessoryIcon.includes('gem')
+                                ? `https://roworlddb.com/media/images/item/icon_item_stonebox_14.webp`
+                                : `https://roworlddb.com/media/images/item/icon_item_bx_fy.webp`)
+                            : isPet
+                            ? (item.accessoryIcon.includes('mfmm')
+                                ? `https://roworlddb.com/media/images/icon/pet/${item.accessoryIcon}.webp`
+                                : `https://roworlddb.com/media/images/pet/${item.accessoryIcon}.webp`)
+                            : isRelic
+                            ? `https://roworlddb.com/media/images/hallows/${item.accessoryIcon}.webp`
+                            : `https://roworlddb.com/media/images/item/${item.accessoryIcon}.webp`;
+                          target.src = fallback;
+                        }}
+                      />
+                    )}
                     {isTitle ? (
                       <span className={`absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold border ${titleTier?.badgeBg}`}>
                         {titleTier?.tier === 'gold' ? 'ทอง' : titleTier?.tier === 'purple' ? 'ม่วง' : titleTier?.tier === 'blue' ? 'ฟ้า' : 'เขียว'}
@@ -1125,6 +1134,12 @@ export default function AuctionPage() {
                         ? 'border-purple-500/50 bg-purple-950/20 shadow-purple-500/15'
                         : 'border-rose-500/50 bg-slate-100 dark:bg-[#080d19] shadow-rose-500/15'
                     }`}>
+                    {item.accessoryIcon.includes('title_chest') ? (
+                      <TitleChestSvgIcon
+                        variant={chestTier?.tier || 'gold'}
+                        className="w-12 h-12 drop-shadow"
+                      />
+                    ) : (
                       <Image
                         src={imageSrc}
                         alt={item.accessoryName}
@@ -1133,6 +1148,8 @@ export default function AuctionPage() {
                         unoptimized
                         className="object-contain drop-shadow"
                         onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.onerror = null;
                           const fallback = isTitle
                             ? `https://roworlddb.com/media/images/item/${item.accessoryIcon}.webp`
                             : isChest
@@ -1148,9 +1165,10 @@ export default function AuctionPage() {
                             : isRelic
                             ? `https://roworlddb.com/media/images/hallows/${item.accessoryIcon}.webp`
                             : `https://roworlddb.com/media/images/item/${item.accessoryIcon}.webp`;
-                          (e.target as HTMLImageElement).src = fallback;
+                          target.src = fallback;
                         }}
                       />
+                    )}
                       {isTitle ? (
                         <span className={`absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold border ${titleTier?.badgeBg}`}>
                           {titleTier?.tier === 'gold' ? 'ทอง' : titleTier?.tier === 'purple' ? 'ม่วง' : titleTier?.tier === 'blue' ? 'ฟ้า' : 'เขียว'}
