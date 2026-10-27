@@ -146,7 +146,7 @@ export default function Navbar() {
             </div>
 
             {/* Mobile Dev Credits */}
-            <div className="text-center pt-1 text-[11px] font-mono text-slate-500 dark:text-slate-400">
+            <div className="text-center pt-1 text-[11px] font-mono text-slate-800 dark:text-slate-400">
               Dev By : Mr7116,xZeNox
             </div>
           </div>
@@ -211,7 +211,7 @@ export default function Navbar() {
 
             {/* Dev Credits */}
             <div className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100/90 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 text-xs font-mono shadow-xs">
-              <span className="text-slate-500 dark:text-slate-400 font-medium">Dev By :</span>
+              <span className="font-bold text-slate-800 dark:text-slate-200">Dev By :</span>
               <span className="font-bold text-slate-800 dark:text-slate-200">Mr7116,xZeNox</span>
             </div>
           </div>
