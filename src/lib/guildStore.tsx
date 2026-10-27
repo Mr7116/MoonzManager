@@ -115,7 +115,13 @@ export interface GuildState {
   reorderQueueEntries: (queueId: string, entries: QueueEntry[]) => void;
   toggleQueueEntryCompleted: (queueId: string, entryId: string) => void;
   clearQueueEntries: (queueId: string) => void;
-  setQueueStatus: (queueId: string, status: 'open' | 'in_progress' | 'closed') => void;
+  setQueueStatus: (queueId: string, status: 'open' | 'in_progress' | 'closed' | 'scheduled') => void;
+  openScheduledQueueNow: (queueId: string) => void;
+  setQueueSchedule: (
+    queueId: string,
+    scheduledOpenAt?: string | null,
+    preRegisteredMemberIds?: string[]
+  ) => void;
 }
 
 const DEFAULT_GVG_TEAMS: Team[] = [
@@ -1096,12 +1102,13 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
     triggerAutoSave();
   };
 
-  // Auto-schedule checker for Auction Rounds (runs every second)
+  // Auto-schedule checker for Auction Rounds and Queue Lists (runs every second)
   useEffect(() => {
     const timer = setInterval(() => {
       const now = Date.now();
       let hasChanges = false;
 
+      // 1. Check scheduled auction rounds
       const roundsToOpen: string[] = [];
       const roundsToClose: string[] = [];
 
@@ -1148,13 +1155,56 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
         hasChanges = true;
       }
 
+      // 2. Check scheduled queue lists
+      const queuesToOpen: string[] = [];
+      queueLists.forEach((q) => {
+        if (q.status === 'scheduled' && q.scheduledOpenAt) {
+          const openTime = new Date(q.scheduledOpenAt).getTime();
+          if (now >= openTime) {
+            queuesToOpen.push(q.id);
+          }
+        }
+      });
+
+      if (queuesToOpen.length > 0) {
+        setQueueLists((prev) =>
+          prev.map((q) => {
+            if (!queuesToOpen.includes(q.id)) return q;
+            const existingMemberIds = new Set((q.entries || []).map((e) => e.memberId));
+            const newEntries = [...(q.entries || [])];
+            (q.preRegisteredMemberIds || []).forEach((mId, idx) => {
+              if (!existingMemberIds.has(mId)) {
+                const m = latestStateRef.current.members.find((mem) => mem.id === mId);
+                newEntries.push({
+                  id: `qentry_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 6)}`,
+                  memberId: mId,
+                  memberName: m?.name || 'ไม่ทราบชื่อ',
+                  memberJob: m?.job,
+                  joinedAt: new Date(Date.now() + idx * 100).toISOString(),
+                });
+                existingMemberIds.add(mId);
+              }
+            });
+
+            return {
+              ...q,
+              status: 'open',
+              entries: newEntries,
+              scheduledOpenAt: undefined,
+              updatedAt: new Date().toISOString(),
+            };
+          })
+        );
+        hasChanges = true;
+      }
+
       if (hasChanges) {
         triggerAutoSave();
       }
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [auctionRounds]);
+  }, [auctionRounds, queueLists]);
 
   const addAuctionItems = (
     itemsData: Array<Omit<AuctionItem, 'id' | 'createdAt' | 'currentPrice' | 'bids' | 'status' | 'entries'> & { status?: 'pending' | 'active'; roundId?: string }>
@@ -1512,11 +1562,31 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
   // Queue Operations
   const createQueueList = (data: Omit<QueueList, 'id' | 'createdAt' | 'entries'>): string => {
     const newId = `queue_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const isFutureSchedule = data.scheduledOpenAt ? new Date(data.scheduledOpenAt).getTime() > Date.now() : false;
+    const preRegIds = data.preRegisteredMemberIds || [];
+
+    // If opened immediately and preRegIds has members, populate them right now into entries
+    let initialEntries: QueueEntry[] = [];
+    if (!isFutureSchedule && preRegIds.length > 0) {
+      initialEntries = preRegIds.map((mId, idx) => {
+        const m = latestStateRef.current.members.find((mem) => mem.id === mId);
+        return {
+          id: `qentry_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 6)}`,
+          memberId: mId,
+          memberName: m?.name || 'ไม่ทราบชื่อ',
+          memberJob: m?.job,
+          joinedAt: new Date(Date.now() + idx * 100).toISOString(),
+        };
+      });
+    }
+
     const newList: QueueList = {
       ...data,
       id: newId,
+      status: isFutureSchedule ? 'scheduled' : data.status || 'open',
       createdAt: new Date().toISOString(),
-      entries: [],
+      entries: initialEntries,
+      preRegisteredMemberIds: preRegIds,
     };
     setQueueLists((prev) => [newList, ...prev]);
     triggerAutoSave();
@@ -1643,7 +1713,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
     triggerAutoSave();
   };
 
-  const setQueueStatus = (queueId: string, status: 'open' | 'in_progress' | 'closed') => {
+  const setQueueStatus = (queueId: string, status: 'open' | 'in_progress' | 'closed' | 'scheduled') => {
     setQueueLists((prev) =>
       prev.map((q) =>
         q.id === queueId
@@ -1655,6 +1725,59 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
             }
           : q
       )
+    );
+    triggerAutoSave();
+  };
+
+  const openScheduledQueueNow = (queueId: string) => {
+    setQueueLists((prev) =>
+      prev.map((q) => {
+        if (q.id !== queueId) return q;
+        const existingMemberIds = new Set((q.entries || []).map((e) => e.memberId));
+        const newEntries = [...(q.entries || [])];
+        (q.preRegisteredMemberIds || []).forEach((mId, idx) => {
+          if (!existingMemberIds.has(mId)) {
+            const m = latestStateRef.current.members.find((mem) => mem.id === mId);
+            newEntries.push({
+              id: `qentry_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 6)}`,
+              memberId: mId,
+              memberName: m?.name || 'ไม่ทราบชื่อ',
+              memberJob: m?.job,
+              joinedAt: new Date(Date.now() + idx * 100).toISOString(),
+            });
+            existingMemberIds.add(mId);
+          }
+        });
+
+        return {
+          ...q,
+          status: 'open',
+          entries: newEntries,
+          scheduledOpenAt: undefined,
+          updatedAt: new Date().toISOString(),
+        };
+      })
+    );
+    triggerAutoSave();
+  };
+
+  const setQueueSchedule = (
+    queueId: string,
+    scheduledOpenAt?: string | null,
+    preRegisteredMemberIds?: string[]
+  ) => {
+    setQueueLists((prev) =>
+      prev.map((q) => {
+        if (q.id !== queueId) return q;
+        const isFuture = scheduledOpenAt ? new Date(scheduledOpenAt).getTime() > Date.now() : false;
+        return {
+          ...q,
+          status: isFuture ? 'scheduled' : 'open',
+          scheduledOpenAt: scheduledOpenAt || undefined,
+          preRegisteredMemberIds: preRegisteredMemberIds !== undefined ? preRegisteredMemberIds : q.preRegisteredMemberIds,
+          updatedAt: new Date().toISOString(),
+        };
+      })
     );
     triggerAutoSave();
   };
@@ -1748,6 +1871,8 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
         toggleQueueEntryCompleted,
         clearQueueEntries,
         setQueueStatus,
+        openScheduledQueueNow,
+        setQueueSchedule,
       }}
     >
       {children}
