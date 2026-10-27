@@ -247,11 +247,11 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
 
         {/* Current Round Banner */}
         {currentRound ? (
-          <div className="mt-1 pt-3 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="font-extrabold text-slate-900 dark:text-white text-sm flex items-center gap-1.5">
+          <div suppressHydrationWarning className="mt-1 pt-3 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+            <div suppressHydrationWarning className="flex flex-wrap items-center gap-2">
+              <span suppressHydrationWarning className="font-extrabold text-slate-900 dark:text-white text-sm flex items-center gap-1.5">
                 <span>🎯</span>
-                <span>{currentRound.name}</span>
+                <span suppressHydrationWarning>{currentRound.name}</span>
               </span>
 
               {currentRound.status === 'active' ? (
