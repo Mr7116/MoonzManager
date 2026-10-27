@@ -736,11 +736,6 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
                                     : `ลงชื่อแล้ว x${myCount}`
                                   : 'ลงชื่อแล้ว'}
                               </span>
-                              {allowMultiple && item.maxEntries && (
-                                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono">
-                                  ({myIndices.map((i) => `#${i + 1}`).join(', ')})
-                                </span>
-                              )}
                             </span>
 
                             {/* ปุ่มเพิ่มสิทธิ์: แสดงสำหรับ Title และ กล่อง/หีบ (Chest/Pack) เมื่อยังไม่เต็มโควตา */}
