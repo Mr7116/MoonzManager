@@ -267,7 +267,7 @@ export default function LuckyWheelModal({
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 p-3 sm:p-5 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-2xl rounded-3xl border border-rose-500/40 bg-[#0d121f] p-5 sm:p-6 shadow-2xl space-y-4 my-auto max-h-[95vh] flex flex-col items-center">
+      <div className="relative w-full max-w-2xl rounded-3xl border border-rose-500/40 bg-[#0d121f] p-4 sm:p-6 shadow-2xl space-y-4 my-auto max-h-[92vh] overflow-y-auto flex flex-col items-center">
         {/* Header */}
         <div className="w-full flex items-center justify-between border-b border-slate-800 pb-3 shrink-0">
           <div className="flex items-center gap-3">
@@ -456,7 +456,7 @@ export default function LuckyWheelModal({
               ref={canvasRef}
               width={380}
               height={380}
-              className="rounded-full max-w-[320px] max-h-[320px] sm:max-w-[380px] sm:max-h-[380px]"
+              className="rounded-full max-w-[270px] max-h-[270px] sm:max-w-[360px] sm:max-h-[360px]"
             />
           </div>
         </div>

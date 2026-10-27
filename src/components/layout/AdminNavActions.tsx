@@ -89,55 +89,60 @@ export default function AdminNavActions() {
         <button
           type="button"
           onClick={() => setIsImportModalOpen(true)}
-          className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 px-3 py-1.5 text-xs font-bold text-white shadow-md shadow-emerald-500/20 transition cursor-pointer"
+          className="flex items-center gap-1 sm:gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 px-2 sm:px-3 py-1.5 text-xs font-bold text-white shadow-md shadow-emerald-500/20 transition cursor-pointer"
           title="นำเข้าสมาชิกจากไฟล์ .CSV"
         >
           <span>📥</span>
-          <span>นำเข้า .CSV</span>
+          <span className="hidden sm:inline">นำเข้า .CSV</span>
+          <span className="sm:hidden">นำเข้า</span>
         </button>
 
         {/* 2. ส่งออก CSV */}
         <button
           type="button"
           onClick={handleExportCSV}
-          className="flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-100 dark:bg-slate-800/90 hover:bg-slate-200 dark:hover:bg-slate-700/90 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition cursor-pointer"
+          className="flex items-center gap-1 sm:gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-100 dark:bg-slate-800/90 hover:bg-slate-200 dark:hover:bg-slate-700/90 px-2 sm:px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition cursor-pointer"
           title="ส่งออกรายชื่อสมาชิกและข้อมูลเป็นไฟล์ CSV"
         >
           <span>📊</span>
-          <span>ส่งออก CSV</span>
+          <span className="hidden sm:inline">ส่งออก CSV</span>
+          <span className="sm:hidden">CSV</span>
         </button>
 
         {/* 3. ส่งออกรูปผังทัพ (PNG) */}
         <button
           type="button"
           onClick={() => setIsExportImageModalOpen(true)}
-          className="flex items-center gap-1.5 rounded-xl border border-indigo-200 dark:border-indigo-500/40 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/70 px-3.5 py-1.5 text-xs font-semibold text-indigo-700 dark:text-indigo-200 transition cursor-pointer"
+          className="flex items-center gap-1 sm:gap-1.5 rounded-xl border border-indigo-200 dark:border-indigo-500/40 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/70 px-2 sm:px-3.5 py-1.5 text-xs font-semibold text-indigo-700 dark:text-indigo-200 transition cursor-pointer"
           title="ส่งออกรูปภาพผังทัพที่จัด (PNG)"
         >
           <span>📸</span>
-          <span>ส่งออกรูปผังทัพ</span>
+          <span className="hidden sm:inline">ส่งออกรูปผังทัพ</span>
+          <span className="sm:hidden">รูปผัง</span>
         </button>
 
         {/* 4. จัดการรหัสผ่าน */}
         <button
           type="button"
           onClick={() => setIsChangePinModalOpen(true)}
-          className="flex items-center gap-1.5 rounded-xl border border-amber-200 dark:border-slate-700/80 bg-amber-50 dark:bg-slate-800/90 hover:bg-amber-100 dark:hover:bg-slate-700/90 px-3 py-1.5 text-xs font-semibold text-amber-800 dark:text-amber-300 transition cursor-pointer"
+          className="flex items-center gap-1 sm:gap-1.5 rounded-xl border border-amber-200 dark:border-slate-700/80 bg-amber-50 dark:bg-slate-800/90 hover:bg-amber-100 dark:hover:bg-slate-700/90 px-2 sm:px-3 py-1.5 text-xs font-semibold text-amber-800 dark:text-amber-300 transition cursor-pointer"
           title="เปลี่ยนรหัสผ่านผู้ดูแล (บันทึก Cloud)"
         >
           <span>🔑</span>
-          <span>จัดการรหัส</span>
+          <span className="hidden sm:inline">จัดการรหัส</span>
+          <span className="sm:hidden">รหัส</span>
         </button>
 
         {/* 5. ออกจากระบบ */}
         <button
           type="button"
           onClick={logout}
-          className="flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-100 dark:bg-slate-800/90 hover:bg-rose-50 dark:hover:bg-rose-950/60 hover:border-rose-300 dark:hover:border-rose-700/60 hover:text-rose-600 dark:hover:text-rose-300 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 transition cursor-pointer"
+          className="flex items-center gap-1 sm:gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-100 dark:bg-slate-800/90 hover:bg-rose-50 dark:hover:bg-rose-950/60 hover:border-rose-300 dark:hover:border-rose-700/60 hover:text-rose-600 dark:hover:text-rose-300 px-2 sm:px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 transition cursor-pointer"
           title="ออกจากระบบ"
         >
           <span>🚪</span>
-          <span>ออกจากระบบ</span>
+          <span className="hidden sm:inline">ออกจากระบบ</span>
+          <span className="sm:hidden">ออก</span>
         </button>
       </div>
 
