@@ -66,15 +66,16 @@ export default function LiveClock({
   if (variant === 'compact') {
     return (
       <div
+        suppressHydrationWarning
         className={`inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700/80 bg-white dark:bg-[#070b14] px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 shadow-sm ${className}`}
       >
         <span className="relative flex h-2 w-2">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
           <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
         </span>
-        <span className="font-bold text-slate-800 dark:text-white">{dateStr}</span>
+        <span suppressHydrationWarning className="font-bold text-slate-800 dark:text-white">{dateStr}</span>
         <span className="text-slate-400 dark:text-slate-600">•</span>
-        <span className="font-mono font-extrabold text-amber-600 dark:text-amber-400 tracking-wider">
+        <span suppressHydrationWarning className="font-mono font-extrabold text-amber-600 dark:text-amber-400 tracking-wider">
           {timeStr}
         </span>
       </div>
@@ -83,6 +84,7 @@ export default function LiveClock({
 
   return (
     <div
+      suppressHydrationWarning
       className={`inline-flex items-center gap-2.5 rounded-2xl border-2 border-slate-300 dark:border-slate-700/90 bg-white/95 dark:bg-gradient-to-r dark:from-[#0b101c] dark:to-[#0f172a] px-3.5 py-1.5 shadow-sm dark:shadow-md transition-all ${className}`}
       title="วัน เดือน ปี และเวลาปัจจุบัน (อัปเดตแบบเรียลไทม์วินาทีต่อวินาที)"
     >

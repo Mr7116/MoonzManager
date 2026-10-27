@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
-import { AuctionItem, AuctionEntry } from '@/types/auction';
+import { AuctionItem, AuctionEntry, isTitleItem, isChestItem, getAuctionItemImageSrc } from '@/types/auction';
 import JobEmblem from '@/components/tactical/JobEmblem';
 import TitleSvgIcon from '@/components/icons/TitleSvgIcon';
 import TitleChestSvgIcon from '@/components/icons/TitleChestSvgIcon';
@@ -295,25 +295,15 @@ export default function LuckyWheelModal({
 
         {/* Item Banner Bar */}
         {(() => {
-          const isTitle = auction.itemCategory === 'title' || (auction.cardSlot && auction.cardSlot.includes('Title')) || (auction.cardQuality && auction.cardQuality.includes('Title'));
-          const isChest = !isTitle && (auction.itemCategory === 'chest' || (auction.cardSlot && (auction.cardSlot.includes('หีบ') || auction.cardSlot.includes('กล่อง') || auction.cardSlot.includes('Pack'))));
+          const isTitle = isTitleItem(auction);
+          const isChest = isChestItem(auction);
           const isPet = !isTitle && !isChest && (auction.itemCategory === 'pet' || (auction.cardSlot && auction.cardSlot.includes('สัตว์เลี้ยง')) || (auction.cardQuality && auction.cardQuality.startsWith('Pet')));
           const isRelic = !isTitle && !isChest && !isPet && (auction.itemCategory === 'relic' || auction.cardQuality === 'Sage');
           const isCard = !isTitle && !isChest && !isPet && !isRelic && (auction.itemCategory === 'card' || auction.cardQuality === 'Purple');
           const titleTier = isTitle ? getTitleTierStyle(auction.accessoryIcon || auction.accessoryName || auction.cardQuality) : null;
           const chestTier = isChest ? getChestTierStyle(auction.accessoryName || auction.cardQuality) : null;
           const petTier = isPet ? getPetTierStyle(auction.accessoryName || auction.cardQuality) : null;
-          const imageSrc = isTitle
-            ? `/images/titles/${auction.accessoryIcon}.webp`
-            : isChest
-            ? `/images/chests/${auction.accessoryIcon}.webp`
-            : isPet
-            ? `/images/pets/${auction.accessoryIcon}.webp`
-            : isRelic
-            ? `/images/relics/${auction.accessoryIcon}.webp`
-            : isCard
-            ? `/images/cards/${auction.accessoryIcon}.webp`
-            : `/images/accessories/${auction.accessoryIcon}.webp`;
+          const imageSrc = getAuctionItemImageSrc(auction);
 
           return (
             <div className={`w-full flex items-center justify-between gap-3 p-3 rounded-2xl border shadow-inner shrink-0 ${

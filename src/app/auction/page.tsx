@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { useGuildStore } from '@/lib/guildStore';
 import MemberAuctionView from '@/components/auction/MemberAuctionView';
-import { AuctionItem, AuctionRound } from '@/types/auction';
+import { AuctionItem, AuctionRound, isTitleItem, isChestItem, getAuctionItemImageSrc } from '@/types/auction';
 import AddAuctionModal from '@/components/modals/AddAuctionModal';
 import RegisterMembersModal from '@/components/modals/RegisterMembersModal';
 import LuckyWheelModal from '@/components/modals/LuckyWheelModal';
@@ -651,8 +651,8 @@ export default function AuctionPage() {
             const isPending = item.status === 'pending';
             const isActive = item.status === 'active';
             const isEnded = item.status === 'ended';
-            const isTitle = item.itemCategory === 'title' || (item.cardSlot && item.cardSlot.includes('Title')) || (item.cardQuality && item.cardQuality.includes('Title'));
-            const isChest = !isTitle && (item.itemCategory === 'chest' || (item.cardSlot && (item.cardSlot.includes('หีบ') || item.cardSlot.includes('กล่อง') || item.cardSlot.includes('Pack'))));
+            const isTitle = isTitleItem(item);
+            const isChest = isChestItem(item);
             const isPet = !isTitle && !isChest && (item.itemCategory === 'pet' || (item.cardSlot && item.cardSlot.includes('สัตว์เลี้ยง')) || (item.cardQuality && item.cardQuality.startsWith('Pet')));
             const isRelic = !isTitle && !isChest && !isPet && (item.itemCategory === 'relic' || item.cardQuality === 'Sage');
             const isCard = !isTitle && !isChest && !isPet && !isRelic && (item.itemCategory === 'card' || item.cardQuality === 'Purple');
@@ -661,17 +661,7 @@ export default function AuctionPage() {
             const petTier = isPet ? getPetTierStyle(item.accessoryName || item.cardQuality) : null;
             const entryCount = (item.entries || []).length;
             const isQuotaFull = !!(item.maxEntries && item.maxEntries > 0 && entryCount >= item.maxEntries);
-            const imageSrc = isTitle
-              ? `/images/titles/${item.accessoryIcon}.webp`
-              : isChest
-              ? `/images/chests/${item.accessoryIcon}.webp`
-              : isPet
-              ? `/images/pets/${item.accessoryIcon}.webp`
-              : isRelic
-              ? `/images/relics/${item.accessoryIcon}.webp`
-              : isCard
-              ? `/images/cards/${item.accessoryIcon}.webp`
-              : `/images/accessories/${item.accessoryIcon}.webp`;
+            const imageSrc = getAuctionItemImageSrc(item);
 
             return (
               <div
@@ -1011,8 +1001,8 @@ export default function AuctionPage() {
             const isPending = item.status === 'pending';
             const isActive = item.status === 'active';
             const isEnded = item.status === 'ended';
-            const isTitle = item.itemCategory === 'title' || (item.cardSlot && item.cardSlot.includes('Title')) || (item.cardQuality && item.cardQuality.includes('Title'));
-            const isChest = !isTitle && (item.itemCategory === 'chest' || (item.cardSlot && (item.cardSlot.includes('หีบ') || item.cardSlot.includes('กล่อง') || item.cardSlot.includes('Pack'))));
+            const isTitle = isTitleItem(item);
+            const isChest = isChestItem(item);
             const isPet = !isTitle && !isChest && (item.itemCategory === 'pet' || (item.cardSlot && item.cardSlot.includes('สัตว์เลี้ยง')) || (item.cardQuality && item.cardQuality.startsWith('Pet')));
             const isRelic = !isTitle && !isChest && !isPet && (item.itemCategory === 'relic' || item.cardQuality === 'Sage');
             const isCard = !isTitle && !isChest && !isPet && !isRelic && (item.itemCategory === 'card' || item.cardQuality === 'Purple');
@@ -1021,17 +1011,7 @@ export default function AuctionPage() {
             const petTier = isPet ? getPetTierStyle(item.accessoryName || item.cardQuality) : null;
             const entryCount = (item.entries || []).length;
             const isQuotaFull = !!(item.maxEntries && item.maxEntries > 0 && entryCount >= item.maxEntries);
-            const imageSrc = isTitle
-              ? `/images/titles/${item.accessoryIcon}.webp`
-              : isChest
-              ? `/images/chests/${item.accessoryIcon}.webp`
-              : isPet
-              ? `/images/pets/${item.accessoryIcon}.webp`
-              : isRelic
-              ? `/images/relics/${item.accessoryIcon}.webp`
-              : isCard
-              ? `/images/cards/${item.accessoryIcon}.webp`
-              : `/images/accessories/${item.accessoryIcon}.webp`;
+            const imageSrc = getAuctionItemImageSrc(item);
 
             return (
               <div

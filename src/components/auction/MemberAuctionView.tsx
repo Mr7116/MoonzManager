@@ -9,7 +9,7 @@ import JobEmblem from '@/components/tactical/JobEmblem';
 import ThemeToggle from '@/components/layout/ThemeToggle';
 import AutoSaveBadge from '@/components/common/AutoSaveBadge';
 import LiveClock from '@/components/common/LiveClock';
-import { AuctionItem, AuctionRound, formatRegistrationTime, isTitleItem, isChestItem, isMultiEntryItem } from '@/types/auction';
+import { AuctionItem, AuctionRound, formatRegistrationTime, isTitleItem, isChestItem, isMultiEntryItem, getAuctionItemImageSrc } from '@/types/auction';
 import TitleSvgIcon from '@/components/icons/TitleSvgIcon';
 import TitleChestSvgIcon from '@/components/icons/TitleChestSvgIcon';
 import RelicSvgIcon from '@/components/icons/RelicSvgIcon';
@@ -520,17 +520,7 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
               const titleTier = isTitle ? getTitleTierStyle(item.accessoryIcon || item.accessoryName || item.cardQuality) : null;
               const chestTier = isChest ? getChestTierStyle(item.accessoryName || item.cardQuality) : null;
               const petTier = isPet ? getPetTierStyle(item.accessoryName || item.cardQuality) : null;
-              const imageSrc = isTitle
-                ? `/images/titles/${item.accessoryIcon}.webp`
-                : isChest
-                ? `/images/chests/${item.accessoryIcon}.webp`
-                : isPet
-                ? `/images/pets/${item.accessoryIcon}.webp`
-                : isRelic
-                ? `/images/relics/${item.accessoryIcon}.webp`
-                : isCard
-                ? `/images/cards/${item.accessoryIcon}.webp`
-                : `/images/accessories/${item.accessoryIcon}.webp`;
+              const imageSrc = getAuctionItemImageSrc(item);
 
               return (
                 <div
@@ -572,22 +562,31 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
                           unoptimized
                           className="object-contain drop-shadow"
                           onError={(e) => {
-                            const fallback = isTitle
-                              ? `https://roworlddb.com/media/images/item/${item.accessoryIcon}.webp`
-                              : isChest
-                              ? (item.accessoryIcon.includes('title_chest')
-                                  ? `/images/chests/${item.accessoryIcon}.svg`
-                                  : item.accessoryIcon.includes('stonebox') || item.accessoryIcon.includes('gem')
-                                  ? `https://roworlddb.com/media/images/item/icon_item_stonebox_14.webp`
-                                  : `https://roworlddb.com/media/images/item/icon_item_bx_fy.webp`)
-                              : isPet
-                              ? (item.accessoryIcon.includes('mfmm')
-                                  ? `https://roworlddb.com/media/images/icon/pet/${item.accessoryIcon}.webp`
-                                  : `https://roworlddb.com/media/images/pet/${item.accessoryIcon}.webp`)
-                              : isRelic
-                              ? `https://roworlddb.com/media/images/hallows/${item.accessoryIcon}.webp`
-                              : `https://roworlddb.com/media/images/item/${item.accessoryIcon}.webp`;
-                            (e.target as HTMLImageElement).src = fallback;
+                            const target = e.target as HTMLImageElement;
+                            const icon = item.accessoryIcon || '';
+                            if (icon.includes('title_chest')) {
+                              target.src = `/images/chests/${icon}.png`;
+                              return;
+                            }
+                            if (isChest) {
+                              target.src = `/images/chests/icon_item_bx_fy.webp`;
+                              return;
+                            }
+                            if (isTitle) {
+                              target.src = `/images/titles/${icon}.webp`;
+                              return;
+                            }
+                            if (isPet) {
+                              target.src = icon.includes('mfmm')
+                                ? `https://roworlddb.com/media/images/icon/pet/${icon}.webp`
+                                : `https://roworlddb.com/media/images/pet/${icon}.webp`;
+                              return;
+                            }
+                            if (isRelic) {
+                              target.src = `https://roworlddb.com/media/images/hallows/${icon}.webp`;
+                              return;
+                            }
+                            target.src = `https://roworlddb.com/media/images/item/${icon}.webp`;
                           }}
                         />
                         {isTitle ? (

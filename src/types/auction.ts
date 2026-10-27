@@ -103,9 +103,60 @@ export function formatRegistrationDateTime(isoStr?: string): string {
   }
 }
 
+export function isChestItem(item?: Partial<AuctionItem> | null): boolean {
+  if (!item) return false;
+  if (item.itemCategory === 'chest') return true;
+
+  const name = (item.accessoryName || '').toLowerCase();
+  const slot = (item.cardSlot || '').toLowerCase();
+  const quality = (item.cardQuality || '').toLowerCase();
+  const icon = (item.accessoryIcon || '').toLowerCase();
+
+  // If icon is a chest or box icon
+  if (
+    icon.includes('chest') ||
+    icon.includes('stonebox') ||
+    icon.includes('box') ||
+    icon.includes('bx_fy') ||
+    icon.includes('gem')
+  ) {
+    return true;
+  }
+
+  // If slot or quality indicates Pack / Chest
+  if (
+    slot.includes('pack') ||
+    quality.includes('pack') ||
+    slot.includes('หีบ') ||
+    slot.includes('กล่อง') ||
+    slot.includes('chest') ||
+    quality.includes('chest')
+  ) {
+    return true;
+  }
+
+  // If item name starts with หีบ or กล่อง or contains pack/chest
+  if (
+    name.startsWith('หีบ') ||
+    name.startsWith('กล่อง') ||
+    name.includes('หีบ') ||
+    name.includes('กล่อง') ||
+    name.includes('pack') ||
+    name.includes('chest') ||
+    name.includes('box')
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
 export function isTitleItem(item?: Partial<AuctionItem> | null): boolean {
   if (!item) return false;
+  // If it's a chest/pack, it is NOT a title voucher
+  if (isChestItem(item)) return false;
   if (item.itemCategory === 'title') return true;
+
   const name = item.accessoryName || '';
   const slot = item.cardSlot || '';
   const quality = item.cardQuality || '';
@@ -124,20 +175,44 @@ export function isTitleItem(item?: Partial<AuctionItem> | null): boolean {
   return false;
 }
 
-export function isChestItem(item?: Partial<AuctionItem> | null): boolean {
-  if (!item) return false;
-  if (isTitleItem(item)) return false;
-  if (item.itemCategory === 'chest') return true;
-  const name = (item.accessoryName || '').toLowerCase();
-  const slot = (item.cardSlot || '').toLowerCase();
-  const quality = (item.cardQuality || '').toLowerCase();
-  const icon = (item.accessoryIcon || '').toLowerCase();
+export function getAuctionItemImageSrc(item?: Partial<AuctionItem> | null): string {
+  if (!item) return '/images/chests/gold_title_chest.webp';
+  const icon = item.accessoryIcon || '';
+  if (icon.startsWith('/') || icon.startsWith('http')) return icon;
 
-  if (slot.includes('หีบ') || slot.includes('กล่อง') || slot.includes('pack') || slot.includes('chest') || slot.includes('box')) return true;
-  if (quality.includes('pack') || quality.includes('chest') || quality.includes('box')) return true;
-  if (icon.includes('title_chest') || icon.includes('stonebox') || icon.includes('gem') || icon.includes('chest') || icon.includes('box')) return true;
-  if (name.includes('หีบ') || name.includes('กล่อง') || name.includes('pack') || name.includes('chest') || name.includes('box')) return true;
-  return false;
+  // 1. Chest & Pack items
+  if (
+    isChestItem(item) ||
+    icon.includes('chest') ||
+    icon.includes('stonebox') ||
+    icon.includes('box') ||
+    icon.includes('bx_fy')
+  ) {
+    return `/images/chests/${icon}.webp`;
+  }
+
+  // 2. Title items
+  if (isTitleItem(item) || icon.includes('touxian')) {
+    return `/images/titles/${icon}.webp`;
+  }
+
+  // 3. Pet items
+  if (item.itemCategory === 'pet' || icon.includes('pet') || icon.includes('mfmm')) {
+    return `/images/pets/${icon}.webp`;
+  }
+
+  // 4. Relic items
+  if (item.itemCategory === 'relic' || item.cardQuality === 'Sage') {
+    return `/images/relics/${icon}.webp`;
+  }
+
+  // 5. Card items
+  if (item.itemCategory === 'card' || item.cardQuality === 'Purple') {
+    return `/images/cards/${icon}.webp`;
+  }
+
+  // 6. Accessories
+  return `/images/accessories/${icon}.webp`;
 }
 
 /**

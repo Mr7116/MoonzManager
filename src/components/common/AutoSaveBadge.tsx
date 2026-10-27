@@ -35,18 +35,18 @@ export default function AutoSaveBadge({ className = '' }: { className?: string }
 
   if (lastSavedAt) {
     return (
-      <div className={`flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 shadow-sm ${className}`}>
+      <div suppressHydrationWarning className={`flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 shadow-sm ${className}`}>
         <span className="relative flex h-2 w-2">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
           <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
         </span>
-        <span>Sync ({lastSavedAt})</span>
+        <span suppressHydrationWarning>Sync ({lastSavedAt})</span>
       </div>
     );
   }
 
   return (
-    <div className={`flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-50/80 dark:bg-slate-900/80 px-3 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 ${className}`}>
+    <div suppressHydrationWarning className={`flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-50/80 dark:bg-slate-900/80 px-3 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 ${className}`}>
       <span className="relative flex h-2 w-2">
         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
         <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>

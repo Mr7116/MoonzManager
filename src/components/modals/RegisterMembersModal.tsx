@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
-import { AuctionItem, formatRegistrationTime, isTitleItem, isChestItem } from '@/types/auction';
+import { AuctionItem, formatRegistrationTime, isTitleItem, isChestItem, getAuctionItemImageSrc } from '@/types/auction';
 import { Member } from '@/types/member';
 import JobEmblem from '@/components/tactical/JobEmblem';
 import TitleSvgIcon from '@/components/icons/TitleSvgIcon';
@@ -110,17 +110,7 @@ export default function RegisterMembersModal({
           const titleTier = isTitle ? getTitleTierStyle(auction.accessoryIcon || auction.accessoryName || auction.cardQuality) : null;
           const chestTier = isChest ? getChestTierStyle(auction.accessoryName || auction.cardQuality) : null;
           const petTier = isPet ? getPetTierStyle(auction.accessoryName || auction.cardQuality) : null;
-          const imageSrc = isTitle
-            ? `/images/titles/${auction.accessoryIcon}.webp`
-            : isChest
-            ? `/images/chests/${auction.accessoryIcon}.webp`
-            : isPet
-            ? `/images/pets/${auction.accessoryIcon}.webp`
-            : isRelic
-            ? `/images/relics/${auction.accessoryIcon}.webp`
-            : isCard
-            ? `/images/cards/${auction.accessoryIcon}.webp`
-            : `/images/accessories/${auction.accessoryIcon}.webp`;
+          const imageSrc = getAuctionItemImageSrc(auction);
 
           return (
             <div className={`flex items-center justify-between gap-3 p-3 rounded-2xl border shadow-inner shrink-0 ${
