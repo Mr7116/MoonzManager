@@ -12,9 +12,11 @@ export interface AuctionRound {
   id: string;
   name: string;
   date: string;
-  status: 'active' | 'completed' | 'archived';
+  status: 'active' | 'completed' | 'archived' | 'scheduled';
   createdAt: string;
   closedAt?: string;
+  scheduledOpenAt?: string; // ISO string ของวัน-เวลาที่จะเปิดรับรายชื่ออัตโนมัติ
+  scheduledCloseAt?: string; // ISO string ของวัน-เวลาที่จะปิดรับรายชื่ออัตโนมัติ
   note?: string;
 }
 

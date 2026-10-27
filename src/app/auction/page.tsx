@@ -36,6 +36,8 @@ export default function AuctionPage() {
     completeAuctionRound,
     reopenAuctionRound,
     deleteAuctionRound,
+    openScheduledRoundNow,
+    setRoundSchedule,
     addAuctionItems,
     startAuction,
     startAllPendingAuctions,
@@ -238,9 +240,10 @@ export default function AuctionPage() {
                   auctionRounds.map((r) => {
                     const rItems = auctionItems.filter((i) => (i.roundId || auctionRounds[0]?.id || 'round_default') === r.id);
                     const isComp = r.status === 'completed';
+                    const isSched = r.status === 'scheduled';
                     return (
                       <option key={r.id} value={r.id}>
-                        {isComp ? '🏆 [จบแล้ว]' : '🟢 [เปิดอยู่]'} {r.name} ({r.date}) — {rItems.length} ชิ้น
+                        {isComp ? '🏆 [จบแล้ว]' : isSched ? '⏰ [ตั้งเวลาเปิด]' : '🟢 [เปิดอยู่]'} {r.name} ({r.date}) — {rItems.length} ชิ้น
                       </option>
                     );
                   })
@@ -257,6 +260,30 @@ export default function AuctionPage() {
                   <span>🏆</span>
                   <span>รอบนี้จบการประมูลแล้ว</span>
                 </span>
+              ) : currentRound.status === 'scheduled' ? (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40 flex items-center gap-1.5">
+                    <span>⏰</span>
+                    <span>
+                      รอเปิดอัตโนมัติ:{' '}
+                      {currentRound.scheduledOpenAt
+                        ? new Date(currentRound.scheduledOpenAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.'
+                        : ''}
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (window.confirm(`ต้องการเปิดรอบ "${currentRound.name}" ทันทีตอนนี้เลยหรือไม่?`)) {
+                        openScheduledRoundNow(currentRound.id);
+                      }
+                    }}
+                    className="px-2.5 py-1 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-[11px] font-bold shadow transition cursor-pointer"
+                    title="เปิดให้สมาชิกลงชื่อทันทีโดยไม่ต้องรอเวลา"
+                  >
+                    <span>⚡ เปิดทันที</span>
+                  </button>
+                </div>
               ) : (
                 <span className="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -1352,8 +1379,8 @@ export default function AuctionPage() {
       <CreateRoundModal
         isOpen={isCreateRoundOpen}
         onClose={() => setIsCreateRoundOpen(false)}
-        onCreateRound={(name, date, note) => {
-          createAuctionRound(name, date, note);
+        onCreateRound={(name, date, note, scheduledOpenAt, scheduledCloseAt) => {
+          createAuctionRound(name, date, note, scheduledOpenAt, scheduledCloseAt);
         }}
       />
 

@@ -67,11 +67,23 @@ export interface GuildState {
   applyPresetToParty: (mode: 'gvg' | 'siege' | 'polarity', targetPartyId: string, presetPartyId: string) => void;
 
   // Auction Round Operations
-  createAuctionRound: (name: string, date?: string, note?: string) => string;
+  createAuctionRound: (
+    name: string,
+    date?: string,
+    note?: string,
+    scheduledOpenAt?: string,
+    scheduledCloseAt?: string
+  ) => string;
   updateAuctionRound: (id: string, updates: Partial<AuctionRound>) => void;
   deleteAuctionRound: (id: string) => void;
   completeAuctionRound: (id: string) => void;
   reopenAuctionRound: (id: string) => void;
+  setRoundSchedule: (
+    id: string,
+    scheduledOpenAt?: string | null,
+    scheduledCloseAt?: string | null
+  ) => void;
+  openScheduledRoundNow: (id: string) => void;
 
   // Auction Operations
   addAuctionItem: (item: Omit<AuctionItem, 'id' | 'createdAt' | 'currentPrice' | 'bids' | 'status' | 'entries'> & { status?: 'pending' | 'active' }) => void;
@@ -980,20 +992,68 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const createAuctionRound = (name: string, date?: string, note?: string): string => {
+  const createAuctionRound = (
+    name: string,
+    date?: string,
+    note?: string,
+    scheduledOpenAt?: string,
+    scheduledCloseAt?: string
+  ): string => {
     const newRoundId = `round_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const isFutureSchedule = scheduledOpenAt ? new Date(scheduledOpenAt).getTime() > Date.now() : false;
     const newRound: AuctionRound = {
       id: newRoundId,
       name: name.trim() || `รอบประมูล ${new Date().toLocaleDateString('th-TH')}`,
       date: date || new Date().toISOString().split('T')[0],
-      status: 'active',
+      status: isFutureSchedule ? 'scheduled' : 'active',
       createdAt: new Date().toISOString(),
+      scheduledOpenAt: scheduledOpenAt || undefined,
+      scheduledCloseAt: scheduledCloseAt || undefined,
       note: note?.trim() || undefined,
     };
     setAuctionRounds((prev) => [newRound, ...prev]);
     setActiveRoundId(newRoundId);
     triggerAutoSave();
     return newRoundId;
+  };
+
+  const setRoundSchedule = (
+    id: string,
+    scheduledOpenAt?: string | null,
+    scheduledCloseAt?: string | null
+  ) => {
+    setAuctionRounds((prev) =>
+      prev.map((r) => {
+        if (r.id !== id) return r;
+        const isFuture = scheduledOpenAt ? new Date(scheduledOpenAt).getTime() > Date.now() : false;
+        return {
+          ...r,
+          status: isFuture ? 'scheduled' : 'active',
+          scheduledOpenAt: scheduledOpenAt || undefined,
+          scheduledCloseAt: scheduledCloseAt || undefined,
+        };
+      })
+    );
+    triggerAutoSave();
+  };
+
+  const openScheduledRoundNow = (id: string) => {
+    setAuctionRounds((prev) =>
+      prev.map((r) =>
+        r.id === id
+          ? { ...r, status: 'active', scheduledOpenAt: undefined }
+          : r
+      )
+    );
+    setAuctionItems((prev) =>
+      prev.map((item) => {
+        if (item.roundId === id && item.status === 'pending') {
+          return { ...item, status: 'active' };
+        }
+        return item;
+      })
+    );
+    triggerAutoSave();
   };
 
   const updateAuctionRound = (id: string, updates: Partial<AuctionRound>) => {
@@ -1035,6 +1095,66 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
     setActiveRoundId(id);
     triggerAutoSave();
   };
+
+  // Auto-schedule checker for Auction Rounds (runs every second)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = Date.now();
+      let hasChanges = false;
+
+      const roundsToOpen: string[] = [];
+      const roundsToClose: string[] = [];
+
+      auctionRounds.forEach((r) => {
+        if (r.status === 'scheduled' && r.scheduledOpenAt) {
+          const openTime = new Date(r.scheduledOpenAt).getTime();
+          if (now >= openTime) {
+            roundsToOpen.push(r.id);
+          }
+        } else if (r.status === 'active' && r.scheduledCloseAt) {
+          const closeTime = new Date(r.scheduledCloseAt).getTime();
+          if (now >= closeTime) {
+            roundsToClose.push(r.id);
+          }
+        }
+      });
+
+      if (roundsToOpen.length > 0) {
+        setAuctionRounds((prev) =>
+          prev.map((r) =>
+            roundsToOpen.includes(r.id)
+              ? { ...r, status: 'active', scheduledOpenAt: undefined }
+              : r
+          )
+        );
+        setAuctionItems((prev) =>
+          prev.map((item) =>
+            item.roundId && roundsToOpen.includes(item.roundId) && item.status === 'pending'
+              ? { ...item, status: 'active' }
+              : item
+          )
+        );
+        hasChanges = true;
+      }
+
+      if (roundsToClose.length > 0) {
+        setAuctionRounds((prev) =>
+          prev.map((r) =>
+            roundsToClose.includes(r.id)
+              ? { ...r, status: 'completed', closedAt: new Date().toISOString() }
+              : r
+          )
+        );
+        hasChanges = true;
+      }
+
+      if (hasChanges) {
+        triggerAutoSave();
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [auctionRounds]);
 
   const addAuctionItems = (
     itemsData: Array<Omit<AuctionItem, 'id' | 'createdAt' | 'currentPrice' | 'bids' | 'status' | 'entries'> & { status?: 'pending' | 'active'; roundId?: string }>
@@ -1573,6 +1693,8 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
         deleteAuctionRound,
         completeAuctionRound,
         reopenAuctionRound,
+        setRoundSchedule,
+        openScheduledRoundNow,
         selectedDate,
         setSelectedDate,
         isLoading,

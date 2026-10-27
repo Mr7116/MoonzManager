@@ -73,8 +73,35 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
   // Current active round (or newest)
   const currentRound: AuctionRound | null = useMemo(() => {
     if (auctionRounds.length === 0) return null;
-    return auctionRounds.find((r) => r.status === 'active') || auctionRounds[0];
+    return auctionRounds.find((r) => r.status === 'active' || r.status === 'scheduled') || auctionRounds[0];
   }, [auctionRounds]);
+
+  // Live timer tick for scheduled countdown
+  const [nowTick, setNowTick] = useState<number>(Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNowTick(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  const isRoundScheduled = Boolean(
+    currentRound &&
+    currentRound.status === 'scheduled' &&
+    currentRound.scheduledOpenAt &&
+    new Date(currentRound.scheduledOpenAt).getTime() > nowTick
+  );
+
+  const scheduledCountdownStr = useMemo(() => {
+    if (!isRoundScheduled || !currentRound?.scheduledOpenAt) return '';
+    const diff = new Date(currentRound.scheduledOpenAt).getTime() - nowTick;
+    if (diff <= 0) return '00:00:00';
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    if (hours > 0) {
+      return `${hours} ชม. ${String(minutes).padStart(2, '0')} นาที ${String(seconds).padStart(2, '0')} วิ`;
+    }
+    return `${String(minutes).padStart(2, '0')} นาที ${String(seconds).padStart(2, '0')} วิ`;
+  }, [isRoundScheduled, currentRound, nowTick]);
 
   // Items for this round
   const roundItems: AuctionItem[] = useMemo(() => {
@@ -102,7 +129,7 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
   const displayItems = useMemo(() => {
     let list = roundItems;
     if (activeTab === 'active') {
-      list = activeItems;
+      list = isRoundScheduled ? roundItems : activeItems;
     } else if (activeTab === 'my') {
       list = myRegisteredItems;
     }
@@ -132,6 +159,10 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
 
   // Join item
   const handleJoin = (item: AuctionItem) => {
+    if (isRoundScheduled) {
+      alert(`รอบนี้ยังไม่ถึงเวลาเปิดรับรายชื่อ จะเปิดอัตโนมัติในอีก ${scheduledCountdownStr}`);
+      return;
+    }
     if (!currentMember) {
       alert('กรุณาเลือกชื่อของคุณด้านบนก่อน');
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -254,7 +285,12 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
                 <span suppressHydrationWarning>{currentRound.name}</span>
               </span>
 
-              {currentRound.status === 'active' ? (
+              {isRoundScheduled ? (
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40 flex items-center gap-1.5 animate-pulse">
+                  <span>⏰</span>
+                  <span>รอเปิดรับรายชื่ออัตโนมัติ ({scheduledCountdownStr})</span>
+                </span>
+              ) : currentRound.status === 'active' ? (
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   <span>กำลังเปิดให้สมาชิกลงชื่อ</span>
@@ -281,6 +317,36 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
           </div>
         )}
       </div>
+
+      {/* SCHEDULED COUNTDOWN BANNER (เมื่อรอบถูกตั้งเวลาเปิดล่วงหน้า) */}
+      {isRoundScheduled && currentRound?.scheduledOpenAt && (
+        <div className="p-3.5 sm:p-4 rounded-3xl border-2 border-amber-500/50 bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500/20 text-2xl border border-amber-500/40 text-amber-500 dark:text-amber-300">
+              ⏰
+            </span>
+            <div>
+              <h3 className="text-sm sm:text-base font-extrabold text-amber-900 dark:text-amber-200">
+                รอบนี้ตั้งเวลาเปิดรับรายชื่อล่วงหน้า
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400">
+                กำหนดเปิดระบบเวลา{' '}
+                <strong className="text-amber-700 dark:text-amber-300">
+                  {new Date(currentRound.scheduledOpenAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.
+                </strong>{' '}
+                (สมาชิกรอกดลงชื่อพร้อมกันเมื่อเวลานับถอยหลังสิ้นสุด)
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-end sm:self-center">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">เหลือเวลา:</span>
+            <div className="font-mono text-base sm:text-lg font-black px-3.5 py-1.5 rounded-2xl bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/50 shadow-inner">
+              {scheduledCountdownStr}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* STEP 1: MEMBER SELECTOR BOX */}
       <div className="rounded-3xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#0d121f] p-4 sm:p-5 shadow-sm space-y-3">
@@ -637,7 +703,12 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
                           )}
 
                           {/* Status */}
-                          {isOpen && (
+                          {isRoundScheduled ? (
+                            <span className="px-2 py-0.2 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40 flex items-center gap-1">
+                              <span>⏰</span>
+                              <span>รอเปิดตามเวลา ({scheduledCountdownStr})</span>
+                            </span>
+                          ) : isOpen && (
                             isQuotaFull ? (
                               <span className="px-2 py-0.2 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40 flex items-center gap-1">
                                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
@@ -724,7 +795,15 @@ export default function MemberAuctionView({ onSwitchToAdmin }: MemberAuctionView
 
                     {/* Right: Action Button */}
                     <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-                      {isOpen ? (
+                      {isRoundScheduled ? (
+                        <div
+                          className="px-3.5 py-2 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 text-xs font-bold flex items-center gap-1.5 shadow-xs select-none"
+                          title="รอบนี้ตั้งเวลาเปิดรับรายชื่อล่วงหน้า สมาชิกจะสามารถกดลงชื่อได้พร้อมกันเมื่อถึงเวลา"
+                        >
+                          <span className="animate-pulse">⏰</span>
+                          <span>รอเปิดรับ ({scheduledCountdownStr})</span>
+                        </div>
+                      ) : isOpen ? (
                         isRegistered ? (
                           <div className="flex items-center gap-1.5 flex-wrap justify-end">
                             <span className="px-3 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center gap-1">
