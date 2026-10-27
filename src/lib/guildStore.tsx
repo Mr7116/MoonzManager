@@ -304,6 +304,9 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
   // Apply parsed database state to React state
   const applyRemoteData = useCallback((data: any) => {
     if (!data) return;
+    if (data.updated_at && data.updated_at === lastRemoteUpdatedAtRef.current) {
+      return;
+    }
     isRemoteSyncingRef.current = true;
 
     if (data.updated_at) {
@@ -482,7 +485,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
 
     setTimeout(() => {
       isRemoteSyncingRef.current = false;
-    }, 400);
+    }, 800);
   }, []);
 
   // Silent reload from Supabase (without toggling full-page loading spinner)
@@ -673,7 +676,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Debounced Auto Save trigger
-  const triggerAutoSave = useCallback((delayMs: number = 400) => {
+  const triggerAutoSave = useCallback((delayMs: number = 800) => {
     if (!isInitialLoadDone.current || isRemoteSyncingRef.current) return;
     setHasUnsavedChanges(true);
     setSaveStatus('pending');
@@ -774,7 +777,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
     };
     window.addEventListener('storage', handleStorage);
 
-    // 3.5s Fallback heartbeat polling
+    // 10s Heartbeat polling (รีเฟรชทุกๆ 10 วินาที นิ่งๆ ไม่เด้ง)
     const pollingInterval = setInterval(async () => {
       if (typeof document !== 'undefined' && document.hidden) return;
       if (autoSaveTimerRef.current || isRemoteSyncingRef.current) return;
@@ -786,11 +789,10 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
           .maybeSingle();
 
         if (!error && data?.updated_at && data.updated_at !== lastRemoteUpdatedAtRef.current) {
-          lastRemoteUpdatedAtRef.current = data.updated_at;
           silentReloadFromCloud();
         }
       } catch (_) {}
-    }, 3500);
+    }, 10000);
 
     return () => {
       supabase.removeChannel(channel);
