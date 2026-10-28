@@ -57,17 +57,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Fetch cloud PIN
     let validPin = localStorage.getItem('Moonz_guild_pin') || 'Moonz';
     try {
-      const { data } = await supabase
-        .from('guild_state')
-        .select('parties')
+      const { data: settData, error: settErr } = await supabase
+        .from('guild_settings')
+        .select('pin')
         .eq('id', 1)
         .maybeSingle();
 
-      if (data && Array.isArray(data.parties)) {
-        const authEntry = data.parties.find((p: any) => p.id === '__guild_auth_config__');
-        if (authEntry && authEntry.pin) {
-          validPin = authEntry.pin;
-          localStorage.setItem('Moonz_guild_pin', authEntry.pin);
+      if (!settErr && settData?.pin) {
+        validPin = settData.pin;
+        localStorage.setItem('Moonz_guild_pin', settData.pin);
+      } else {
+        const { data } = await supabase
+          .from('guild_state')
+          .select('parties')
+          .eq('id', 1)
+          .maybeSingle();
+
+        if (data && Array.isArray(data.parties)) {
+          const authEntry = data.parties.find((p: any) => p.id === '__guild_auth_config__');
+          if (authEntry && authEntry.pin) {
+            validPin = authEntry.pin;
+            localStorage.setItem('Moonz_guild_pin', authEntry.pin);
+          }
         }
       }
     } catch (e) {
@@ -133,6 +144,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         latestParties.push(updatedAuth);
       }
+
+      // Also update guild_settings
+      try {
+        await supabase.from('guild_settings').upsert({
+          id: 1,
+          pin: newPin,
+          updated_at: new Date().toISOString(),
+        });
+      } catch (_) {}
 
       await supabase.from('guild_state').upsert({
         id: 1,

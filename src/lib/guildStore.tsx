@@ -281,6 +281,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
       : 'server'
   );
   const realtimeChannelRef = useRef<RealtimeChannel | null>(null);
+  const hasModularTablesRef = useRef<boolean>(false);
 
   // References to latest state to avoid stale closures in save
   const latestStateRef = useRef({
@@ -506,12 +507,100 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
     }, 800);
   }, []);
 
-  // Silent reload from Supabase (without toggling full-page loading spinner)
-  const silentReloadFromCloud = useCallback(async () => {
+  // Silent reload from Supabase (can target a specific table or reload all)
+  const silentReloadFromCloud = useCallback(async (targetTable?: string) => {
     // If pending local changes or saving, avoid overwriting local edits
     if (autoSaveTimerRef.current) return;
 
     try {
+      if (targetTable === 'guild_queues') {
+        const { data } = await supabase.from('guild_queues').select('*').eq('id', 1).maybeSingle();
+        if (data && Array.isArray(data.lists)) {
+          isRemoteSyncingRef.current = true;
+          setQueueLists(data.lists);
+          try { localStorage.setItem('Moonz_queue_lists', JSON.stringify(data.lists)); } catch (_) {}
+          setTimeout(() => { isRemoteSyncingRef.current = false; }, 300);
+          return;
+        }
+      }
+
+      if (targetTable === 'guild_auctions') {
+        const { data } = await supabase.from('guild_auctions').select('*').eq('id', 1).maybeSingle();
+        if (data) {
+          isRemoteSyncingRef.current = true;
+          if (Array.isArray(data.items)) {
+            setAuctionItems(data.items);
+            try { localStorage.setItem('Moonz_auctions', JSON.stringify(data.items)); } catch (_) {}
+          }
+          if (Array.isArray(data.rounds)) {
+            setAuctionRounds(data.rounds);
+            try { localStorage.setItem('Moonz_auction_rounds', JSON.stringify(data.rounds)); } catch (_) {}
+          }
+          setTimeout(() => { isRemoteSyncingRef.current = false; }, 300);
+          return;
+        }
+      }
+
+      if (targetTable === 'guild_members') {
+        const { data } = await supabase.from('guild_members').select('*').eq('id', 1).maybeSingle();
+        if (data && Array.isArray(data.members)) {
+          isRemoteSyncingRef.current = true;
+          setMembers(data.members);
+          setTimeout(() => { isRemoteSyncingRef.current = false; }, 300);
+          return;
+        }
+      }
+
+      if (targetTable === 'guild_gvg') {
+        const { data } = await supabase.from('guild_gvg').select('*').eq('id', 1).maybeSingle();
+        if (data) {
+          isRemoteSyncingRef.current = true;
+          if (Array.isArray(data.teams) && data.teams.length > 0) setGvgTeams(data.teams);
+          if (Array.isArray(data.parties)) setGvgParties(data.parties);
+          setTimeout(() => { isRemoteSyncingRef.current = false; }, 300);
+          return;
+        }
+      }
+
+      if (targetTable === 'guild_siege') {
+        const { data } = await supabase.from('guild_siege').select('*').eq('id', 1).maybeSingle();
+        if (data) {
+          isRemoteSyncingRef.current = true;
+          if (Array.isArray(data.teams) && data.teams.length > 0) {
+            setSiegeTeams(data.teams);
+            try { localStorage.setItem('Moonz_siege_teams', JSON.stringify(data.teams)); } catch (_) {}
+          }
+          if (Array.isArray(data.parties)) setSiegeParties(data.parties);
+          setTimeout(() => { isRemoteSyncingRef.current = false; }, 300);
+          return;
+        }
+      }
+
+      if (targetTable === 'guild_polarity') {
+        const { data } = await supabase.from('guild_polarity').select('*').eq('id', 1).maybeSingle();
+        if (data) {
+          isRemoteSyncingRef.current = true;
+          if (Array.isArray(data.teams) && data.teams.length > 0) {
+            setPolarityTeams(data.teams);
+            try { localStorage.setItem('Moonz_polarity_teams', JSON.stringify(data.teams)); } catch (_) {}
+          }
+          if (Array.isArray(data.parties)) setPolarityParties(data.parties);
+          if (Array.isArray(data.preset_parties)) setPresetParties(data.preset_parties);
+          setTimeout(() => { isRemoteSyncingRef.current = false; }, 300);
+          return;
+        }
+      }
+
+      if (targetTable === 'guild_settings') {
+        const { data } = await supabase.from('guild_settings').select('*').eq('id', 1).maybeSingle();
+        if (data) {
+          if (data.guild_name) setGuildName(data.guild_name);
+          if (data.file_timestamp) setFileTimestamp(data.file_timestamp);
+          return;
+        }
+      }
+
+      // Universal fallback: guild_state
       const { data, error: fetchErr } = await supabase
         .from('guild_state')
         .select('*')
@@ -531,11 +620,81 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
     }
   }, [applyRemoteData]);
 
-  // Initial Fetch from Supabase
+  // Initial Fetch from Supabase (Modular tables with guild_state fallback)
   const loadFromCloud = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
+      // 1. Try parallel fetch from modular tables
+      try {
+        const [settRes, memRes, gvgRes, siegeRes, polRes, aucRes, queRes] = await Promise.all([
+          supabase.from('guild_settings').select('*').eq('id', 1).maybeSingle(),
+          supabase.from('guild_members').select('*').eq('id', 1).maybeSingle(),
+          supabase.from('guild_gvg').select('*').eq('id', 1).maybeSingle(),
+          supabase.from('guild_siege').select('*').eq('id', 1).maybeSingle(),
+          supabase.from('guild_polarity').select('*').eq('id', 1).maybeSingle(),
+          supabase.from('guild_auctions').select('*').eq('id', 1).maybeSingle(),
+          supabase.from('guild_queues').select('*').eq('id', 1).maybeSingle(),
+        ]);
+
+        const hasAnyModular = !!(
+          settRes.data || memRes.data || gvgRes.data || siegeRes.data ||
+          polRes.data || aucRes.data || queRes.data
+        );
+
+        if (hasAnyModular) {
+          hasModularTablesRef.current = true;
+
+          if (settRes.data) {
+            if (settRes.data.guild_name) setGuildName(settRes.data.guild_name);
+            if (settRes.data.file_timestamp) setFileTimestamp(settRes.data.file_timestamp);
+            if (settRes.data.pin) {
+              try { localStorage.setItem('Moonz_guild_pin', settRes.data.pin); } catch (_) {}
+            }
+          }
+          if (memRes.data && Array.isArray(memRes.data.members)) {
+            setMembers(memRes.data.members);
+          }
+          if (gvgRes.data) {
+            if (Array.isArray(gvgRes.data.teams) && gvgRes.data.teams.length > 0) setGvgTeams(gvgRes.data.teams);
+            if (Array.isArray(gvgRes.data.parties)) setGvgParties(gvgRes.data.parties);
+          }
+          if (siegeRes.data) {
+            if (Array.isArray(siegeRes.data.teams) && siegeRes.data.teams.length > 0) {
+              setSiegeTeams(siegeRes.data.teams);
+              try { localStorage.setItem('Moonz_siege_teams', JSON.stringify(siegeRes.data.teams)); } catch (_) {}
+            }
+            if (Array.isArray(siegeRes.data.parties)) setSiegeParties(siegeRes.data.parties);
+          }
+          if (polRes.data) {
+            if (Array.isArray(polRes.data.teams) && polRes.data.teams.length > 0) {
+              setPolarityTeams(polRes.data.teams);
+              try { localStorage.setItem('Moonz_polarity_teams', JSON.stringify(polRes.data.teams)); } catch (_) {}
+            }
+            if (Array.isArray(polRes.data.parties)) setPolarityParties(polRes.data.parties);
+            if (Array.isArray(polRes.data.preset_parties)) setPresetParties(polRes.data.preset_parties);
+          }
+          if (aucRes.data) {
+            if (Array.isArray(aucRes.data.items)) {
+              setAuctionItems(aucRes.data.items);
+              try { localStorage.setItem('Moonz_auctions', JSON.stringify(aucRes.data.items)); } catch (_) {}
+            }
+            if (Array.isArray(aucRes.data.rounds)) {
+              setAuctionRounds(aucRes.data.rounds);
+              try { localStorage.setItem('Moonz_auction_rounds', JSON.stringify(aucRes.data.rounds)); } catch (_) {}
+            }
+          }
+          if (queRes.data && Array.isArray(queRes.data.lists)) {
+            setQueueLists(queRes.data.lists);
+            try { localStorage.setItem('Moonz_queue_lists', JSON.stringify(queRes.data.lists)); } catch (_) {}
+          }
+          return;
+        }
+      } catch (modularErr) {
+        console.warn('Modular tables check fallback to guild_state:', modularErr);
+      }
+
+      // 2. Fallback to guild_state
       const { data, error: fetchErr } = await supabase
         .from('guild_state')
         .select('*')
@@ -557,7 +716,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
     }
   }, [applyRemoteData]);
 
-  // Save to Supabase (uses latestStateRef)
+  // Save to Supabase (Modular tables + guild_state fallback)
   const saveToCloud = useCallback(async () => {
     setIsSaving(true);
     setSaveStatus('saving');
@@ -655,16 +814,60 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
       const newUpdatedAt = new Date().toISOString();
       lastRemoteUpdatedAtRef.current = newUpdatedAt;
 
-      const { error: saveErr } = await supabase.from('guild_state').upsert({
-        id: 1,
-        guild_name: state.guildName,
-        file_timestamp: state.fileTimestamp,
-        members: state.members,
-        parties: combinedParties,
-        updated_at: newUpdatedAt,
-      });
-
-      if (saveErr) throw saveErr;
+      // Parallel saves across all modular tables + guild_state fallback
+      await Promise.allSettled([
+        supabase.from('guild_settings').upsert({
+          id: 1,
+          guild_name: state.guildName,
+          pin,
+          file_timestamp: state.fileTimestamp,
+          updated_at: newUpdatedAt,
+        }),
+        supabase.from('guild_members').upsert({
+          id: 1,
+          members: state.members,
+          updated_at: newUpdatedAt,
+        }),
+        supabase.from('guild_gvg').upsert({
+          id: 1,
+          teams: state.gvgTeams,
+          parties: gvgPartiesWithMeta,
+          updated_at: newUpdatedAt,
+        }),
+        supabase.from('guild_siege').upsert({
+          id: 1,
+          teams: state.siegeTeams,
+          parties: siegePartiesWithMeta,
+          updated_at: newUpdatedAt,
+        }),
+        supabase.from('guild_polarity').upsert({
+          id: 1,
+          teams: state.polarityTeams,
+          parties: state.polarityParties,
+          preset_parties: state.presetParties,
+          updated_at: newUpdatedAt,
+        }),
+        supabase.from('guild_auctions').upsert({
+          id: 1,
+          items: sanitizedAuctionItems,
+          rounds: state.auctionRounds,
+          active_round_id: state.activeRoundId || null,
+          updated_at: newUpdatedAt,
+        }),
+        supabase.from('guild_queues').upsert({
+          id: 1,
+          lists: state.queueLists,
+          updated_at: newUpdatedAt,
+        }),
+        supabase.from('guild_state').upsert({
+          id: 1,
+          guild_name: state.guildName,
+          file_timestamp: state.fileTimestamp,
+          members: state.members,
+          parties: combinedParties,
+          updated_at: newUpdatedAt,
+        }),
+      ]);
 
       // Broadcast realtime event to all other open tabs/windows/devices
       if (realtimeChannelRef.current) {
@@ -731,12 +934,19 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
   }, [loadFromCloud]);
 
   // Multi-tier Realtime Synchronization:
-  // 1. Supabase Realtime channel (postgres_changes + broadcast)
+  // 1. Supabase Realtime channel (postgres_changes per modular table + broadcast)
   // 2. Browser StorageEvent (instant cross-tab update on same computer)
-  // 3. Fallback polling interval (3.5 seconds) ensuring updates even if WebSockets disconnect
+  // 3. Fallback polling interval (10 seconds)
   useEffect(() => {
     const channel = supabase
       .channel('moonz_guild_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'guild_queues', filter: 'id=eq.1' }, () => silentReloadFromCloud('guild_queues'))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'guild_auctions', filter: 'id=eq.1' }, () => silentReloadFromCloud('guild_auctions'))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'guild_members', filter: 'id=eq.1' }, () => silentReloadFromCloud('guild_members'))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'guild_gvg', filter: 'id=eq.1' }, () => silentReloadFromCloud('guild_gvg'))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'guild_siege', filter: 'id=eq.1' }, () => silentReloadFromCloud('guild_siege'))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'guild_polarity', filter: 'id=eq.1' }, () => silentReloadFromCloud('guild_polarity'))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'guild_settings', filter: 'id=eq.1' }, () => silentReloadFromCloud('guild_settings'))
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'guild_state', filter: 'id=eq.1' },
@@ -747,7 +957,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
             }
             applyRemoteData(payload.new);
           } else {
-            silentReloadFromCloud();
+            silentReloadFromCloud('guild_state');
           }
         }
       )
@@ -755,7 +965,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
         if (payload?.payload?.senderId === clientSessionId.current) {
           return;
         }
-        silentReloadFromCloud();
+        silentReloadFromCloud(payload?.payload?.table);
       })
       .subscribe();
 
@@ -795,7 +1005,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
     };
     window.addEventListener('storage', handleStorage);
 
-    // 10s Heartbeat polling (รีเฟรชทุกๆ 10 วินาที นิ่งๆ ไม่เด้ง)
+    // 10s Heartbeat polling (fallback check)
     const pollingInterval = setInterval(async () => {
       if (typeof document !== 'undefined' && document.hidden) return;
       if (autoSaveTimerRef.current || isRemoteSyncingRef.current) return;
