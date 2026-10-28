@@ -206,8 +206,21 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
         const parsed = JSON.parse(cachedQueues);
         if (Array.isArray(parsed)) setQueueLists(parsed);
       }
+      const cachedPreset = localStorage.getItem('Moonz_preset_parties');
+      if (cachedPreset) {
+        const parsed = JSON.parse(cachedPreset);
+        if (Array.isArray(parsed) && parsed.length > 0) setPresetParties(parsed);
+      }
     } catch (_) {}
   }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && presetParties.length > 0) {
+      try {
+        localStorage.setItem('Moonz_preset_parties', JSON.stringify(presetParties));
+      } catch (e) {}
+    }
+  }, [presetParties]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -538,7 +551,10 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
             try { localStorage.setItem('Moonz_polarity_teams', JSON.stringify(data.teams)); } catch (_) {}
           }
           if (Array.isArray(data.parties)) setPolarityParties(data.parties);
-          if (Array.isArray(data.preset_parties)) setPresetParties(data.preset_parties);
+          if (Array.isArray(data.preset_parties) && data.preset_parties.length > 0) {
+            setPresetParties(data.preset_parties);
+            try { localStorage.setItem('Moonz_preset_parties', JSON.stringify(data.preset_parties)); } catch (_) {}
+          }
           setTimeout(() => { isRemoteSyncingRef.current = false; }, 300);
           return;
         }
@@ -625,7 +641,21 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
               try { localStorage.setItem('Moonz_polarity_teams', JSON.stringify(polRes.data.teams)); } catch (_) {}
             }
             if (Array.isArray(polRes.data.parties)) setPolarityParties(polRes.data.parties);
-            if (Array.isArray(polRes.data.preset_parties)) setPresetParties(polRes.data.preset_parties);
+            if (Array.isArray(polRes.data.preset_parties) && polRes.data.preset_parties.length > 0) {
+              setPresetParties(polRes.data.preset_parties);
+              try { localStorage.setItem('Moonz_preset_parties', JSON.stringify(polRes.data.preset_parties)); } catch (_) {}
+            } else {
+              try {
+                const cached = localStorage.getItem('Moonz_preset_parties');
+                if (cached) {
+                  const parsed = JSON.parse(cached);
+                  if (Array.isArray(parsed) && parsed.length > 0) setPresetParties(parsed);
+                  else setPresetParties(Array.from({ length: 8 }, (_, i) => ({ id: `preset_p${i + 1}`, name: `ตี้ประจำ ${i + 1}`, teamId: 'preset', slots: [null, null, null, null, null] })));
+                } else {
+                  setPresetParties(Array.from({ length: 8 }, (_, i) => ({ id: `preset_p${i + 1}`, name: `ตี้ประจำ ${i + 1}`, teamId: 'preset', slots: [null, null, null, null, null] })));
+                }
+              } catch (_) {}
+            }
           }
           if (aucRes.data) {
             if (Array.isArray(aucRes.data.items)) {
@@ -750,6 +780,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('Moonz_auctions', JSON.stringify(sanitizedAuctionItems));
         localStorage.setItem('Moonz_auction_rounds', JSON.stringify(state.auctionRounds));
         localStorage.setItem('Moonz_queue_lists', JSON.stringify(state.queueLists));
+        localStorage.setItem('Moonz_preset_parties', JSON.stringify(state.presetParties));
       } catch (e) {}
 
       const combinedParties = [
