@@ -507,14 +507,8 @@ export default function MemberQueueView({ onSwitchToAdmin }: MemberQueueViewProp
                   {/* QUEUE ENTRIES AS A CLEAN LIST */}
                   {entries.length === 0 ? (
                     isScheduled ? (
-                      <div className="p-6 text-center text-xs font-bold text-amber-700 dark:text-amber-300 border-2 border-dashed border-amber-400/50 rounded-2xl bg-amber-500/5 space-y-1">
+                      <div className="p-6 text-center text-xs font-bold text-amber-700 dark:text-amber-300 border-2 border-dashed border-amber-400/50 rounded-2xl bg-amber-500/5">
                         <div className="text-sm">⏰ คิวนี้ตั้งเวลาเปิดอัตโนมัติ</div>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 font-normal">
-                          จะเปิดรับคิวในอีก ~{minsUntilOpen} นาที ({queue.scheduledOpenAt ? new Date(queue.scheduledOpenAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : ''} น.)
-                          {queue.preRegisteredMemberIds && queue.preRegisteredMemberIds.length > 0
-                            ? ` · มีสมาชิกลงชื่ออัตโนมัติล่วงหน้า ${queue.preRegisteredMemberIds.length} คน`
-                            : ''}
-                        </p>
                       </div>
                     ) : (
                       <div className="p-8 text-center text-xs font-bold text-slate-500 dark:text-slate-400 border-2 border-dashed border-slate-300 dark:border-slate-800 rounded-2xl bg-slate-50/50 dark:bg-transparent">
