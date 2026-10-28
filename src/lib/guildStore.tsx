@@ -958,13 +958,34 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const channel = supabase
       .channel(`moonz_guild_realtime_${GUILD_ID}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'guild_queues', filter: `id=eq.${GUILD_ID}` }, () => silentReloadFromCloud('guild_queues'))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'guild_auctions', filter: `id=eq.${GUILD_ID}` }, () => silentReloadFromCloud('guild_auctions'))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'guild_members', filter: `id=eq.${GUILD_ID}` }, () => silentReloadFromCloud('guild_members'))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'guild_gvg', filter: `id=eq.${GUILD_ID}` }, () => silentReloadFromCloud('guild_gvg'))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'guild_siege', filter: `id=eq.${GUILD_ID}` }, () => silentReloadFromCloud('guild_siege'))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'guild_polarity', filter: `id=eq.${GUILD_ID}` }, () => silentReloadFromCloud('guild_polarity'))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'guild_settings', filter: `id=eq.${GUILD_ID}` }, () => silentReloadFromCloud('guild_settings'))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'guild_queues', filter: `id=eq.${GUILD_ID}` }, () => {
+        if (isSavingRef.current || autoSaveTimerRef.current || Date.now() - lastUserActionTimeRef.current < 3000) return;
+        silentReloadFromCloud('guild_queues');
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'guild_auctions', filter: `id=eq.${GUILD_ID}` }, () => {
+        if (isSavingRef.current || autoSaveTimerRef.current || Date.now() - lastUserActionTimeRef.current < 3000) return;
+        silentReloadFromCloud('guild_auctions');
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'guild_members', filter: `id=eq.${GUILD_ID}` }, () => {
+        if (isSavingRef.current || autoSaveTimerRef.current || Date.now() - lastUserActionTimeRef.current < 3000) return;
+        silentReloadFromCloud('guild_members');
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'guild_gvg', filter: `id=eq.${GUILD_ID}` }, () => {
+        if (isSavingRef.current || autoSaveTimerRef.current || Date.now() - lastUserActionTimeRef.current < 3000) return;
+        silentReloadFromCloud('guild_gvg');
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'guild_siege', filter: `id=eq.${GUILD_ID}` }, () => {
+        if (isSavingRef.current || autoSaveTimerRef.current || Date.now() - lastUserActionTimeRef.current < 3000) return;
+        silentReloadFromCloud('guild_siege');
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'guild_polarity', filter: `id=eq.${GUILD_ID}` }, () => {
+        if (isSavingRef.current || autoSaveTimerRef.current || Date.now() - lastUserActionTimeRef.current < 3000) return;
+        silentReloadFromCloud('guild_polarity');
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'guild_settings', filter: `id=eq.${GUILD_ID}` }, () => {
+        if (isSavingRef.current || autoSaveTimerRef.current || Date.now() - lastUserActionTimeRef.current < 3000) return;
+        silentReloadFromCloud('guild_settings');
+      })
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'guild_state', filter: `id=eq.${GUILD_ID}` },
@@ -992,6 +1013,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
     // Cross-tab instant sync
     const handleStorage = (e: StorageEvent) => {
       if (!e.newValue) return;
+      if (Date.now() - lastUserActionTimeRef.current < 3000) return;
       if (e.key === 'Moonz_queue_lists') {
         try {
           const parsed = JSON.parse(e.newValue);
@@ -2220,15 +2242,6 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
     }
 
     triggerAutoSave(150);
-
-    // Atomic Database RPC ควบคู่
-    void Promise.resolve(
-      supabase.rpc('toggle_queue_entry_atomic', {
-        p_guild_id: GUILD_ID,
-        p_queue_id: queueId,
-        p_entry_id: entryId,
-      })
-    ).catch(() => {});
   };
 
   const clearQueueEntries = (queueId: string) => {
