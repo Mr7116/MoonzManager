@@ -863,3 +863,4 @@ DO $$
 BEGIN
     RAISE NOTICE '🎉 ติดตั้ง Atomic Database Functions สำหรับทุกฟังก์ชันในระบบเสร็จสมบูรณ์ 100%%';
 END $$;
+

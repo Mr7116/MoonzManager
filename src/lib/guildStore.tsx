@@ -286,6 +286,8 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
   );
   const realtimeChannelRef = useRef<RealtimeChannel | null>(null);
   const hasModularTablesRef = useRef<boolean>(false);
+  const isSavingRef = useRef<boolean>(false);
+  const lastUserActionTimeRef = useRef<number>(0);
 
   // References to latest state to avoid stale closures in save
   const latestStateRef = useRef({
@@ -327,6 +329,10 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
   // Apply parsed database state to React state
   const applyRemoteData = useCallback((data: any) => {
     if (!data) return;
+    // ป้องกัน Remote sync มาเขียนทับข้อมูลที่เพิ่งลากวางหรือแก้ไขใน 2.5 วินาที
+    if (Date.now() - lastUserActionTimeRef.current < 2500 || autoSaveTimerRef.current || isSavingRef.current) {
+      return;
+    }
     if (data.updated_at && data.updated_at === lastRemoteUpdatedAtRef.current) {
       return;
     }
@@ -506,8 +512,10 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
 
   // Silent reload from Supabase (can target a specific table or reload all)
   const silentReloadFromCloud = useCallback(async (targetTable?: string) => {
-    // If pending local changes or saving, avoid overwriting local edits
-    if (autoSaveTimerRef.current) return;
+    // ป้องกัน Reload มาเขียนทับข้อมูลที่เพิ่งลากวางหรือแก้ไข
+    if (autoSaveTimerRef.current || isSavingRef.current || Date.now() - lastUserActionTimeRef.current < 2500) {
+      return;
+    }
 
     try {
       if (targetTable === 'guild_queues') {
@@ -725,6 +733,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
   // Save to Supabase (Modular tables + guild_state fallback)
   const saveToCloud = useCallback(async () => {
     setIsSaving(true);
+    isSavingRef.current = true;
     setSaveStatus('saving');
     try {
       const state = latestStateRef.current;
@@ -900,12 +909,14 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
       setSaveStatus('error');
     } finally {
       setIsSaving(false);
+      isSavingRef.current = false;
     }
   }, []);
 
-  // Debounced Auto Save trigger
-  const triggerAutoSave = useCallback((delayMs: number = 800) => {
-    if (!isInitialLoadDone.current || isRemoteSyncingRef.current) return;
+  // Debounced Auto Save trigger (รวดเร็ว 250ms และไม่ถูกบล็อกโดย remote sync)
+  const triggerAutoSave = useCallback((delayMs: number = 250) => {
+    if (!isInitialLoadDone.current) return;
+    lastUserActionTimeRef.current = Date.now();
     setHasUnsavedChanges(true);
     setSaveStatus('pending');
 
@@ -1100,7 +1111,8 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
     setSiegeTeams((prev) => prev.map((t) => (t.id === teamId ? { ...t, color } : t)));
   };
 
-  const removeMemberFromSlot = async (partyId: string, slotIndex: number) => {
+  const removeMemberFromSlot = (partyId: string, slotIndex: number) => {
+    lastUserActionTimeRef.current = Date.now();
     setGvgParties((prev) =>
       prev.map((p) => {
         if (p.id !== partyId) return p;
@@ -1110,19 +1122,22 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
       })
     );
 
-    try {
-      await supabase.rpc('clear_slot_atomic', {
+    // บันทึกทันที 150ms เพื่อ Realtime ที่เร็วที่สุด
+    triggerAutoSave(150);
+
+    // Atomic RPC ควบคู่
+    void Promise.resolve(
+      supabase.rpc('clear_slot_atomic', {
         p_guild_id: GUILD_ID,
         p_mode: 'gvg',
         p_party_id: partyId,
         p_slot_idx: slotIndex,
-      });
-    } catch {
-      triggerAutoSave();
-    }
+      })
+    ).catch(() => {});
   };
 
-  const placeMemberInSlot = async (partyId: string, slotIndex: number, memberId: string) => {
+  const placeMemberInSlot = (partyId: string, slotIndex: number, memberId: string) => {
+    lastUserActionTimeRef.current = Date.now();
     setGvgParties((prev) => {
       const cleaned = prev.map((p) => {
         const slots = (p.slots || [null, null, null, null, null]).map((id) => (id === memberId ? null : id));
@@ -1137,20 +1152,23 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
       });
     });
 
-    try {
-      await supabase.rpc('assign_slot_atomic', {
+    // บันทึกทันที 150ms เพื่อ Realtime ที่เร็วที่สุด
+    triggerAutoSave(150);
+
+    // Atomic RPC ควบคู่
+    void Promise.resolve(
+      supabase.rpc('assign_slot_atomic', {
         p_guild_id: GUILD_ID,
         p_mode: 'gvg',
         p_party_id: partyId,
         p_slot_idx: slotIndex,
         p_member_id: memberId,
-      });
-    } catch {
-      triggerAutoSave();
-    }
+      })
+    ).catch(() => {});
   };
 
   const swapSlots = (fromPartyId: string, fromSlotIdx: number, toPartyId: string, toSlotIdx: number) => {
+    lastUserActionTimeRef.current = Date.now();
     setGvgParties((prev) => {
       const fromParty = prev.find((p) => p.id === fromPartyId);
       const toParty = prev.find((p) => p.id === toPartyId);
@@ -1179,6 +1197,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
         return p;
       });
     });
+    triggerAutoSave(150);
   };
 
   const applyPresetToParty = (

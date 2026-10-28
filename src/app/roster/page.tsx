@@ -16,7 +16,7 @@ type SortField = 'name' | 'job' | 'position' | 'title' | 'status' | 'gear';
 type SortDirection = 'asc' | 'desc';
 
 export default function RosterPage() {
-  const { members, setMembers, saveToCloud, isSaving, lastSavedAt } = useGuildStore();
+  const { members, setMembers, saveToCloud, isSaving, lastSavedAt, triggerAutoSave } = useGuildStore();
 
   const [mounted, setMounted] = useState(false);
   const [search, setSearch] = useState('');
@@ -160,6 +160,7 @@ export default function RosterPage() {
   const handleDeleteOne = (id: string, name: string) => {
     if (!confirm(`คุณต้องการลบ "${name}" ออกจากกิลด์ใช่หรือไม่?`)) return;
     setMembers((prev) => prev.filter((m) => m.id !== id));
+    triggerAutoSave(150);
   };
 
   // Open modal

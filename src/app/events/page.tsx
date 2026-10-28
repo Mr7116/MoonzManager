@@ -77,7 +77,7 @@ function formatShortRange(monIso: string, sunIso: string): string {
 }
 
 export default function EventsPage() {
-  const { guildName, members, setMembers, gvgParties, gvgTeams } = useGuildStore();
+  const { guildName, members, setMembers, gvgParties, gvgTeams, triggerAutoSave } = useGuildStore();
 
   const [selectedWeekMonday, setSelectedWeekMonday] = useState(() => getWeekMondayISO(new Date()));
   const [activeTab, setActiveTab] = useState<'matrix' | 'analytics'>('matrix');
@@ -142,7 +142,8 @@ export default function EventsPage() {
         return { ...m, weeklyEvents: curEvents };
       })
     );
-  }, [selectedWeekMonday, setMembers]);
+    triggerAutoSave(150);
+  }, [selectedWeekMonday, setMembers, triggerAutoSave]);
 
   // Click on event cell
   const handleCellClick = (memberId: string, eventKey: string) => {
