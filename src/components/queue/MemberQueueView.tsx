@@ -160,8 +160,8 @@ export default function MemberQueueView({ onSwitchToAdmin }: MemberQueueViewProp
   };
 
   return (
-    <div className="mx-auto max-w-5xl px-3 py-4 sm:px-6 space-y-5 pb-16">
-      {/* Toast Notification (Smooth Floating Toast - ไม่เด้งขึ้นลง นิ่ง สวยงาม) */}
+    <>
+      {/* Toast Notification (อยู่นอก container หลัก ไม่ดัน space-y-5 ไม่ทำให้หน้าขยับ 100%) */}
       {toastMsg && (
         <div className="fixed top-5 right-5 z-[9999] pointer-events-none transition-all duration-300 ease-out animate-in fade-in slide-in-from-top-3">
           <div
@@ -181,7 +181,8 @@ export default function MemberQueueView({ onSwitchToAdmin }: MemberQueueViewProp
         </div>
       )}
 
-      {/* TOP HEADER */}
+      <div className="mx-auto max-w-5xl px-3 py-4 sm:px-6 space-y-5 pb-16">
+        {/* TOP HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-3xl border-2 border-slate-300 dark:border-slate-800 bg-white dark:bg-[#0c101d] shadow-md">
         <div className="flex items-center gap-3">
           <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-500/15 text-2xl border border-indigo-500/30 text-indigo-400">
@@ -713,6 +714,7 @@ export default function MemberQueueView({ onSwitchToAdmin }: MemberQueueViewProp
         )}
       </div>
     </div>
+    </>
   );
 }
 

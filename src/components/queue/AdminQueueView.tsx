@@ -159,8 +159,8 @@ export default function AdminQueueView({ onSwitchToMember }: AdminQueueViewProps
   }, [queueLists, manualAddQueueId]);
 
   return (
-    <div className="mx-auto max-w-[1700px] px-3 py-4 sm:px-6 space-y-5">
-      {/* Toast Notification (Smooth Floating Toast - ไม่เด้งขึ้นลง นิ่ง สวยงาม) */}
+    <>
+      {/* Toast Notification (อยู่นอก container หลัก ไม่ดัน space-y-5 ไม่ทำให้หน้าขยับ 100%) */}
       {toastMsg && (
         <div className="fixed top-5 right-5 z-[9999] pointer-events-none transition-all duration-300 ease-out animate-in fade-in slide-in-from-top-3">
           <div
@@ -180,7 +180,8 @@ export default function AdminQueueView({ onSwitchToMember }: AdminQueueViewProps
         </div>
       )}
 
-      {/* TOP BAR */}
+      <div className="mx-auto max-w-[1700px] px-3 py-4 sm:px-6 space-y-5">
+        {/* TOP BAR */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-[#0c101d]/90 backdrop-blur-md shadow-sm">
         <div className="flex items-center gap-3">
           <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 text-2xl text-white shadow-lg shadow-indigo-950/40">
@@ -841,5 +842,6 @@ export default function AdminQueueView({ onSwitchToMember }: AdminQueueViewProps
         </div>
       )}
     </div>
+    </>
   );
 }
