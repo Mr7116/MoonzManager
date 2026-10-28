@@ -150,112 +150,64 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
   const [members, setMembers] = useState<Member[]>([]);
   const [gvgTeams, setGvgTeams] = useState<Team[]>(DEFAULT_GVG_TEAMS);
   const [gvgParties, setGvgParties] = useState<Party[]>(DEFAULT_GVG_PARTIES);
-  const [siegeTeams, setSiegeTeams] = useState<Team[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const cached = localStorage.getItem('Moonz_siege_teams');
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-        }
-      } catch (e) {}
-    }
-    return [{ id: 'siege_team_1', name: 'ทีมปราสาท 1', color: 'sky', field: 'main' }];
-  });
+  const [siegeTeams, setSiegeTeams] = useState<Team[]>([
+    { id: 'siege_team_1', name: 'ทีมปราสาท 1', color: 'sky', field: 'main' }
+  ]);
   const [siegeParties, setSiegeParties] = useState<Party[]>([]);
-  const [polarityTeams, setPolarityTeams] = useState<Team[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const cached = localStorage.getItem('Moonz_polarity_teams');
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-        }
-      } catch (e) {}
-    }
-    return [{ id: 'pol_main', name: 'สงครามดาว', color: 'amber', field: 'main' }];
-  });
+  const [polarityTeams, setPolarityTeams] = useState<Team[]>([
+    { id: 'pol_main', name: 'สงครามดาว', color: 'amber', field: 'main' }
+  ]);
   const [polarityParties, setPolarityParties] = useState<Party[]>([]);
   const [presetParties, setPresetParties] = useState<Party[]>([]);
-  const [auctionRounds, setAuctionRounds] = useState<AuctionRound[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const cached = localStorage.getItem('Moonz_auction_rounds');
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-        }
-      } catch (e) {}
-    }
-    return [
-      {
-        id: 'round_default',
-        name: 'รอบประมูลรอบที่ 1',
-        date: new Date().toISOString().split('T')[0],
-        status: 'active',
-        createdAt: new Date().toISOString(),
-        note: 'รอบประมูลเริ่มต้น',
-      },
-    ];
-  });
-  const [activeRoundId, setActiveRoundId] = useState<string | null>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const cachedRounds = localStorage.getItem('Moonz_auction_rounds');
-        if (cachedRounds) {
-          const parsed = JSON.parse(cachedRounds);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            const active = parsed.find((r: AuctionRound) => r.status === 'active');
-            return active ? active.id : parsed[0].id;
-          }
-        }
-      } catch (e) {}
-    }
-    return 'round_default';
-  });
-
-  const [auctionItems, setAuctionItems] = useState<AuctionItem[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const cached = localStorage.getItem('Moonz_auctions');
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed)) return parsed;
-        }
-      } catch (e) {}
-    }
-    return [];
-  });
+  const [auctionRounds, setAuctionRounds] = useState<AuctionRound[]>([
+    {
+      id: 'round_default',
+      name: 'รอบประมูลรอบที่ 1',
+      date: new Date().toISOString().split('T')[0],
+      status: 'active',
+      createdAt: new Date().toISOString(),
+      note: 'รอบประมูลเริ่มต้น',
+    },
+  ]);
+  const [activeRoundId, setActiveRoundId] = useState<string | null>('round_default');
+  const [auctionItems, setAuctionItems] = useState<AuctionItem[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
+  const [queueLists, setQueueLists] = useState<QueueList[]>([]);
 
+  // Hydrate local cache on client mount to eliminate SSR hydration mismatch
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('Moonz_auctions', JSON.stringify(auctionItems));
-      } catch (e) {}
-    }
-  }, [auctionItems]);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('Moonz_auction_rounds', JSON.stringify(auctionRounds));
-      } catch (e) {}
-    }
-  }, [auctionRounds]);
-
-  const [queueLists, setQueueLists] = useState<QueueList[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const cached = localStorage.getItem('Moonz_queue_lists');
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed)) return parsed;
+    try {
+      const cachedSiege = localStorage.getItem('Moonz_siege_teams');
+      if (cachedSiege) {
+        const parsed = JSON.parse(cachedSiege);
+        if (Array.isArray(parsed) && parsed.length > 0) setSiegeTeams(parsed);
+      }
+      const cachedPol = localStorage.getItem('Moonz_polarity_teams');
+      if (cachedPol) {
+        const parsed = JSON.parse(cachedPol);
+        if (Array.isArray(parsed) && parsed.length > 0) setPolarityTeams(parsed);
+      }
+      const cachedRounds = localStorage.getItem('Moonz_auction_rounds');
+      if (cachedRounds) {
+        const parsed = JSON.parse(cachedRounds);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setAuctionRounds(parsed);
+          const active = parsed.find((r: AuctionRound) => r.status === 'active');
+          setActiveRoundId(active ? active.id : parsed[0].id);
         }
-      } catch (e) {}
-    }
-    return [];
-  });
+      }
+      const cachedAuctions = localStorage.getItem('Moonz_auctions');
+      if (cachedAuctions) {
+        const parsed = JSON.parse(cachedAuctions);
+        if (Array.isArray(parsed)) setAuctionItems(parsed);
+      }
+      const cachedQueues = localStorage.getItem('Moonz_queue_lists');
+      if (cachedQueues) {
+        const parsed = JSON.parse(cachedQueues);
+        if (Array.isArray(parsed)) setQueueLists(parsed);
+      }
+    } catch (_) {}
+  }, []);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
