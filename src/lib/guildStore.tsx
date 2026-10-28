@@ -8,6 +8,7 @@ import { Member } from '@/types/member';
 import { Party, Team, LaneKey, FieldZoneKey } from '@/types/party';
 import { AuctionItem, AuctionEntry, AuctionRound, BidRecord, isTitleItem, isChestItem, isMultiEntryItem } from '@/types/auction';
 import { QueueList, QueueEntry } from '@/types/queue';
+import { TUMDOOD_PRESET_PARTIES } from '@/data/tumdoodSquads';
 
 export interface GuildState {
   guildName: string;
@@ -142,7 +143,7 @@ const DEFAULT_GVG_PARTIES: Party[] = [
   { id: 'gvg_p8', name: 'ปาร์ตี้ 8', teamId: 'team_c', lane: 'roam_right', slots: [null, null, null, null, null] },
 ];
 
-export const DEFAULT_PRESET_PARTIES: Party[] = [
+export const MOONZ_PRESET_PARTIES: Party[] = [
   {
     id: 'preset_p_default_1',
     name: 'ตี้ประจำ 1',
@@ -166,6 +167,8 @@ export const DEFAULT_PRESET_PARTIES: Party[] = [
   { id: 'preset_p_default_7', name: 'ตี้ประจำ 7', teamId: 'preset', teamColor: 'rose', category: 'preset', slots: [null, null, null, null, null] },
   { id: 'preset_p_default_8', name: 'ตี้ประจำ 8', teamId: 'preset', teamColor: 'blue', category: 'preset', slots: [null, null, null, null, null] },
 ];
+
+export const DEFAULT_PRESET_PARTIES: Party[] = GUILD_ID === 2 ? TUMDOOD_PRESET_PARTIES : MOONZ_PRESET_PARTIES;
 
 const GuildContext = createContext<GuildState | null>(null);
 
@@ -231,10 +234,16 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
         const parsed = JSON.parse(cachedQueues);
         if (Array.isArray(parsed)) setQueueLists(parsed);
       }
-      const cachedPreset = localStorage.getItem('Moonz_preset_parties');
+      const cachedPreset = localStorage.getItem(`${GUILD_NAME}_preset_parties`) || localStorage.getItem('Moonz_preset_parties');
       if (cachedPreset) {
         const parsed = JSON.parse(cachedPreset);
-        if (Array.isArray(parsed) && parsed.length > 0) setPresetParties(parsed);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          if (GUILD_ID === 2 && parsed.length < 32) {
+            setPresetParties(DEFAULT_PRESET_PARTIES);
+          } else {
+            setPresetParties(parsed);
+          }
+        }
       }
     } catch (_) {}
   }, []);
@@ -242,7 +251,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (typeof window !== 'undefined' && presetParties.length > 0) {
       try {
-        localStorage.setItem('Moonz_preset_parties', JSON.stringify(presetParties));
+        localStorage.setItem(`${GUILD_NAME}_preset_parties`, JSON.stringify(presetParties));
       } catch (e) {}
     }
   }, [presetParties]);
@@ -442,14 +451,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
       if (presetRaw.length > 0) {
         setPresetParties(presetRaw);
       } else {
-        setPresetParties(
-          Array.from({ length: 8 }, (_, i) => ({
-            id: `preset_p${i + 1}`,
-            name: `ตี้ประจำ ${i + 1}`,
-            teamId: 'preset',
-            slots: [null, null, null, null, null],
-          }))
-        );
+        setPresetParties(DEFAULT_PRESET_PARTIES);
       }
 
       // Auction Items & Rounds
@@ -578,7 +580,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
           if (Array.isArray(data.parties)) setPolarityParties(data.parties);
           if (Array.isArray(data.preset_parties) && data.preset_parties.length > 0) {
             setPresetParties(data.preset_parties);
-            try { localStorage.setItem('Moonz_preset_parties', JSON.stringify(data.preset_parties)); } catch (_) {}
+            try { localStorage.setItem(`${GUILD_NAME}_preset_parties`, JSON.stringify(data.preset_parties)); } catch (_) {}
           }
           setTimeout(() => { isRemoteSyncingRef.current = false; }, 300);
           return;
@@ -668,18 +670,10 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
             if (Array.isArray(polRes.data.parties)) setPolarityParties(polRes.data.parties);
             if (Array.isArray(polRes.data.preset_parties) && polRes.data.preset_parties.length > 0) {
               setPresetParties(polRes.data.preset_parties);
-              try { localStorage.setItem('Moonz_preset_parties', JSON.stringify(polRes.data.preset_parties)); } catch (_) {}
+              try { localStorage.setItem(`${GUILD_NAME}_preset_parties`, JSON.stringify(polRes.data.preset_parties)); } catch (_) {}
             } else {
-              try {
-                const cached = localStorage.getItem('Moonz_preset_parties');
-                if (cached) {
-                  const parsed = JSON.parse(cached);
-                  if (Array.isArray(parsed) && parsed.length > 0) setPresetParties(parsed);
-                  else setPresetParties(Array.from({ length: 8 }, (_, i) => ({ id: `preset_p${i + 1}`, name: `ตี้ประจำ ${i + 1}`, teamId: 'preset', slots: [null, null, null, null, null] })));
-                } else {
-                  setPresetParties(Array.from({ length: 8 }, (_, i) => ({ id: `preset_p${i + 1}`, name: `ตี้ประจำ ${i + 1}`, teamId: 'preset', slots: [null, null, null, null, null] })));
-                }
-              } catch (_) {}
+              setPresetParties(DEFAULT_PRESET_PARTIES);
+              try { localStorage.setItem(`${GUILD_NAME}_preset_parties`, JSON.stringify(DEFAULT_PRESET_PARTIES)); } catch (_) {}
             }
           }
           if (aucRes.data) {
