@@ -472,6 +472,116 @@ BEGIN
 END;
 $$;
 
+-- 2.4 เสนอราคาประมูล (Place Bid) แบบ Atomic ป้องกันการเคาะราคาชนกัน
+CREATE OR REPLACE FUNCTION public.place_bid_atomic(
+    p_guild_id INT,
+    p_auction_id TEXT,
+    p_member_id TEXT,
+    p_member_name TEXT,
+    p_member_job TEXT DEFAULT NULL,
+    p_amount BIGINT DEFAULT 0,
+    p_note TEXT DEFAULT NULL
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_row RECORD;
+    v_items JSONB;
+    v_new_items JSONB := '[]'::jsonb;
+    v_item JSONB;
+    v_bids JSONB;
+    v_found BOOLEAN := false;
+    v_status TEXT;
+    v_current_price BIGINT;
+    v_start_price BIGINT;
+    v_min_increment BIGINT;
+    v_min_allowed BIGINT;
+    v_bid_id TEXT;
+    v_timestamp TEXT;
+    v_new_bid JSONB;
+BEGIN
+    SELECT * INTO v_row
+    FROM public.guild_auctions
+    WHERE id = p_guild_id
+    FOR UPDATE;
+
+    IF NOT FOUND THEN
+        RETURN jsonb_build_object('success', false, 'message', 'ไม่พบข้อมูลการประมูลของกิลด์นี้');
+    END IF;
+
+    v_items := COALESCE(v_row.items, '[]'::jsonb);
+
+    FOR v_item IN SELECT * FROM jsonb_array_elements(v_items)
+    LOOP
+        IF v_item->>'id' = p_auction_id THEN
+            v_found := true;
+            v_status := COALESCE(v_item->>'status', 'active');
+
+            IF v_status <> 'active' THEN
+                RETURN jsonb_build_object('success', false, 'message', 'การประมูลนี้สิ้นสุดหรือถูกยกเลิกแล้ว');
+            END IF;
+
+            v_bids := COALESCE(v_item->'bids', '[]'::jsonb);
+            v_start_price := COALESCE((v_item->>'startPrice')::bigint, 0);
+            v_current_price := COALESCE((v_item->>'currentPrice')::bigint, v_start_price);
+            v_min_increment := COALESCE((v_item->>'minIncrement')::bigint, 100);
+
+            IF jsonb_array_length(v_bids) = 0 THEN
+                v_min_allowed := v_start_price;
+            ELSE
+                v_min_allowed := v_current_price + v_min_increment;
+            END IF;
+
+            IF p_amount < v_min_allowed THEN
+                RETURN jsonb_build_object(
+                    'success', false, 
+                    'message', 'มีผู้เสนอราคาสูงกว่าแล้ว ต้องเสนอราคาอย่างน้อย ' || to_char(v_min_allowed, 'FM999,999,999,999') || ' หน่วย'
+                );
+            END IF;
+
+            v_bid_id := 'bid_' || extract(epoch from clock_timestamp())::bigint || '_' || substr(md5(random()::text), 1, 4);
+            v_timestamp := to_char(clock_timestamp() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"');
+
+            v_new_bid := jsonb_build_object(
+                'id', v_bid_id,
+                'memberId', p_member_id,
+                'memberName', p_member_name,
+                'memberJob', p_member_job,
+                'amount', p_amount,
+                'timestamp', v_timestamp,
+                'note', p_note
+            );
+
+            v_bids := jsonb_build_array(v_new_bid) || v_bids;
+            v_item := jsonb_set(v_item, '{bids}', v_bids);
+            v_item := jsonb_set(v_item, '{currentPrice}', to_jsonb(p_amount));
+            v_item := jsonb_set(v_item, '{winnerMemberId}', to_jsonb(p_member_id));
+            v_item := jsonb_set(v_item, '{winnerMemberName}', to_jsonb(p_member_name));
+            v_item := jsonb_set(v_item, '{winnerMemberJob}', to_jsonb(p_member_job));
+        END IF;
+
+        v_new_items := v_new_items || jsonb_build_array(v_item);
+    END LOOP;
+
+    IF NOT v_found THEN
+        RETURN jsonb_build_object('success', false, 'message', 'ไม่พบรายการประมูลนี้');
+    END IF;
+
+    UPDATE public.guild_auctions
+    SET items = v_new_items, updated_at = NOW()
+    WHERE id = p_guild_id;
+
+    RETURN jsonb_build_object(
+        'success', true,
+        'message', 'เสนอราคา ' || to_char(p_amount, 'FM999,999,999,999') || ' หน่วย สำเร็จ!',
+        'items', v_new_items,
+        'bid', v_new_bid
+    );
+END;
+$$;
+
 -- ==============================================================================
 -- หมวดที่ 3: ระบบแจ้งลากิลด์วอร์ออนไลน์ (Leave War Atomic Functions)
 -- ==============================================================================
