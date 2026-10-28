@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
+import NotFound from '@/app/not-found';
 import { useGuildStore } from '@/lib/guildStore';
 import { useAuth } from '@/lib/auth';
 import JobEmblem from '@/components/tactical/JobEmblem';
@@ -21,6 +22,7 @@ export default function MemberQueueView({ onSwitchToAdmin, requireId = false }: 
     guildName,
     members,
     queueLists,
+    isLoading,
     addMemberToQueue,
     removeMemberByMemberIdFromQueue,
   } = useGuildStore();
@@ -159,6 +161,22 @@ export default function MemberQueueView({ onSwitchToAdmin, requireId = false }: 
       }
     }
   };
+
+  // ถ้าเข้าผ่าน URL ที่เจาะจงคิว (?id=...)
+  // 1. ระหว่างกำลังโหลดข้อมูลจาก Cloud ให้แสดง Spinner รอ
+  if (isLoading && selectedQueueIdFromUrl) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 text-center space-y-3">
+        <div className="w-9 h-9 rounded-full border-3 border-indigo-500 border-t-transparent animate-spin" />
+        <p className="text-xs text-slate-400 font-medium">กำลังค้นหารายการคิว...</p>
+      </div>
+    );
+  }
+
+  // 2. ถ้าโหลดเสร็จแล้ว ไม่พบคิวรหัสนี้ หรือคิวถูกปิดไปแล้ว (status === 'closed') ให้เด้งไปหน้า Error 404
+  if (!isLoading && selectedQueueIdFromUrl && (!targetedQueue || targetedQueue.status === 'closed')) {
+    return <NotFound />;
+  }
 
   return (
     <>

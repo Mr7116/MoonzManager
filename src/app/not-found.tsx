@@ -15,10 +15,10 @@ export default function NotFound() {
           404
         </h1>
         <h2 className="text-lg sm:text-xl font-extrabold text-slate-800 dark:text-slate-200">
-          ไม่พบหน้าที่คุณต้องการ (Page Not Found)
+          ไม่พบคิวรหัสนี้ หรือคิวอาจถูกปิดไปแล้ว
         </h2>
         <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-          หน้านี้จำเป็นต้องมีรหัสประจำ List คิวในการเข้าถึง (เช่น <span className="font-mono text-indigo-400 bg-indigo-950/50 px-1.5 py-0.5 rounded border border-indigo-500/30">?id=รหัสคิว</span>) หรือรายการคิวนี้อาจไม่มีอยู่ในระบบ
+          รหัสคิวที่คุณเข้าถึงไม่มีอยู่ในระบบ หรือผู้ดูแลได้ปิดรับคิวนี้ไปแล้ว กรุณาตรวจสอบลิงก์อีกครั้ง
         </p>
       </div>
 
