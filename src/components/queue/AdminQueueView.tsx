@@ -36,7 +36,17 @@ export default function AdminQueueView({ onSwitchToMember }: AdminQueueViewProps
   const [manualAddQueueId, setManualAddQueueId] = useState<string | null>(null);
   const [memberSearch, setMemberSearch] = useState('');
   const [toastMsg, setToastMsg] = useState<{ text: string; isError?: boolean } | null>(null);
+  const [selectedQueueIdFromUrl, setSelectedQueueIdFromUrl] = useState<string | null>(null);
   const [, setTick] = useState(0);
+
+  // Read URL query parameter "?id=..." or "?list=..." on mount
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const qId = params.get('id') || params.get('queueId') || params.get('list');
+      if (qId) setSelectedQueueIdFromUrl(qId);
+    }
+  }, []);
 
   // Live ticker for countdown update every second
   React.useEffect(() => {
@@ -51,8 +61,17 @@ export default function AdminQueueView({ onSwitchToMember }: AdminQueueViewProps
     }, 2500);
   };
 
+  // Targeted queue from URL ("ใคร list มัน")
+  const targetedQueue = useMemo(() => {
+    if (!selectedQueueIdFromUrl) return null;
+    return queueLists.find((q) => q.id === selectedQueueIdFromUrl) || null;
+  }, [queueLists, selectedQueueIdFromUrl]);
+
   // Filtered Queue Lists
   const displayLists = useMemo(() => {
+    if (selectedQueueIdFromUrl && targetedQueue) {
+      return [targetedQueue];
+    }
     let lists = [...queueLists];
     if (activeTab === 'open') {
       lists = lists.filter((q) => q.status === 'open');
@@ -66,7 +85,7 @@ export default function AdminQueueView({ onSwitchToMember }: AdminQueueViewProps
       lists = lists.filter((q) => q.dungeonCategory === 'apocalypse');
     }
     return lists;
-  }, [queueLists, activeTab]);
+  }, [queueLists, activeTab, selectedQueueIdFromUrl, targetedQueue]);
 
   // Overall Stats
   const totalQueuedMembers = useMemo(() => {
@@ -113,6 +132,12 @@ export default function AdminQueueView({ onSwitchToMember }: AdminQueueViewProps
         const status = e.isCompleted ? ' [✓ ผ่านแล้ว]' : '';
         lines.push(`${idx + 1}. ${e.memberName} (${e.memberJob || 'ไม่ระบุ'})${time ? ` - ${time}` : ''}${status}`);
       });
+    }
+
+    if (typeof window !== 'undefined') {
+      const joinUrl = `${window.location.origin}/queue/join?id=${queue.id}`;
+      lines.push('------------------------');
+      lines.push(`🔗 ลิงก์กดต่อคิว: ${joinUrl}`);
     }
 
     navigator.clipboard.writeText(lines.join('\n'));
@@ -247,6 +272,39 @@ export default function AdminQueueView({ onSwitchToMember }: AdminQueueViewProps
         </div>
       </div>
 
+      {/* TARGETED QUEUE URL BANNER (ใคร list มัน) */}
+      {selectedQueueIdFromUrl && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-gradient-to-r from-purple-900/60 to-indigo-900/60 border-2 border-purple-500 shadow-xl text-white">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl p-2 rounded-xl bg-purple-500/20 border border-purple-400 shrink-0">🎯</span>
+            <div>
+              <div className="text-sm font-black flex flex-wrap items-center gap-2">
+                <span>กำลังดูและจัดการเฉพาะ List คิว:</span>
+                <span className="text-amber-300 underline font-black">{targetedQueue?.title || selectedQueueIdFromUrl}</span>
+                <span className="font-mono text-xs text-purple-300 bg-purple-950 px-2 py-0.5 rounded border border-purple-500/40">#{selectedQueueIdFromUrl}</span>
+              </div>
+              <p className="text-xs text-purple-200 mt-0.5">
+                {targetedQueue
+                  ? 'คุณกำลังจัดการเฉพาะคิวนี้ตาม URL ที่ระบุ'
+                  : 'ไม่พบคิวรหัสนี้ในระบบ (กำลังแสดงคิวทั้งหมด)'}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedQueueIdFromUrl(null);
+              if (typeof window !== 'undefined') {
+                window.history.replaceState({}, '', window.location.pathname);
+              }
+            }}
+            className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-xs font-bold text-white transition shadow cursor-pointer shrink-0 active:scale-95"
+          >
+            📋 ดูคิวทั้งหมดในระบบ ({queueLists.length} คิว)
+          </button>
+        </div>
+      )}
+
       {/* FILTER TABS */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-1.5 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c101d] shadow-sm">
@@ -330,6 +388,11 @@ export default function AdminQueueView({ onSwitchToMember }: AdminQueueViewProps
                           {queue.title}
                         </h3>
 
+                        {/* ID Badge */}
+                        <span className="font-mono text-[10px] text-indigo-400 bg-indigo-950/60 px-2 py-0.5 rounded-md border border-indigo-500/30 font-semibold" title={`รหัสคิว: ${queue.id}`}>
+                          #{queue.id}
+                        </span>
+
                         {/* Level / Difficulty badge */}
                         {preset && (
                           <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${preset.badgeBg} ${preset.badgeColor} ${preset.badgeBorder}`}>
@@ -408,6 +471,20 @@ export default function AdminQueueView({ onSwitchToMember }: AdminQueueViewProps
 
                   {/* Top-Right Tools */}
                   <div className="flex flex-wrap items-center gap-1.5 shrink-0 self-end lg:self-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const url = `${window.location.origin}/queue/join?id=${queue.id}`;
+                        navigator.clipboard.writeText(url);
+                        showToast(`คัดลอกลิงก์คิว "${queue.title}" แล้ว! 🔗 (รหัส: ${queue.id})`);
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 text-xs font-bold flex items-center gap-1 transition cursor-pointer"
+                      title="คัดลอกลิงก์สำหรับคิวนี้เพื่อส่งให้สมาชิก"
+                    >
+                      <span>🔗</span>
+                      <span>คัดลอกลิงก์คิวนี้</span>
+                    </button>
+
                     <button
                       type="button"
                       onClick={() => setManualAddQueueId(queue.id)}
@@ -686,8 +763,8 @@ export default function AdminQueueView({ onSwitchToMember }: AdminQueueViewProps
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onCreate={(data) => {
-          createQueueList(data);
-          showToast(`สร้างคิว "${data.title}" เรียบร้อยแล้ว! 🚀`);
+          const newId = createQueueList(data);
+          showToast(`สร้างคิว "${data.title}" เรียบร้อยแล้ว! (รหัส: ${newId}) 🚀`);
         }}
       />
 

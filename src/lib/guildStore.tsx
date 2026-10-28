@@ -108,7 +108,7 @@ export interface GuildState {
 
   // Queue Management
   queueLists: QueueList[];
-  createQueueList: (data: Omit<QueueList, 'id' | 'createdAt' | 'entries'>) => string;
+  createQueueList: (data: Omit<QueueList, 'createdAt' | 'entries'> & { id?: string }) => string;
   updateQueueList: (id: string, updates: Partial<QueueList>) => void;
   deleteQueueList: (id: string) => void;
   addMemberToQueue: (queueId: string, memberId: string, note?: string) => { success: boolean; message: string };
@@ -1773,8 +1773,11 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Queue Operations
-  const createQueueList = (data: Omit<QueueList, 'id' | 'createdAt' | 'entries'>): string => {
-    const newId = `queue_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+  const createQueueList = (data: Omit<QueueList, 'createdAt' | 'entries'> & { id?: string }): string => {
+    const rawId = (data.id && data.id.trim())
+      ? data.id.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-')
+      : '';
+    const newId = rawId || `queue_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
     const isFutureSchedule = data.scheduledOpenAt ? new Date(data.scheduledOpenAt).getTime() > Date.now() : false;
     const preRegIds = data.preRegisteredMemberIds || [];
 

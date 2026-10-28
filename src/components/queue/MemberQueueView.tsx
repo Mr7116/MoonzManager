@@ -31,7 +31,19 @@ export default function MemberQueueView({ onSwitchToAdmin }: MemberQueueViewProp
   const [memberSearch, setMemberSearch] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'all' | 'open' | 'my' | 'vanished' | 'apocalypse'>('open');
   const [toastMsg, setToastMsg] = useState<{ text: string; isError?: boolean } | null>(null);
+  const [selectedQueueIdFromUrl, setSelectedQueueIdFromUrl] = useState<string | null>(null);
   const [, setTick] = useState(0);
+
+  // Read URL query parameter "?id=..." or "?list=..." on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const qId = params.get('id') || params.get('queueId') || params.get('list');
+      if (qId) {
+        setSelectedQueueIdFromUrl(qId);
+      }
+    }
+  }, []);
 
   // Live ticker for countdown update every second
   useEffect(() => {
@@ -87,8 +99,17 @@ export default function MemberQueueView({ onSwitchToAdmin }: MemberQueueViewProp
     );
   }, [queueLists, selectedMemberId]);
 
+  // Targeted queue from URL ("ใคร list มัน")
+  const targetedQueue = useMemo(() => {
+    if (!selectedQueueIdFromUrl) return null;
+    return queueLists.find((q) => q.id === selectedQueueIdFromUrl) || null;
+  }, [queueLists, selectedQueueIdFromUrl]);
+
   // Filtered queue lists
   const displayLists = useMemo(() => {
+    if (selectedQueueIdFromUrl && targetedQueue) {
+      return [targetedQueue];
+    }
     let lists = [...queueLists];
     if (activeTab === 'open') {
       lists = lists.filter((q) => q.status === 'open' || q.status === 'scheduled');
@@ -100,7 +121,7 @@ export default function MemberQueueView({ onSwitchToAdmin }: MemberQueueViewProp
       lists = lists.filter((q) => q.dungeonCategory === 'apocalypse');
     }
     return lists;
-  }, [queueLists, activeTab, myQueueLists]);
+  }, [queueLists, activeTab, myQueueLists, selectedQueueIdFromUrl, targetedQueue]);
 
   const handleJoin = (queue: QueueList) => {
     if (!currentMember) {
@@ -303,6 +324,39 @@ export default function MemberQueueView({ onSwitchToAdmin }: MemberQueueViewProp
         )}
       </div>
 
+      {/* TARGETED QUEUE URL BANNER (ใคร list มัน) */}
+      {selectedQueueIdFromUrl && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-gradient-to-r from-indigo-900/60 to-purple-900/60 border-2 border-indigo-500 shadow-xl text-white">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl p-2 rounded-xl bg-indigo-500/20 border border-indigo-400 shrink-0">🎯</span>
+            <div>
+              <div className="text-sm font-black flex flex-wrap items-center gap-2">
+                <span>กำลังเปิดเฉพาะ List คิว:</span>
+                <span className="text-amber-300 underline font-black">{targetedQueue?.title || selectedQueueIdFromUrl}</span>
+                <span className="font-mono text-xs text-indigo-300 bg-indigo-950 px-2 py-0.5 rounded border border-indigo-500/40">#{selectedQueueIdFromUrl}</span>
+              </div>
+              <p className="text-xs text-indigo-200 mt-0.5">
+                {targetedQueue
+                  ? 'คุณเข้าผ่าน URL เฉพาะของ List นี้ สามารถเลือกลงชื่อเข้าคิวนี้ได้ทันที'
+                  : 'ไม่พบคิวรหัสนี้ หรือคิวอาจถูกปิดไปแล้ว (กำลังแสดงคิวทั้งหมด)'}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedQueueIdFromUrl(null);
+              if (typeof window !== 'undefined') {
+                window.history.replaceState({}, '', window.location.pathname);
+              }
+            }}
+            className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white transition shadow cursor-pointer shrink-0 active:scale-95"
+          >
+            📋 ดูคิวทั้งหมดของกิลด์ ({queueLists.length} คิว)
+          </button>
+        </div>
+      )}
+
       {/* STEP 2: QUEUE LISTS */}
       <div className="space-y-3">
         {/* Filter Tabs */}
@@ -395,6 +449,11 @@ export default function MemberQueueView({ onSwitchToAdmin }: MemberQueueViewProp
                             {queue.title}
                           </h3>
 
+                          {/* ID Badge */}
+                          <span className="font-mono text-[10px] text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-md border border-indigo-400/40 font-bold" title={`รหัสคิว: ${queue.id}`}>
+                            #{queue.id}
+                          </span>
+
                           {/* Level / Difficulty badge */}
                           {preset && (
                             <span className={`px-2 py-0.5 rounded-lg text-xs font-black border shadow-sm ${preset.badgeBg} ${preset.badgeColor} ${preset.badgeBorder}`}>
@@ -450,6 +509,19 @@ export default function MemberQueueView({ onSwitchToAdmin }: MemberQueueViewProp
 
                     {/* Action Button for Member */}
                     <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const url = `${window.location.origin}/queue/join?id=${queue.id}`;
+                          navigator.clipboard.writeText(url);
+                          showToast(`คัดลอกลิงก์คิว "${queue.title}" แล้ว! 🔗 (รหัส: ${queue.id})`);
+                        }}
+                        className="p-2 sm:px-3 sm:py-2 rounded-xl border border-indigo-500/40 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 text-xs font-bold transition flex items-center gap-1 cursor-pointer active:scale-95 shadow-sm shrink-0"
+                        title="คัดลอกลิงก์เฉพาะ List คิวนี้ เพื่อส่งให้เพื่อนเข้าต่อคิวได้ทันที"
+                      >
+                        <span>🔗</span>
+                        <span className="hidden sm:inline">คัดลอกลิงก์</span>
+                      </button>
                       {isScheduled ? (
                         isPreRegistered ? (
                           <span className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 text-white text-xs font-black flex items-center gap-1.5 shadow-md">
