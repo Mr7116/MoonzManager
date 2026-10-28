@@ -142,6 +142,31 @@ const DEFAULT_GVG_PARTIES: Party[] = [
   { id: 'gvg_p8', name: 'ปาร์ตี้ 8', teamId: 'team_c', lane: 'roam_right', slots: [null, null, null, null, null] },
 ];
 
+export const DEFAULT_PRESET_PARTIES: Party[] = [
+  {
+    id: 'preset_p_default_1',
+    name: 'ตี้ประจำ 1',
+    teamId: 'preset',
+    teamColor: 'rose',
+    category: 'preset',
+    slots: ['m_csv_1792954365593_1_4zxo', 'm_csv_1792954365593_3_tjfl', 'm_csv_1792954365593_4_d5bt', 'm_csv_1792954365593_6_j3b0', 'm_csv_1792954365593_8_ec78'],
+  },
+  {
+    id: 'preset_p_default_2',
+    name: 'ตี้ประจำ 2',
+    teamId: 'preset',
+    teamColor: 'blue',
+    category: 'preset',
+    slots: ['m_csv_1792696734525_87', 'm_csv_1792696734525_6', 'm_csv_1792696734525_10', 'm_csv_1792696734525_19', 'm_csv_1792696734525_23'],
+  },
+  { id: 'preset_p_default_3', name: 'ตี้ประจำ 3', teamId: 'preset', teamColor: 'amber', category: 'preset', slots: [null, null, null, null, null] },
+  { id: 'preset_p_default_4', name: 'ตี้ประจำ 4', teamId: 'preset', teamColor: 'emerald', category: 'preset', slots: [null, null, null, null, null] },
+  { id: 'preset_p_default_5', name: 'ตี้ประจำ 5', teamId: 'preset', teamColor: 'purple', category: 'preset', slots: [null, null, null, null, null] },
+  { id: 'preset_p_default_6', name: 'ตี้ประจำ 6', teamId: 'preset', teamColor: 'cyan', category: 'preset', slots: [null, null, null, null, null] },
+  { id: 'preset_p_default_7', name: 'ตี้ประจำ 7', teamId: 'preset', teamColor: 'rose', category: 'preset', slots: [null, null, null, null, null] },
+  { id: 'preset_p_default_8', name: 'ตี้ประจำ 8', teamId: 'preset', teamColor: 'blue', category: 'preset', slots: [null, null, null, null, null] },
+];
+
 const GuildContext = createContext<GuildState | null>(null);
 
 export function GuildProvider({ children }: { children: React.ReactNode }) {
@@ -158,7 +183,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
     { id: 'pol_main', name: 'สงครามดาว', color: 'amber', field: 'main' }
   ]);
   const [polarityParties, setPolarityParties] = useState<Party[]>([]);
-  const [presetParties, setPresetParties] = useState<Party[]>([]);
+  const [presetParties, setPresetParties] = useState<Party[]>(DEFAULT_PRESET_PARTIES);
   const [auctionRounds, setAuctionRounds] = useState<AuctionRound[]>([
     {
       id: 'round_default',
