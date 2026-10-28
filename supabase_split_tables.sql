@@ -3,7 +3,7 @@
 -- รันสคริปต์นี้ใน Supabase Dashboard -> เมนู SQL Editor -> New query -> Run
 -- ============================================================
 
--- 1. Create 7 Modular Tables (แยก 7 ตารางตามหน้าการใช้งาน)
+-- 1. Create Modular Tables & Fallback Table (สร้างตารางแยก 7 ตาราง + ตารางสำรอง)
 
 -- Table 1: guild_settings (ตั้งค่ากิลด์, รหัสผ่าน PIN, วันที่ไฟล์)
 CREATE TABLE IF NOT EXISTS public.guild_settings (
@@ -62,6 +62,16 @@ CREATE TABLE IF NOT EXISTS public.guild_queues (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Table 8: guild_state (ตารางรวมเดิมสำหรับระบบสำรอง Fallback)
+CREATE TABLE IF NOT EXISTS public.guild_state (
+    id INT PRIMARY KEY DEFAULT 1,
+    guild_name TEXT DEFAULT 'Moonz',
+    file_timestamp TEXT,
+    members JSONB DEFAULT '[]'::jsonb,
+    parties JSONB DEFAULT '[]'::jsonb,
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- 2. เปิดใช้งาน Row Level Security (RLS) ทั้งหมด
 ALTER TABLE public.guild_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.guild_members ENABLE ROW LEVEL SECURITY;
@@ -70,6 +80,7 @@ ALTER TABLE public.guild_siege ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.guild_polarity ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.guild_auctions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.guild_queues ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.guild_state ENABLE ROW LEVEL SECURITY;
 
 -- 3. สร้าง Policies ให้สามารถอ่าน-เขียนข้อมูลได้ผ่าน Anon Key
 DO $$
@@ -94,24 +105,48 @@ BEGIN
 
     DROP POLICY IF EXISTS "Allow all access to guild_queues" ON public.guild_queues;
     CREATE POLICY "Allow all access to guild_queues" ON public.guild_queues FOR ALL USING (true) WITH CHECK (true);
+
+    DROP POLICY IF EXISTS "Allow all access to guild_state" ON public.guild_state;
+    CREATE POLICY "Allow all access to guild_state" ON public.guild_state FOR ALL USING (true) WITH CHECK (true);
 END $$;
 
--- 4. เปิด Realtime สำหรับตารางใหม่ทั้งหมด
-ALTER PUBLICATION supabase_realtime ADD TABLE public.guild_settings;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.guild_members;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.guild_gvg;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.guild_siege;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.guild_polarity;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.guild_auctions;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.guild_queues;
+-- 4. เปิด Realtime สำหรับตารางทั้งหมด (Safe check ไม่พังถ้ารันซ้ำ)
+DO $$
+DECLARE
+    tbl TEXT;
+    target_tables TEXT[] := ARRAY[
+        'guild_settings',
+        'guild_members',
+        'guild_gvg',
+        'guild_siege',
+        'guild_polarity',
+        'guild_auctions',
+        'guild_queues',
+        'guild_state'
+    ];
+BEGIN
+    FOREACH tbl IN ARRAY target_tables
+    LOOP
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_publication_tables 
+            WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = tbl
+        ) THEN
+            BEGIN
+                EXECUTE format('ALTER PUBLICATION supabase_realtime ADD TABLE public.%I', tbl);
+            EXCEPTION WHEN OTHERS THEN
+                NULL;
+            END;
+        END IF;
+    END LOOP;
+END $$;
 
--- 5. Auto-Migrate: โคลนข้อมูลเดิมจาก guild_state เข้าตารางใหม่ทันที (ถ้ามีข้อมูลเดิมอยู่)
+-- 5. Auto-Migrate / Seed: บันทึกข้อมูลเริ่มต้นหรือโคลนจากข้อมูลเดิม (ถ้ามี)
 DO $$
 DECLARE
     -- ============================================================
     -- กำหนด ID กิลด์ที่ต้องการ Migrated / บันทึก (เปลี่ยนเป็น 2 หรือเลขที่ต้องการได้)
     -- ============================================================
-    target_guild_id INT := 1; -- 👈 ID ปลายทางใน 7 ตารางใหม่ (ตรงกับ GUILD_ID ใน config)
+    target_guild_id INT := 1; -- 👈 ID ปลายทางในตาราง (ตรงกับ GUILD_ID ใน config เช่น 1 หรือ 2)
     source_guild_id INT := 1; -- 👈 ID ต้นทางใน guild_state ที่ต้องการดึงข้อมูลมา
 
     old_state RECORD;
@@ -128,7 +163,7 @@ DECLARE
     queue_lists_list JSONB := '[]'::jsonb;
 BEGIN
     SELECT * INTO old_state FROM public.guild_state WHERE id = source_guild_id;
-    IF FOUND THEN
+    IF FOUND AND (old_state.parties IS NOT NULL OR old_state.members IS NOT NULL) THEN
         IF old_state.parties IS NOT NULL AND jsonb_typeof(to_jsonb(old_state.parties)) = 'array' THEN
             FOR p_elem IN SELECT * FROM jsonb_array_elements(to_jsonb(old_state.parties))
             LOOP
@@ -203,7 +238,7 @@ BEGIN
             lists = EXCLUDED.lists,
             updated_at = NOW();
     ELSE
-        -- กรณีไม่มีข้อมูลใน guild_state ให้สร้างข้อมูลเริ่มต้นสำหรับ target_guild_id
+        -- กรณีไม่มีข้อมูลเดิม (ฐานข้อมูลใหม่) ให้สร้างข้อมูลเริ่มต้นสำหรับ target_guild_id
         INSERT INTO public.guild_settings (id, guild_name, pin, updated_at)
         VALUES (target_guild_id, 'Moonz', 'Moonz', NOW())
         ON CONFLICT (id) DO NOTHING;
@@ -231,6 +266,9 @@ BEGIN
         INSERT INTO public.guild_queues (id, lists, updated_at)
         VALUES (target_guild_id, '[]'::jsonb, NOW())
         ON CONFLICT (id) DO NOTHING;
+
+        INSERT INTO public.guild_state (id, guild_name, members, parties, updated_at)
+        VALUES (target_guild_id, 'Moonz', '[]'::jsonb, '[]'::jsonb, NOW())
+        ON CONFLICT (id) DO NOTHING;
     END IF;
 END $$;
-
