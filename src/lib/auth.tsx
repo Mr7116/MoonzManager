@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { GUILD_ID } from '@/config/guildConfig';
+import { GUILD_ID, DEFAULT_PIN } from '@/config/guildConfig';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!trimmed) return false;
 
     // Fetch cloud PIN
-    let validPin = localStorage.getItem('Moonz_guild_pin') || 'Moonz';
+    let validPin = localStorage.getItem('Moonz_guild_pin') || DEFAULT_PIN;
     try {
       const { data: settData, error: settErr } = await supabase
         .from('guild_settings')
@@ -112,7 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const changePin = async (oldPin: string, newPin: string): Promise<{ success: boolean; message: string }> => {
-    let currentPin = localStorage.getItem('Moonz_guild_pin') || 'Moonz';
+    let currentPin = localStorage.getItem('Moonz_guild_pin') || DEFAULT_PIN;
     try {
       const { data } = await supabase
         .from('guild_state')

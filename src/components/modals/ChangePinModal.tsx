@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useGuildStore } from '@/lib/guildStore';
+import { DEFAULT_PIN } from '@/config/guildConfig';
 
 interface ChangePinModalProps {
   isOpen: boolean;
@@ -13,7 +14,7 @@ export default function ChangePinModal({ isOpen, onClose }: ChangePinModalProps)
   const { saveToCloud } = useGuildStore();
 
   const [mounted, setMounted] = useState(false);
-  const [currentPin, setCurrentPin] = useState('Moonz');
+  const [currentPin, setCurrentPin] = useState(DEFAULT_PIN);
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -27,7 +28,7 @@ export default function ChangePinModal({ isOpen, onClose }: ChangePinModalProps)
 
   useEffect(() => {
     if (isOpen) {
-      const stored = localStorage.getItem('Moonz_guild_pin') || 'Moonz';
+      const stored = localStorage.getItem('Moonz_guild_pin') || DEFAULT_PIN;
       setCurrentPin(stored);
       setNewPin('');
       setConfirmPin('');

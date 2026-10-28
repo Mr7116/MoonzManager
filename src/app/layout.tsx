@@ -5,6 +5,7 @@ import Navbar from '@/components/layout/Navbar';
 import { AuthProvider } from '@/lib/auth';
 import { GuildProvider } from '@/lib/guildStore';
 import { ThemeProvider } from '@/lib/theme';
+import { GUILD_NAME } from '@/config/guildConfig';
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -27,7 +28,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Moonz Tactical — ระบบจัดทัพกิลด์วอร์',
+  title: `${GUILD_NAME} Tactical — ระบบจัดทัพกิลด์วอร์`,
   description: 'ระบบจัดผังทัพกิลด์วอร์ ROX (GVG / Siege / Polarity / Squads)',
 };
 

@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
-import { GUILD_ID } from '@/config/guildConfig';
+import { GUILD_ID, GUILD_NAME, DEFAULT_PIN } from '@/config/guildConfig';
 import { Member } from '@/types/member';
 import { Party, Team, LaneKey, FieldZoneKey } from '@/types/party';
 import { AuctionItem, AuctionEntry, AuctionRound, BidRecord, isTitleItem, isChestItem, isMultiEntryItem } from '@/types/auction';
@@ -145,7 +145,7 @@ const DEFAULT_GVG_PARTIES: Party[] = [
 const GuildContext = createContext<GuildState | null>(null);
 
 export function GuildProvider({ children }: { children: React.ReactNode }) {
-  const [guildName, setGuildName] = useState('Moonz');
+  const [guildName, setGuildName] = useState(GUILD_NAME);
   const [fileTimestamp, setFileTimestamp] = useState('กำลังโหลด...');
   const [members, setMembers] = useState<Member[]>([]);
   const [gvgTeams, setGvgTeams] = useState<Team[]>(DEFAULT_GVG_TEAMS);
@@ -745,7 +745,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
         };
       });
 
-      const pin = typeof window !== 'undefined' ? localStorage.getItem('Moonz_guild_pin') || 'Moonz' : 'Moonz';
+      const pin = typeof window !== 'undefined' ? localStorage.getItem('Moonz_guild_pin') || DEFAULT_PIN : DEFAULT_PIN;
       const authEntry = {
         id: '__guild_auth_config__',
         category: '__system__',
