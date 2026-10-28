@@ -13,9 +13,10 @@ import { getQueuePreset } from '@/constants/queuePresets';
 
 interface MemberQueueViewProps {
   onSwitchToAdmin?: () => void;
+  requireId?: boolean;
 }
 
-export default function MemberQueueView({ onSwitchToAdmin }: MemberQueueViewProps) {
+export default function MemberQueueView({ onSwitchToAdmin, requireId = false }: MemberQueueViewProps) {
   const {
     guildName,
     members,
@@ -360,53 +361,57 @@ export default function MemberQueueView({ onSwitchToAdmin }: MemberQueueViewProp
               <p className="text-xs text-indigo-200 mt-0.5">
                 {targetedQueue
                   ? 'คุณเข้าผ่าน URL เฉพาะของ List นี้ สามารถเลือกลงชื่อเข้าคิวนี้ได้ทันที'
-                  : 'ไม่พบคิวรหัสนี้ หรือคิวอาจถูกปิดไปแล้ว (กำลังแสดงคิวทั้งหมด)'}
+                  : 'ไม่พบคิวรหัสนี้ หรือคิวอาจถูกปิดไปแล้ว'}
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedQueueIdFromUrl(null);
-              if (typeof window !== 'undefined') {
-                window.history.replaceState({}, '', window.location.pathname);
-              }
-            }}
-            className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white transition shadow cursor-pointer shrink-0 active:scale-95"
-          >
-            📋 ดูคิวทั้งหมดของกิลด์ ({queueLists.length} คิว)
-          </button>
+          {!requireId && (
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedQueueIdFromUrl(null);
+                if (typeof window !== 'undefined') {
+                  window.history.replaceState({}, '', window.location.pathname);
+                }
+              }}
+              className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white transition shadow cursor-pointer shrink-0 active:scale-95"
+            >
+              📋 ดูคิวทั้งหมดของกิลด์ ({queueLists.length} คิว)
+            </button>
+          )}
         </div>
       )}
 
       {/* STEP 2: QUEUE LISTS */}
       <div className="space-y-3">
-        {/* Filter Tabs */}
-        <div className="flex flex-wrap items-center gap-1.5 p-2 rounded-2xl border-2 border-slate-300 dark:border-slate-800 bg-white dark:bg-[#0c101d] shadow-sm">
-          {[
-            { id: 'open', label: '🟢 เปิดรับคิวอยู่', count: queueLists.filter((q) => q.status === 'open' || q.status === 'scheduled').length },
-            { id: 'vanished', label: '🌀 มายาสิ้นสูญ', count: queueLists.filter((q) => q.dungeonCategory === 'vanished').length },
-            { id: 'apocalypse', label: '⚔️ Apocalypse', count: queueLists.filter((q) => q.dungeonCategory === 'apocalypse').length },
-            { id: 'my', label: '📌 คิวของฉัน', count: myQueueLists.length },
-            { id: 'all', label: 'ทั้งหมด', count: queueLists.length },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id as typeof activeTab)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer ${
-                activeTab === tab.id
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-extrabold border border-slate-300 dark:border-slate-700'
-              }`}
-            >
-              <span>{tab.label}</span>
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/25 text-white font-mono font-bold">
-                {tab.count}
-              </span>
-            </button>
-          ))}
-        </div>
+        {/* Filter Tabs (แสดงเฉพาะเมื่อดูรายการรวม) */}
+        {!requireId && !selectedQueueIdFromUrl && (
+          <div className="flex flex-wrap items-center gap-1.5 p-2 rounded-2xl border-2 border-slate-300 dark:border-slate-800 bg-white dark:bg-[#0c101d] shadow-sm">
+            {[
+              { id: 'open', label: '🟢 เปิดรับคิวอยู่', count: queueLists.filter((q) => q.status === 'open' || q.status === 'scheduled').length },
+              { id: 'vanished', label: '🌀 มายาสิ้นสูญ', count: queueLists.filter((q) => q.dungeonCategory === 'vanished').length },
+              { id: 'apocalypse', label: '⚔️ Apocalypse', count: queueLists.filter((q) => q.dungeonCategory === 'apocalypse').length },
+              { id: 'my', label: '📌 คิวของฉัน', count: myQueueLists.length },
+              { id: 'all', label: 'ทั้งหมด', count: queueLists.length },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id as typeof activeTab)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer ${
+                  activeTab === tab.id
+                    ? 'bg-indigo-600 text-white shadow-md'
+                    : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-extrabold border border-slate-300 dark:border-slate-700'
+                }`}
+              >
+                <span>{tab.label}</span>
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/25 text-white font-mono font-bold">
+                  {tab.count}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Empty state */}
         {displayLists.length === 0 ? (
