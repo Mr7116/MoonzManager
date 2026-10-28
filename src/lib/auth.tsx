@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { GUILD_ID } from '@/config/guildConfig';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -60,7 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { data: settData, error: settErr } = await supabase
         .from('guild_settings')
         .select('pin')
-        .eq('id', 1)
+        .eq('id', GUILD_ID)
         .maybeSingle();
 
       if (!settErr && settData?.pin) {
@@ -70,7 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { data } = await supabase
           .from('guild_state')
           .select('parties')
-          .eq('id', 1)
+          .eq('id', GUILD_ID)
           .maybeSingle();
 
         if (data && Array.isArray(data.parties)) {
@@ -116,7 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { data } = await supabase
         .from('guild_state')
         .select('*')
-        .eq('id', 1)
+        .eq('id', GUILD_ID)
         .maybeSingle();
 
       let latestParties = data?.parties || [];
@@ -148,14 +149,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Also update guild_settings
       try {
         await supabase.from('guild_settings').upsert({
-          id: 1,
+          id: GUILD_ID,
           pin: newPin,
           updated_at: new Date().toISOString(),
         });
       } catch (_) {}
 
       await supabase.from('guild_state').upsert({
-        id: 1,
+        id: GUILD_ID,
         parties: latestParties,
         updated_at: new Date().toISOString(),
       });

@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import { GUILD_ID } from '@/config/guildConfig';
 import { Member } from '@/types/member';
 import { Party, Team, LaneKey, FieldZoneKey } from '@/types/party';
 import { AuctionItem, AuctionEntry, AuctionRound, BidRecord, isTitleItem, isChestItem, isMultiEntryItem } from '@/types/auction';
@@ -514,7 +515,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
 
     try {
       if (targetTable === 'guild_queues') {
-        const { data } = await supabase.from('guild_queues').select('*').eq('id', 1).maybeSingle();
+        const { data } = await supabase.from('guild_queues').select('*').eq('id', GUILD_ID).maybeSingle();
         if (data && Array.isArray(data.lists)) {
           isRemoteSyncingRef.current = true;
           setQueueLists(data.lists);
@@ -525,7 +526,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (targetTable === 'guild_auctions') {
-        const { data } = await supabase.from('guild_auctions').select('*').eq('id', 1).maybeSingle();
+        const { data } = await supabase.from('guild_auctions').select('*').eq('id', GUILD_ID).maybeSingle();
         if (data) {
           isRemoteSyncingRef.current = true;
           if (Array.isArray(data.items)) {
@@ -542,7 +543,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (targetTable === 'guild_members') {
-        const { data } = await supabase.from('guild_members').select('*').eq('id', 1).maybeSingle();
+        const { data } = await supabase.from('guild_members').select('*').eq('id', GUILD_ID).maybeSingle();
         if (data && Array.isArray(data.members)) {
           isRemoteSyncingRef.current = true;
           setMembers(data.members);
@@ -552,7 +553,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (targetTable === 'guild_gvg') {
-        const { data } = await supabase.from('guild_gvg').select('*').eq('id', 1).maybeSingle();
+        const { data } = await supabase.from('guild_gvg').select('*').eq('id', GUILD_ID).maybeSingle();
         if (data) {
           isRemoteSyncingRef.current = true;
           if (Array.isArray(data.teams) && data.teams.length > 0) setGvgTeams(data.teams);
@@ -563,7 +564,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (targetTable === 'guild_siege') {
-        const { data } = await supabase.from('guild_siege').select('*').eq('id', 1).maybeSingle();
+        const { data } = await supabase.from('guild_siege').select('*').eq('id', GUILD_ID).maybeSingle();
         if (data) {
           isRemoteSyncingRef.current = true;
           if (Array.isArray(data.teams) && data.teams.length > 0) {
@@ -577,7 +578,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (targetTable === 'guild_polarity') {
-        const { data } = await supabase.from('guild_polarity').select('*').eq('id', 1).maybeSingle();
+        const { data } = await supabase.from('guild_polarity').select('*').eq('id', GUILD_ID).maybeSingle();
         if (data) {
           isRemoteSyncingRef.current = true;
           if (Array.isArray(data.teams) && data.teams.length > 0) {
@@ -592,7 +593,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (targetTable === 'guild_settings') {
-        const { data } = await supabase.from('guild_settings').select('*').eq('id', 1).maybeSingle();
+        const { data } = await supabase.from('guild_settings').select('*').eq('id', GUILD_ID).maybeSingle();
         if (data) {
           if (data.guild_name) setGuildName(data.guild_name);
           if (data.file_timestamp) setFileTimestamp(data.file_timestamp);
@@ -604,7 +605,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
       const { data, error: fetchErr } = await supabase
         .from('guild_state')
         .select('*')
-        .eq('id', 1)
+        .eq('id', GUILD_ID)
         .maybeSingle();
 
       if (fetchErr) {
@@ -628,13 +629,13 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
       // 1. Try parallel fetch from modular tables
       try {
         const [settRes, memRes, gvgRes, siegeRes, polRes, aucRes, queRes] = await Promise.all([
-          supabase.from('guild_settings').select('*').eq('id', 1).maybeSingle(),
-          supabase.from('guild_members').select('*').eq('id', 1).maybeSingle(),
-          supabase.from('guild_gvg').select('*').eq('id', 1).maybeSingle(),
-          supabase.from('guild_siege').select('*').eq('id', 1).maybeSingle(),
-          supabase.from('guild_polarity').select('*').eq('id', 1).maybeSingle(),
-          supabase.from('guild_auctions').select('*').eq('id', 1).maybeSingle(),
-          supabase.from('guild_queues').select('*').eq('id', 1).maybeSingle(),
+          supabase.from('guild_settings').select('*').eq('id', GUILD_ID).maybeSingle(),
+          supabase.from('guild_members').select('*').eq('id', GUILD_ID).maybeSingle(),
+          supabase.from('guild_gvg').select('*').eq('id', GUILD_ID).maybeSingle(),
+          supabase.from('guild_siege').select('*').eq('id', GUILD_ID).maybeSingle(),
+          supabase.from('guild_polarity').select('*').eq('id', GUILD_ID).maybeSingle(),
+          supabase.from('guild_auctions').select('*').eq('id', GUILD_ID).maybeSingle(),
+          supabase.from('guild_queues').select('*').eq('id', GUILD_ID).maybeSingle(),
         ]);
 
         const hasAnyModular = !!(
@@ -698,7 +699,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
       const { data, error: fetchErr } = await supabase
         .from('guild_state')
         .select('*')
-        .eq('id', 1)
+        .eq('id', GUILD_ID)
         .maybeSingle();
 
       if (fetchErr) throw fetchErr;
@@ -817,50 +818,50 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
       // Parallel saves across all modular tables + guild_state fallback
       await Promise.allSettled([
         supabase.from('guild_settings').upsert({
-          id: 1,
+          id: GUILD_ID,
           guild_name: state.guildName,
           pin,
           file_timestamp: state.fileTimestamp,
           updated_at: newUpdatedAt,
         }),
         supabase.from('guild_members').upsert({
-          id: 1,
+          id: GUILD_ID,
           members: state.members,
           updated_at: newUpdatedAt,
         }),
         supabase.from('guild_gvg').upsert({
-          id: 1,
+          id: GUILD_ID,
           teams: state.gvgTeams,
           parties: gvgPartiesWithMeta,
           updated_at: newUpdatedAt,
         }),
         supabase.from('guild_siege').upsert({
-          id: 1,
+          id: GUILD_ID,
           teams: state.siegeTeams,
           parties: siegePartiesWithMeta,
           updated_at: newUpdatedAt,
         }),
         supabase.from('guild_polarity').upsert({
-          id: 1,
+          id: GUILD_ID,
           teams: state.polarityTeams,
           parties: state.polarityParties,
           preset_parties: state.presetParties,
           updated_at: newUpdatedAt,
         }),
         supabase.from('guild_auctions').upsert({
-          id: 1,
+          id: GUILD_ID,
           items: sanitizedAuctionItems,
           rounds: state.auctionRounds,
           active_round_id: state.activeRoundId || null,
           updated_at: newUpdatedAt,
         }),
         supabase.from('guild_queues').upsert({
-          id: 1,
+          id: GUILD_ID,
           lists: state.queueLists,
           updated_at: newUpdatedAt,
         }),
         supabase.from('guild_state').upsert({
-          id: 1,
+          id: GUILD_ID,
           guild_name: state.guildName,
           file_timestamp: state.fileTimestamp,
           members: state.members,
@@ -939,17 +940,17 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
   // 3. Fallback polling interval (10 seconds)
   useEffect(() => {
     const channel = supabase
-      .channel('moonz_guild_realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'guild_queues', filter: 'id=eq.1' }, () => silentReloadFromCloud('guild_queues'))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'guild_auctions', filter: 'id=eq.1' }, () => silentReloadFromCloud('guild_auctions'))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'guild_members', filter: 'id=eq.1' }, () => silentReloadFromCloud('guild_members'))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'guild_gvg', filter: 'id=eq.1' }, () => silentReloadFromCloud('guild_gvg'))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'guild_siege', filter: 'id=eq.1' }, () => silentReloadFromCloud('guild_siege'))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'guild_polarity', filter: 'id=eq.1' }, () => silentReloadFromCloud('guild_polarity'))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'guild_settings', filter: 'id=eq.1' }, () => silentReloadFromCloud('guild_settings'))
+      .channel(`moonz_guild_realtime_${GUILD_ID}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'guild_queues', filter: `id=eq.${GUILD_ID}` }, () => silentReloadFromCloud('guild_queues'))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'guild_auctions', filter: `id=eq.${GUILD_ID}` }, () => silentReloadFromCloud('guild_auctions'))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'guild_members', filter: `id=eq.${GUILD_ID}` }, () => silentReloadFromCloud('guild_members'))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'guild_gvg', filter: `id=eq.${GUILD_ID}` }, () => silentReloadFromCloud('guild_gvg'))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'guild_siege', filter: `id=eq.${GUILD_ID}` }, () => silentReloadFromCloud('guild_siege'))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'guild_polarity', filter: `id=eq.${GUILD_ID}` }, () => silentReloadFromCloud('guild_polarity'))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'guild_settings', filter: `id=eq.${GUILD_ID}` }, () => silentReloadFromCloud('guild_settings'))
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'guild_state', filter: 'id=eq.1' },
+        { event: '*', schema: 'public', table: 'guild_state', filter: `id=eq.${GUILD_ID}` },
         (payload: any) => {
           if (payload?.new) {
             if (payload.new.updated_at && payload.new.updated_at === lastRemoteUpdatedAtRef.current) {
@@ -1013,7 +1014,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
         const { data, error } = await supabase
           .from('guild_state')
           .select('updated_at')
-          .eq('id', 1)
+          .eq('id', GUILD_ID)
           .maybeSingle();
 
         if (!error && data?.updated_at && data.updated_at !== lastRemoteUpdatedAtRef.current) {

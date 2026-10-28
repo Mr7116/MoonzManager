@@ -108,6 +108,12 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.guild_queues;
 -- 5. Auto-Migrate: โคลนข้อมูลเดิมจาก guild_state เข้าตารางใหม่ทันที (ถ้ามีข้อมูลเดิมอยู่)
 DO $$
 DECLARE
+    -- ============================================================
+    -- กำหนด ID กิลด์ที่ต้องการ Migrated / บันทึก (เปลี่ยนเป็น 2 หรือเลขที่ต้องการได้)
+    -- ============================================================
+    target_guild_id INT := 1; -- 👈 ID ปลายทางใน 7 ตารางใหม่ (ตรงกับ GUILD_ID ใน config)
+    source_guild_id INT := 1; -- 👈 ID ต้นทางใน guild_state ที่ต้องการดึงข้อมูลมา
+
     old_state RECORD;
     extracted_pin TEXT := 'Moonz';
     p_elem JSONB;
@@ -121,7 +127,7 @@ DECLARE
     auction_rounds_list JSONB := '[]'::jsonb;
     queue_lists_list JSONB := '[]'::jsonb;
 BEGIN
-    SELECT * INTO old_state FROM public.guild_state WHERE id = 1;
+    SELECT * INTO old_state FROM public.guild_state WHERE id = source_guild_id;
     IF FOUND THEN
         IF old_state.parties IS NOT NULL AND jsonb_typeof(to_jsonb(old_state.parties)) = 'array' THEN
             FOR p_elem IN SELECT * FROM jsonb_array_elements(to_jsonb(old_state.parties))
@@ -150,7 +156,7 @@ BEGIN
         END IF;
 
         INSERT INTO public.guild_settings (id, guild_name, pin, file_timestamp, updated_at)
-        VALUES (1, COALESCE(old_state.guild_name, 'Moonz'), extracted_pin, old_state.file_timestamp, NOW())
+        VALUES (target_guild_id, COALESCE(old_state.guild_name, 'Moonz'), extracted_pin, old_state.file_timestamp, NOW())
         ON CONFLICT (id) DO UPDATE SET
             guild_name = EXCLUDED.guild_name,
             pin = EXCLUDED.pin,
@@ -158,26 +164,26 @@ BEGIN
             updated_at = NOW();
 
         INSERT INTO public.guild_members (id, members, updated_at)
-        VALUES (1, COALESCE(to_jsonb(old_state.members), '[]'::jsonb), NOW())
+        VALUES (target_guild_id, COALESCE(to_jsonb(old_state.members), '[]'::jsonb), NOW())
         ON CONFLICT (id) DO UPDATE SET
             members = EXCLUDED.members,
             updated_at = NOW();
 
         INSERT INTO public.guild_gvg (id, teams, parties, updated_at)
-        VALUES (1, '[{"id":"main","name":"ทัพหลัก (Main)","field":"main","color":"rose"},{"id":"sub","name":"ทัพรอง (Sub)","field":"sub","color":"blue"}]'::jsonb, gvg_list, NOW())
+        VALUES (target_guild_id, '[{"id":"main","name":"ทัพหลัก (Main)","field":"main","color":"rose"},{"id":"sub","name":"ทัพรอง (Sub)","field":"sub","color":"blue"}]'::jsonb, gvg_list, NOW())
         ON CONFLICT (id) DO UPDATE SET
             parties = EXCLUDED.parties,
             updated_at = NOW();
 
         INSERT INTO public.guild_siege (id, teams, parties, updated_at)
-        VALUES (1, siege_teams_list, siege_list, NOW())
+        VALUES (target_guild_id, siege_teams_list, siege_list, NOW())
         ON CONFLICT (id) DO UPDATE SET
             teams = EXCLUDED.teams,
             parties = EXCLUDED.parties,
             updated_at = NOW();
 
         INSERT INTO public.guild_polarity (id, teams, parties, preset_parties, updated_at)
-        VALUES (1, polarity_teams_list, polarity_list, preset_list, NOW())
+        VALUES (target_guild_id, polarity_teams_list, polarity_list, preset_list, NOW())
         ON CONFLICT (id) DO UPDATE SET
             teams = EXCLUDED.teams,
             parties = EXCLUDED.parties,
@@ -185,16 +191,46 @@ BEGIN
             updated_at = NOW();
 
         INSERT INTO public.guild_auctions (id, items, rounds, updated_at)
-        VALUES (1, auction_items_list, auction_rounds_list, NOW())
+        VALUES (target_guild_id, auction_items_list, auction_rounds_list, NOW())
         ON CONFLICT (id) DO UPDATE SET
             items = EXCLUDED.items,
             rounds = EXCLUDED.rounds,
             updated_at = NOW();
 
         INSERT INTO public.guild_queues (id, lists, updated_at)
-        VALUES (1, queue_lists_list, NOW())
+        VALUES (target_guild_id, queue_lists_list, NOW())
         ON CONFLICT (id) DO UPDATE SET
             lists = EXCLUDED.lists,
             updated_at = NOW();
+    ELSE
+        -- กรณีไม่มีข้อมูลใน guild_state ให้สร้างข้อมูลเริ่มต้นสำหรับ target_guild_id
+        INSERT INTO public.guild_settings (id, guild_name, pin, updated_at)
+        VALUES (target_guild_id, 'Moonz', 'Moonz', NOW())
+        ON CONFLICT (id) DO NOTHING;
+
+        INSERT INTO public.guild_members (id, members, updated_at)
+        VALUES (target_guild_id, '[]'::jsonb, NOW())
+        ON CONFLICT (id) DO NOTHING;
+
+        INSERT INTO public.guild_gvg (id, teams, parties, updated_at)
+        VALUES (target_guild_id, '[{"id":"main","name":"ทัพหลัก (Main)","field":"main","color":"rose"},{"id":"sub","name":"ทัพรอง (Sub)","field":"sub","color":"blue"}]'::jsonb, '[]'::jsonb, NOW())
+        ON CONFLICT (id) DO NOTHING;
+
+        INSERT INTO public.guild_siege (id, teams, parties, updated_at)
+        VALUES (target_guild_id, '[]'::jsonb, '[]'::jsonb, NOW())
+        ON CONFLICT (id) DO NOTHING;
+
+        INSERT INTO public.guild_polarity (id, teams, parties, preset_parties, updated_at)
+        VALUES (target_guild_id, '[]'::jsonb, '[]'::jsonb, '[]'::jsonb, NOW())
+        ON CONFLICT (id) DO NOTHING;
+
+        INSERT INTO public.guild_auctions (id, items, rounds, updated_at)
+        VALUES (target_guild_id, '[]'::jsonb, '[]'::jsonb, NOW())
+        ON CONFLICT (id) DO NOTHING;
+
+        INSERT INTO public.guild_queues (id, lists, updated_at)
+        VALUES (target_guild_id, '[]'::jsonb, NOW())
+        ON CONFLICT (id) DO NOTHING;
     END IF;
 END $$;
+
