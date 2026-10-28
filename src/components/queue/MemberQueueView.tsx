@@ -123,7 +123,9 @@ export default function MemberQueueView({ onSwitchToAdmin }: MemberQueueViewProp
     return lists;
   }, [queueLists, activeTab, myQueueLists, selectedQueueIdFromUrl, targetedQueue]);
 
-  const handleJoin = (queue: QueueList) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleJoin = async (queue: QueueList) => {
     if (!currentMember) {
       showToast('กรุณาเลือกชื่อตัวละครของคุณก่อน', true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -133,15 +135,27 @@ export default function MemberQueueView({ onSwitchToAdmin }: MemberQueueViewProp
       showToast('คิวนี้ยังไม่เปิดรับ กรุณารอเวลาเปิดตามที่กำหนด', true);
       return;
     }
-    const res = addMemberToQueue(queue.id, currentMember.id);
-    showToast(res.message, !res.success);
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const res = await addMemberToQueue(queue.id, currentMember.id);
+      showToast(res.message, !res.success);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleLeave = (queue: QueueList) => {
+  const handleLeave = async (queue: QueueList) => {
     if (!currentMember) return;
     if (window.confirm(`คุณต้องการยกเลิกการต่อคิว "${queue.title}" ใช่หรือไม่?`)) {
-      removeMemberByMemberIdFromQueue(queue.id, currentMember.id);
-      showToast(`ยกเลิกคิว "${queue.title}" เรียบร้อยแล้ว`);
+      if (isSubmitting) return;
+      setIsSubmitting(true);
+      try {
+        const res = await removeMemberByMemberIdFromQueue(queue.id, currentMember.id);
+        showToast(res?.message || `ยกเลิกคิว "${queue.title}" เรียบร้อยแล้ว`);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 

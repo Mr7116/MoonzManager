@@ -734,9 +734,9 @@ export default function AdminQueueView({ onSwitchToMember }: AdminQueueViewProps
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => {
+                                  onClick={async () => {
                                     if (window.confirm(`นำ "${entry.memberName}" ออกจากคิวใช่หรือไม่?`)) {
-                                      removeMemberFromQueue(queue.id, entry.id);
+                                      await removeMemberFromQueue(queue.id, entry.id);
                                     }
                                   }}
                                   className="w-7 h-7 rounded-lg text-xs font-black text-slate-400 hover:text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-950/50 cursor-pointer flex items-center justify-center transition ml-0.5"
@@ -817,8 +817,8 @@ export default function AdminQueueView({ onSwitchToMember }: AdminQueueViewProps
 
                     <button
                       type="button"
-                      onClick={() => {
-                        const res = addMemberToQueue(activeQueueForAdd.id, m.id);
+                      onClick={async () => {
+                        const res = await addMemberToQueue(activeQueueForAdd.id, m.id);
                         showToast(res.message, !res.success);
                         setManualAddQueueId(null);
                       }}

@@ -111,9 +111,9 @@ export interface GuildState {
   createQueueList: (data: Omit<QueueList, 'createdAt' | 'entries'> & { id?: string }) => string;
   updateQueueList: (id: string, updates: Partial<QueueList>) => void;
   deleteQueueList: (id: string) => void;
-  addMemberToQueue: (queueId: string, memberId: string, note?: string) => { success: boolean; message: string };
-  removeMemberFromQueue: (queueId: string, entryId: string) => void;
-  removeMemberByMemberIdFromQueue: (queueId: string, memberId: string) => void;
+  addMemberToQueue: (queueId: string, memberId: string, note?: string) => Promise<{ success: boolean; message: string }>;
+  removeMemberFromQueue: (queueId: string, entryId: string) => Promise<void>;
+  removeMemberByMemberIdFromQueue: (queueId: string, memberId: string) => Promise<{ success: boolean; message: string }>;
   reorderQueueEntries: (queueId: string, entries: QueueEntry[]) => void;
   toggleQueueEntryCompleted: (queueId: string, entryId: string) => void;
   clearQueueEntries: (queueId: string) => void;
@@ -1821,10 +1821,46 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
     triggerAutoSave();
   };
 
-  const addMemberToQueue = (queueId: string, memberId: string, note?: string): { success: boolean; message: string } => {
+  const addMemberToQueue = async (
+    queueId: string,
+    memberId: string,
+    note?: string
+  ): Promise<{ success: boolean; message: string }> => {
     const member = latestStateRef.current.members.find((m) => m.id === memberId);
     if (!member) return { success: false, message: 'ไม่พบข้อมูลสมาชิก' };
 
+    // 1. เรียก Atomic Database Function (RPC) บน Supabase ล็อกแถวด้วย FOR UPDATE
+    // ป้องกันคนกดพร้อมกันแล้วแย่งกัน / เด้งออก 100%
+    try {
+      const { data, error: rpcErr } = await supabase.rpc('join_queue_atomic', {
+        p_guild_id: GUILD_ID,
+        p_queue_id: queueId,
+        p_member_id: member.id,
+        p_member_name: member.name,
+        p_member_job: member.job || null,
+        p_note: note?.trim() || null,
+      });
+
+      if (!rpcErr && data && typeof data === 'object') {
+        const res = data as { success: boolean; message: string; position?: number };
+        if (res.success) {
+          silentReloadFromCloud('guild_queues');
+          return {
+            success: true,
+            message: res.message || `เข้าร่วมคิวสำเร็จ! (อันดับที่ #${res.position})`,
+          };
+        } else {
+          return {
+            success: false,
+            message: res.message || 'ไม่สามารถเข้าร่วมคิวได้',
+          };
+        }
+      }
+    } catch (rpcEx) {
+      console.warn('join_queue_atomic RPC fallback:', rpcEx);
+    }
+
+    // 2. Fallback: ถ้ายังไม่ได้รัน SQL RPC บน Cloud
     let added = false;
     let errMessage = '';
     let newPosition = 1;
@@ -1868,7 +1904,22 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
     return { success: false, message: errMessage || 'ไม่สามารถเข้าร่วมคิวได้' };
   };
 
-  const removeMemberFromQueue = (queueId: string, entryId: string) => {
+  const removeMemberFromQueue = async (queueId: string, entryId: string): Promise<void> => {
+    try {
+      const { data, error: rpcErr } = await supabase.rpc('remove_queue_entry_atomic', {
+        p_guild_id: GUILD_ID,
+        p_queue_id: queueId,
+        p_entry_id: entryId,
+      });
+
+      if (!rpcErr && data && (data as any).success) {
+        silentReloadFromCloud('guild_queues');
+        return;
+      }
+    } catch (rpcEx) {
+      console.warn('remove_queue_entry_atomic RPC fallback:', rpcEx);
+    }
+
     setQueueLists((prev) =>
       prev.map((q) => {
         if (q.id !== queueId) return q;
@@ -1882,7 +1933,25 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
     triggerAutoSave();
   };
 
-  const removeMemberByMemberIdFromQueue = (queueId: string, memberId: string) => {
+  const removeMemberByMemberIdFromQueue = async (
+    queueId: string,
+    memberId: string
+  ): Promise<{ success: boolean; message: string }> => {
+    try {
+      const { data, error: rpcErr } = await supabase.rpc('leave_queue_atomic', {
+        p_guild_id: GUILD_ID,
+        p_queue_id: queueId,
+        p_member_id: memberId,
+      });
+
+      if (!rpcErr && data && (data as any).success) {
+        silentReloadFromCloud('guild_queues');
+        return { success: true, message: (data as any).message || 'ยกเลิกการต่อคิวเรียบร้อยแล้ว' };
+      }
+    } catch (rpcEx) {
+      console.warn('leave_queue_atomic RPC fallback:', rpcEx);
+    }
+
     setQueueLists((prev) =>
       prev.map((q) => {
         if (q.id !== queueId) return q;
@@ -1894,6 +1963,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
       })
     );
     triggerAutoSave();
+    return { success: true, message: 'ยกเลิกการต่อคิวเรียบร้อยแล้ว' };
   };
 
   const reorderQueueEntries = (queueId: string, entries: QueueEntry[]) => {
