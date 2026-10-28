@@ -2171,18 +2171,31 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
 
   const reorderQueueEntries = (queueId: string, entries: QueueEntry[]) => {
     lastUserActionTimeRef.current = Date.now();
-    setQueueLists((prev) =>
-      prev.map((q) => (q.id === queueId ? { ...q, entries, updatedAt: new Date().toISOString() } : q))
-    );
+    let nextLists: QueueList[] = [];
+    setQueueLists((prev) => {
+      nextLists = prev.map((q) => (q.id === queueId ? { ...q, entries, updatedAt: new Date().toISOString() } : q));
+      return nextLists;
+    });
+    if (nextLists.length > 0) {
+      latestStateRef.current = {
+        ...latestStateRef.current,
+        queueLists: nextLists,
+      };
+      try {
+        localStorage.setItem('Moonz_queue_lists', JSON.stringify(nextLists));
+      } catch (_) {}
+    }
     triggerAutoSave(150);
   };
 
   const toggleQueueEntryCompleted = (queueId: string, entryId: string) => {
     lastUserActionTimeRef.current = Date.now();
-    setQueueLists((prev) =>
-      prev.map((q) => {
+    let nextLists: QueueList[] = [];
+
+    setQueueLists((prev) => {
+      nextLists = prev.map((q) => {
         if (q.id !== queueId) return q;
-        const updatedEntries = q.entries.map((e) => {
+        const updatedEntries = (q.entries || []).map((e) => {
           if (e.id !== entryId) return e;
           const willBeCompleted = !e.isCompleted;
           return {
@@ -2192,9 +2205,30 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
           };
         });
         return { ...q, entries: updatedEntries, updatedAt: new Date().toISOString() };
+      });
+      return nextLists;
+    });
+
+    if (nextLists.length > 0) {
+      latestStateRef.current = {
+        ...latestStateRef.current,
+        queueLists: nextLists,
+      };
+      try {
+        localStorage.setItem('Moonz_queue_lists', JSON.stringify(nextLists));
+      } catch (_) {}
+    }
+
+    triggerAutoSave(150);
+
+    // Atomic Database RPC ควบคู่
+    void Promise.resolve(
+      supabase.rpc('toggle_queue_entry_atomic', {
+        p_guild_id: GUILD_ID,
+        p_queue_id: queueId,
+        p_entry_id: entryId,
       })
-    );
-    triggerAutoSave();
+    ).catch(() => {});
   };
 
   const clearQueueEntries = (queueId: string) => {

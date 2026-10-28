@@ -242,6 +242,85 @@ BEGIN
 END;
 $$;
 
+-- 1.4 สลับสถานะผ่าน/ไม่ผ่านของคนในคิว (Toggle Completed) แบบ Atomic
+CREATE OR REPLACE FUNCTION public.toggle_queue_entry_atomic(
+    p_guild_id INT,
+    p_queue_id TEXT,
+    p_entry_id TEXT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_row RECORD;
+    v_lists JSONB;
+    v_new_lists JSONB := '[]'::jsonb;
+    v_q JSONB;
+    v_entries JSONB;
+    v_new_entries JSONB;
+    v_e JSONB;
+    v_found BOOLEAN := false;
+    v_now_completed BOOLEAN := false;
+    v_completed_at TEXT;
+BEGIN
+    SELECT * INTO v_row
+    FROM public.guild_queues
+    WHERE id = p_guild_id
+    FOR UPDATE;
+
+    IF NOT FOUND THEN
+        RETURN jsonb_build_object('success', false, 'message', 'ไม่พบข้อมูลคิว');
+    END IF;
+
+    v_lists := COALESCE(v_row.lists, '[]'::jsonb);
+
+    FOR v_q IN SELECT * FROM jsonb_array_elements(v_lists)
+    LOOP
+        IF v_q->>'id' = p_queue_id THEN
+            v_found := true;
+            v_entries := COALESCE(v_q->'entries', '[]'::jsonb);
+            v_new_entries := '[]'::jsonb;
+
+            FOR v_e IN SELECT * FROM jsonb_array_elements(v_entries)
+            LOOP
+                IF v_e->>'id' = p_entry_id THEN
+                    v_now_completed := NOT COALESCE((v_e->>'isCompleted')::boolean, false);
+                    v_e := jsonb_set(v_e, '{isCompleted}', to_jsonb(v_now_completed));
+                    IF v_now_completed THEN
+                        v_completed_at := to_char(clock_timestamp() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"');
+                        v_e := jsonb_set(v_e, '{completedAt}', to_jsonb(v_completed_at));
+                    ELSE
+                        v_e := v_e - 'completedAt';
+                    END IF;
+                END IF;
+                v_new_entries := v_new_entries || jsonb_build_array(v_e);
+            END LOOP;
+
+            v_q := jsonb_set(v_q, '{entries}', v_new_entries);
+            v_q := jsonb_set(v_q, '{updatedAt}', to_jsonb(to_char(clock_timestamp() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')));
+        END IF;
+
+        v_new_lists := v_new_lists || jsonb_build_array(v_q);
+    END LOOP;
+
+    IF NOT v_found THEN
+        RETURN jsonb_build_object('success', false, 'message', 'ไม่พบคิวนี้');
+    END IF;
+
+    UPDATE public.guild_queues
+    SET lists = v_new_lists, updated_at = NOW()
+    WHERE id = p_guild_id;
+
+    RETURN jsonb_build_object(
+        'success', true,
+        'message', 'อัปเดตสถานะผ่านเรียบร้อย',
+        'isCompleted', v_now_completed,
+        'lists', v_new_lists
+    );
+END;
+$$;
+
 -- ==============================================================================
 -- หมวดที่ 2: ระบบประมูลและชิงไอเทม (Auction Atomic Functions)
 -- ==============================================================================
