@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { useGuildStore } from '@/lib/guildStore';
 import { Member } from '@/types/member';
 import JobEmblem from '@/components/tactical/JobEmblem';
+import DonateCard from '@/components/common/DonateCard';
 import JobEmblemBar from '@/components/tactical/JobEmblemBar';
 import TitleMedal from '@/components/tactical/TitleMedal';
 import AutoSaveBadge from '@/components/common/AutoSaveBadge';
@@ -529,6 +530,11 @@ export default function RosterPage() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Donate Card */}
+      <div className="pt-6 flex justify-center">
+        <DonateCard className="w-full max-w-sm" />
       </div>
 
       {/* Add / Edit Member Modal */}

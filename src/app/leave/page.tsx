@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/auth';
 import { useGuildStore } from '@/lib/guildStore';
 import { getJobMeta } from '@/constants/jobs';
 import JobEmblem from '@/components/tactical/JobEmblem';
+import DonateCard from '@/components/common/DonateCard';
 import ThemeToggle from '@/components/layout/ThemeToggle';
 
 const QUICK_REASONS = [
@@ -274,6 +275,11 @@ export default function LeavePage() {
               🚀 ยืนยันการแจ้งลาวอร์
             </button>
           </form>
+
+          {/* Donate Card */}
+          <div className="mt-4">
+            <DonateCard className="w-full" />
+          </div>
         </div>
 
         {/* Leave List Column */}

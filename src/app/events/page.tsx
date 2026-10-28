@@ -5,6 +5,7 @@ import { useGuildStore } from '@/lib/guildStore';
 import { Member } from '@/types/member';
 import { getJobMeta } from '@/constants/jobs';
 import JobEmblem from '@/components/tactical/JobEmblem';
+import DonateCard from '@/components/common/DonateCard';
 import AutoSaveBadge from '@/components/common/AutoSaveBadge';
 
 interface EventConfig {
@@ -1483,6 +1484,11 @@ export default function EventsPage() {
           </div>
         </div>
       )}
+
+      {/* Donate Card */}
+      <div className="pt-6 flex justify-center">
+        <DonateCard className="w-full max-w-sm" />
+      </div>
     </div>
   );
 }

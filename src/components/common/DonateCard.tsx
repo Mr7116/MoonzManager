@@ -3,7 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 
-export default function DonateCard() {
+interface DonateCardProps {
+  className?: string;
+}
+
+export default function DonateCard({ className = '' }: DonateCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -13,10 +17,10 @@ export default function DonateCard() {
 
   return (
     <>
-      {/* Donate QR Box (Permanent Left Box) */}
+      {/* Donate QR Box */}
       <div
         onClick={() => setIsModalOpen(true)}
-        className="bg-gradient-to-br from-amber-950/30 via-slate-900 to-slate-900 border border-amber-500/30 hover:border-amber-400/60 rounded-2xl p-3 flex flex-col items-center text-center cursor-pointer group transition shadow-lg shadow-amber-950/20"
+        className={`bg-gradient-to-br from-amber-950/30 via-slate-900 to-slate-900 border border-amber-500/30 hover:border-amber-400/60 rounded-2xl p-3 flex flex-col items-center text-center cursor-pointer group transition shadow-lg shadow-amber-950/20 ${className}`}
       >
         <div className="flex items-center gap-1.5 mb-1 text-amber-300 font-bold text-xs">
           <span>☕</span>

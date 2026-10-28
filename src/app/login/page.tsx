@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, Suspense } from 'react';
+import DonateCard from '@/components/common/DonateCard';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
@@ -177,6 +178,9 @@ function LoginForm() {
             </Link>
           </div>
         </form>
+
+        {/* Donate Card */}
+        <DonateCard className="mt-4" />
       </div>
 
       {/* Change PIN Modal */}
