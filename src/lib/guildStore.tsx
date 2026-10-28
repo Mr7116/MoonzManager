@@ -106,6 +106,10 @@ export interface GuildState {
   deleteAuctionItem: (auctionId: string) => void;
   cancelAuctionItem: (auctionId: string) => void;
 
+  // Leave Management (Atomic)
+  submitLeave: (memberId: string, reason: string) => Promise<{ success: boolean; message: string }>;
+  cancelLeave: (memberId: string) => Promise<{ success: boolean; message: string }>;
+
   // Queue Management
   queueLists: QueueList[];
   createQueueList: (data: Omit<QueueList, 'createdAt' | 'entries'> & { id?: string }) => string;
@@ -1096,7 +1100,7 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
     setSiegeTeams((prev) => prev.map((t) => (t.id === teamId ? { ...t, color } : t)));
   };
 
-  const removeMemberFromSlot = (partyId: string, slotIndex: number) => {
+  const removeMemberFromSlot = async (partyId: string, slotIndex: number) => {
     setGvgParties((prev) =>
       prev.map((p) => {
         if (p.id !== partyId) return p;
@@ -1105,9 +1109,20 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
         return { ...p, slots: nextSlots };
       })
     );
+
+    try {
+      await supabase.rpc('clear_slot_atomic', {
+        p_guild_id: GUILD_ID,
+        p_mode: 'gvg',
+        p_party_id: partyId,
+        p_slot_idx: slotIndex,
+      });
+    } catch {
+      triggerAutoSave();
+    }
   };
 
-  const placeMemberInSlot = (partyId: string, slotIndex: number, memberId: string) => {
+  const placeMemberInSlot = async (partyId: string, slotIndex: number, memberId: string) => {
     setGvgParties((prev) => {
       const cleaned = prev.map((p) => {
         const slots = (p.slots || [null, null, null, null, null]).map((id) => (id === memberId ? null : id));
@@ -1121,6 +1136,18 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
         return { ...p, slots };
       });
     });
+
+    try {
+      await supabase.rpc('assign_slot_atomic', {
+        p_guild_id: GUILD_ID,
+        p_mode: 'gvg',
+        p_party_id: partyId,
+        p_slot_idx: slotIndex,
+        p_member_id: memberId,
+      });
+    } catch {
+      triggerAutoSave();
+    }
   };
 
   const swapSlots = (fromPartyId: string, fromSlotIdx: number, toPartyId: string, toSlotIdx: number) => {
@@ -1475,10 +1502,32 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
     triggerAutoSave();
   };
 
-  const addMemberToAuction = (auctionId: string, memberId: string) => {
+  const addMemberToAuction = async (auctionId: string, memberId: string) => {
     const member = latestStateRef.current.members.find((m) => m.id === memberId);
     if (!member) return;
 
+    // 1. Atomic Database RPC
+    try {
+      const { data, error } = await supabase.rpc('join_auction_atomic', {
+        p_guild_id: GUILD_ID,
+        p_auction_id: auctionId,
+        p_member_id: member.id,
+        p_member_name: member.name,
+        p_member_job: member.job || null,
+      });
+
+      if (!error && data && typeof data === 'object') {
+        const res = data as { success: boolean; message: string; items?: any };
+        if (res.success && res.items) {
+          setAuctionItems(res.items);
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('join_auction_atomic RPC fallback', e);
+    }
+
+    // 2. Fallback local update
     setAuctionItems((prev) =>
       prev.map((item) => {
         if (item.id !== auctionId) return item;
@@ -1560,7 +1609,27 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
     triggerAutoSave();
   };
 
-  const removeMemberFromAuction = (auctionId: string, memberId: string) => {
+  const removeMemberFromAuction = async (auctionId: string, memberId: string) => {
+    // 1. Atomic Database RPC
+    try {
+      const { data, error } = await supabase.rpc('leave_auction_atomic', {
+        p_guild_id: GUILD_ID,
+        p_auction_id: auctionId,
+        p_member_id: memberId,
+      });
+
+      if (!error && data && typeof data === 'object') {
+        const res = data as { success: boolean; items?: any };
+        if (res.success && res.items) {
+          setAuctionItems(res.items);
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('leave_auction_atomic RPC fallback', e);
+    }
+
+    // 2. Fallback
     setAuctionItems((prev) =>
       prev.map((item) => {
         if (item.id !== auctionId) return item;
@@ -1597,7 +1666,27 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
     triggerAutoSave();
   };
 
-  const removeMemberEntryById = (auctionId: string, entryId: string) => {
+  const removeMemberEntryById = async (auctionId: string, entryId: string) => {
+    // 1. Atomic Database RPC
+    try {
+      const { data, error } = await supabase.rpc('remove_auction_entry_atomic', {
+        p_guild_id: GUILD_ID,
+        p_auction_id: auctionId,
+        p_entry_id: entryId,
+      });
+
+      if (!error && data && typeof data === 'object') {
+        const res = data as { success: boolean; items?: any };
+        if (res.success && res.items) {
+          setAuctionItems(res.items);
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('remove_auction_entry_atomic RPC fallback', e);
+    }
+
+    // 2. Fallback
     setAuctionItems((prev) =>
       prev.map((item) => {
         if (item.id !== auctionId) return item;
@@ -1770,6 +1859,66 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
       prev.map((item) => (item.id === auctionId ? { ...item, status: 'cancelled' } : item))
     );
     triggerAutoSave();
+  };
+
+// Leave Management (Atomic RPC)
+  const submitLeave = async (memberId: string, reason: string): Promise<{ success: boolean; message: string }> => {
+    try {
+      const { data, error } = await supabase.rpc('submit_leave_atomic', {
+        p_guild_id: GUILD_ID,
+        p_member_id: memberId,
+        p_reason: reason,
+      });
+      if (!error && data && typeof data === 'object') {
+        const res = data as { success: boolean; message: string; members?: any };
+        if (res.success && res.members) {
+          setMembers(res.members);
+          return { success: true, message: res.message };
+        }
+      }
+    } catch (e) {
+      console.warn('submit_leave_atomic fallback', e);
+    }
+
+    // Local fallback
+    setMembers((prev) =>
+      prev.map((m) =>
+        m.id === memberId
+          ? { ...m, status: 'leave', leaveReason: reason, updatedAt: new Date().toISOString() }
+          : m
+      )
+    );
+    triggerAutoSave();
+    return { success: true, message: 'บันทึกการลาสำเร็จ' };
+  };
+
+  const cancelLeave = async (memberId: string): Promise<{ success: boolean; message: string }> => {
+    try {
+      const { data, error } = await supabase.rpc('cancel_leave_atomic', {
+        p_guild_id: GUILD_ID,
+        p_member_id: memberId,
+      });
+      if (!error && data && typeof data === 'object') {
+        const res = data as { success: boolean; message: string; members?: any };
+        if (res.success && res.members) {
+          setMembers(res.members);
+          return { success: true, message: res.message };
+        }
+      }
+    } catch (e) {
+      console.warn('cancel_leave_atomic fallback', e);
+    }
+
+    // Local fallback
+    setMembers((prev) =>
+      prev.map((m) =>
+        m.id === memberId
+          ? { ...m, status: 'ready', leaveReason: undefined, updatedAt: new Date().toISOString() }
+          : m
+      )
+    );
+    triggerAutoSave();
+    return { success: true, message: 'ยกเลิกการลาสำเร็จ กลับมาพร้อมรบ!' };
   };
 
   // Queue Operations
@@ -2146,6 +2295,8 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
         closeAuction,
         deleteAuctionItem,
         cancelAuctionItem,
+        submitLeave,
+        cancelLeave,
         queueLists,
         createQueueList,
         updateQueueList,
