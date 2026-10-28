@@ -265,3 +265,4 @@ $$;
 GRANT EXECUTE ON FUNCTION public.join_queue_atomic(INT, TEXT, TEXT, TEXT, TEXT, TEXT) TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.leave_queue_atomic(INT, TEXT, TEXT) TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.remove_queue_entry_atomic(INT, TEXT, TEXT) TO anon, authenticated, service_role;
+

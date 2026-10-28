@@ -160,16 +160,23 @@ export default function AdminQueueView({ onSwitchToMember }: AdminQueueViewProps
 
   return (
     <div className="mx-auto max-w-[1700px] px-3 py-4 sm:px-6 space-y-5">
-      {/* Toast Notification */}
+      {/* Toast Notification (Smooth Floating Toast - ไม่เด้งขึ้นลง นิ่ง สวยงาม) */}
       {toastMsg && (
-        <div
-          className={`fixed bottom-5 right-5 z-50 max-w-md rounded-2xl border p-4 text-xs sm:text-sm font-bold shadow-2xl transition-all ${
-            toastMsg.isError
-              ? 'bg-rose-950/90 text-rose-200 border-rose-500/60'
-              : 'bg-indigo-900/90 text-indigo-100 border-indigo-500/60'
-          }`}
-        >
-          {toastMsg.text}
+        <div className="fixed top-5 right-5 z-[9999] pointer-events-none transition-all duration-300 ease-out animate-in fade-in slide-in-from-top-3">
+          <div
+            className={`flex items-center gap-2.5 px-4 py-3 rounded-2xl border shadow-2xl backdrop-blur-md pointer-events-auto ${
+              toastMsg.isError
+                ? 'bg-rose-950/95 border-rose-500/60 text-rose-100 shadow-rose-950/50'
+                : 'bg-slate-900/95 border-indigo-500/60 text-indigo-100 shadow-indigo-950/50'
+            }`}
+          >
+            <span className="text-base shrink-0">
+              {toastMsg.isError ? '⚠️' : '✨'}
+            </span>
+            <span className="text-xs sm:text-sm font-bold tracking-wide">
+              {toastMsg.text}
+            </span>
+          </div>
         </div>
       )}
 
