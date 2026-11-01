@@ -1,20 +1,29 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import Link from 'next/link';
+import { useAuth } from '@/lib/auth';
 import { useGuildStore } from '@/lib/guildStore';
 import { supabase } from '@/lib/supabase';
 import { GUILD_ID } from '@/config/guildConfig';
-import { TacticalPlan, TacticalIconType, TacticalColorType, TacticalMapPresetId } from '@/types/tactics';
+import { TacticalPlan, TacticalPin, TacticalIconType, TacticalColorType, TacticalMapPresetId } from '@/types/tactics';
 import { DEFAULT_TACTICAL_PLANS, MAP_PRESETS, TACTICAL_ICONS, TACTICAL_COLORS } from '@/config/tacticsConfig';
 import TacticalMapBoard from '@/components/tactics/TacticalMapBoard';
 import TacticalSidebar from '@/components/tactics/TacticalSidebar';
 import TacticalExportModal from '@/components/tactics/TacticalExportModal';
+import TacticalPinViewModal from '@/components/tactics/TacticalPinViewModal';
 import DonateCard from '@/components/common/DonateCard';
 import AutoSaveBadge from '@/components/common/AutoSaveBadge';
 
 export default function TacticsPage() {
   const { guildName, gvgParties, siegeParties } = useGuildStore();
+  const { isAuthenticated } = useAuth();
   const [mounted, setMounted] = useState(false);
+  const [viewAsMember, setViewAsMember] = useState(false);
+  const [viewingPin, setViewingPin] = useState<TacticalPin | null>(null);
+
+  // Read-only mode active when not logged in or when officer toggles preview mode
+  const isReadOnly = !isAuthenticated || viewAsMember;
 
   // Initialize with DEFAULT_TACTICAL_PLANS for consistent SSR
   const [plans, setPlans] = useState<TacticalPlan[]>(DEFAULT_TACTICAL_PLANS);
@@ -320,7 +329,21 @@ export default function TacticsPage() {
           </div>
 
           {/* Quick Header Actions */}
-          <div className="flex items-center gap-2 self-end md:self-center">
+          <div className="flex items-center gap-2 self-end md:self-center flex-wrap">
+            {isAuthenticated && (
+              <button
+                type="button"
+                onClick={() => setViewAsMember(!viewAsMember)}
+                className={`px-3 py-2 rounded-xl border text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer ${
+                  viewAsMember
+                    ? 'border-amber-400 bg-amber-500 text-slate-950 font-black'
+                    : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300'
+                }`}
+                title="ทดสอบดูหน้าจอในมุมมองของสมาชิกที่ไม่ได้ล็อกอิน"
+              >
+                <span>{viewAsMember ? '✓ กำลังดูมุมมองสมาชิก' : '👁️ สลับมุมมองสมาชิก'}</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={handleCopySummary}
@@ -340,6 +363,22 @@ export default function TacticsPage() {
           </div>
         </div>
 
+        {/* Non-authenticated View-Only Notice Banner */}
+        {!isAuthenticated && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800/80 text-amber-900 dark:text-amber-200 text-xs sm:text-sm font-bold shadow-sm">
+            <div className="flex items-center gap-2.5">
+              <span className="text-lg">👁️</span>
+              <span>โหมดดูอย่างเดียว (View-Only Mode) — สำหรับสมาชิกกิลด์เข้าชมแผน</span>
+            </div>
+            <Link
+              href="/login?redirect=%2Ftactics"
+              className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-black text-xs shadow-md transition shrink-0"
+            >
+              🔑 เข้าสู่ระบบผู้ดูแลเพื่อแก้ไขแผน
+            </Link>
+          </div>
+        )}
+
         {/* Board & Sidebar Layout */}
         <div className="flex flex-col lg:flex-row items-start gap-5">
           {/* Left / Center: Interactive Map Board */}
@@ -353,6 +392,7 @@ export default function TacticsPage() {
               isDrawingMode={isDrawingMode}
               drawingColor={drawingColor}
               availableParties={availableParties}
+              isReadOnly={isReadOnly}
             />
           </div>
 
@@ -382,6 +422,8 @@ export default function TacticsPage() {
             onCopySummary={handleCopySummary}
             availableParties={availableParties}
             activePlan={activePlan}
+            onEditPin={(pin) => setViewingPin(pin)}
+            isReadOnly={isReadOnly}
           />
         </div>
 
@@ -390,6 +432,13 @@ export default function TacticsPage() {
           <DonateCard />
         </div>
       </div>
+
+      {/* Pin View Modal for Sidebar click */}
+      <TacticalPinViewModal
+        pin={viewingPin}
+        isOpen={!!viewingPin}
+        onClose={() => setViewingPin(null)}
+      />
 
       {/* Export Image Modal */}
       <TacticalExportModal

@@ -30,6 +30,7 @@ interface TacticalSidebarProps {
   availableParties?: string[];
   activePlan: TacticalPlan;
   onEditPin?: (pin: any) => void;
+  isReadOnly?: boolean;
 }
 
 export default function TacticalSidebar({
@@ -58,6 +59,7 @@ export default function TacticalSidebar({
   availableParties = ['ทัพหลัก', 'ปาร์ตี้ 1', 'ปาร์ตี้ 2', 'ปาร์ตี้ 3', 'ปาร์ตี้ 4', 'ปาร์ตี้ 5', 'พรีสต์ / ซัพพอร์ต'],
   activePlan,
   onEditPin,
+  isReadOnly = false,
 }: TacticalSidebarProps) {
   const [isCreatingPlan, setIsCreatingPlan] = useState(false);
   const [newPlanName, setNewPlanName] = useState('');
@@ -93,13 +95,15 @@ export default function TacticalSidebar({
             <span>🗺️</span>
             <span>แผนยุทธการ (Tactical Plans)</span>
           </span>
-          <button
-            type="button"
-            onClick={() => setIsCreatingPlan(!isCreatingPlan)}
-            className="px-2.5 py-1 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 text-[11px] font-bold text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 transition cursor-pointer"
-          >
-            {isCreatingPlan ? '✕ ยกเลิก' : '+ สร้างแผนใหม่'}
-          </button>
+          {!isReadOnly && (
+            <button
+              type="button"
+              onClick={() => setIsCreatingPlan(!isCreatingPlan)}
+              className="px-2.5 py-1 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 text-[11px] font-bold text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 transition cursor-pointer"
+            >
+              {isCreatingPlan ? '✕ ยกเลิก' : '+ สร้างแผนใหม่'}
+            </button>
+          )}
         </div>
 
         {/* Create Plan Form Popover */}
@@ -155,30 +159,32 @@ export default function TacticalSidebar({
               ))}
             </select>
 
-            <div className="flex items-center justify-between text-xs pt-1">
-              <button
-                type="button"
-                onClick={() => onDuplicatePlan(activePlanId)}
-                className="text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 font-bold transition flex items-center gap-1 cursor-pointer"
-              >
-                <span>📑</span>
-                <span>คัดลอกแผนนี้</span>
-              </button>
-              {plans.length > 1 && (
+            {!isReadOnly && (
+              <div className="flex items-center justify-between text-xs pt-1">
                 <button
                   type="button"
-                  onClick={() => {
-                    if (confirm(`ต้องการลบแผน "${activePlan.name}" ใช่หรือไม่?`)) {
-                      onDeletePlan(activePlanId);
-                    }
-                  }}
-                  className="text-rose-500 hover:text-rose-700 font-bold transition flex items-center gap-1 cursor-pointer"
+                  onClick={() => onDuplicatePlan(activePlanId)}
+                  className="text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 font-bold transition flex items-center gap-1 cursor-pointer"
                 >
-                  <span>🗑️</span>
-                  <span>ลบแผนนี้</span>
+                  <span>📑</span>
+                  <span>คัดลอกแผนนี้</span>
                 </button>
-              )}
-            </div>
+                {plans.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (confirm(`ต้องการลบแผน "${activePlan.name}" ใช่หรือไม่?`)) {
+                        onDeletePlan(activePlanId);
+                      }
+                    }}
+                    className="text-rose-500 hover:text-rose-700 font-bold transition flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>🗑️</span>
+                    <span>ลบแผนนี้</span>
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -190,16 +196,18 @@ export default function TacticalSidebar({
             <span>🏰</span>
             <span>เลือกแผนที่ (Castle Maps)</span>
           </span>
-          <label className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer flex items-center gap-1">
-            <span>📷</span>
-            <span>อัปโหลดรูปเอง</span>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleCustomMapUpload}
-              className="hidden"
-            />
-          </label>
+          {!isReadOnly && (
+            <label className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer flex items-center gap-1">
+              <span>📷</span>
+              <span>อัปโหลดรูปเอง</span>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleCustomMapUpload}
+                className="hidden"
+              />
+            </label>
+          )}
         </div>
 
         <div className="grid grid-cols-1 gap-2">
@@ -240,7 +248,30 @@ export default function TacticalSidebar({
         </div>
       </div>
 
-      {/* 3. Tactical Tools & Markers Card */}
+      {/* 3. Tactical Tools & Markers Card (or Plan Overview if read-only) */}
+      {isReadOnly ? (
+        <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c101d] p-4 sm:p-5 shadow-sm space-y-3">
+          <span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+            <span>📝</span>
+            <span>รายละเอียดแผนนี้ (Plan Info)</span>
+          </span>
+          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-2 text-xs">
+            <div className="font-extrabold text-slate-900 dark:text-white text-sm">
+              {activePlan.name}
+            </div>
+            {activePlan.description && (
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                {activePlan.description}
+              </p>
+            )}
+            <div className="flex items-center gap-2 pt-2 border-t border-slate-200 dark:border-slate-800 text-[11px] text-slate-500">
+              <span>📍 มีทั้งหมด {activePlan.pins?.length || 0} จุดคำสั่ง</span>
+              <span>·</span>
+              <span>✏️ {activePlan.lines?.length || 0} เส้นเดินทัพ</span>
+            </div>
+          </div>
+        </div>
+      ) : (
       <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c101d] p-4 sm:p-5 shadow-sm space-y-4">
         {/* Mode Switch: Pin vs Draw */}
         <div className="grid grid-cols-2 p-1 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 gap-1">
@@ -399,6 +430,7 @@ export default function TacticalSidebar({
           </div>
         )}
       </div>
+      )}
 
       {/* 4. Active Pins List in this Plan */}
       {(activePlan.pins || []).length > 0 && (
@@ -479,7 +511,7 @@ export default function TacticalSidebar({
           <span>คัดลอกสรุปคำสั่งส่ง Discord / LINE</span>
         </button>
 
-        {(activePlan.pins?.length || 0) > 0 && (
+        {!isReadOnly && (activePlan.pins?.length || 0) > 0 && (
           <button
             type="button"
             onClick={() => {
