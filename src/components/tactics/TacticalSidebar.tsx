@@ -29,6 +29,7 @@ interface TacticalSidebarProps {
   onCopySummary: () => void;
   availableParties?: string[];
   activePlan: TacticalPlan;
+  onEditPin?: (pin: any) => void;
 }
 
 export default function TacticalSidebar({
@@ -56,6 +57,7 @@ export default function TacticalSidebar({
   onCopySummary,
   availableParties = ['ทัพหลัก', 'ปาร์ตี้ 1', 'ปาร์ตี้ 2', 'ปาร์ตี้ 3', 'ปาร์ตี้ 4', 'ปาร์ตี้ 5', 'พรีสต์ / ซัพพอร์ต'],
   activePlan,
+  onEditPin,
 }: TacticalSidebarProps) {
   const [isCreatingPlan, setIsCreatingPlan] = useState(false);
   const [newPlanName, setNewPlanName] = useState('');
@@ -398,7 +400,66 @@ export default function TacticalSidebar({
         )}
       </div>
 
-      {/* 4. Action Buttons (Export Image & Copy Discord) */}
+      {/* 4. Active Pins List in this Plan */}
+      {(activePlan.pins || []).length > 0 && (
+        <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c101d] p-4 sm:p-5 shadow-sm space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+              <span>📍</span>
+              <span>หมุดคำสั่ง ({activePlan.pins.length})</span>
+            </span>
+            <span className="text-[10px] text-slate-400">ดับเบิ้ลคลิกหมุดเพื่อแก้ไข</span>
+          </div>
+
+          <div className="space-y-1.5 max-h-[220px] overflow-y-auto pr-1 scrollbar-thin">
+            {[...(activePlan.pins || [])]
+              .sort((a, b) => (a.orderNumber || 99) - (b.orderNumber || 99))
+              .map((p) => {
+                const iconMeta = TACTICAL_ICONS.find((i) => i.type === p.icon) || TACTICAL_ICONS[0];
+                const colorMeta = TACTICAL_COLORS.find((c) => c.type === p.color) || TACTICAL_COLORS[0];
+                return (
+                  <div
+                    key={p.id}
+                    className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-600 bg-slate-50/70 dark:bg-slate-900/50 flex items-center justify-between gap-2 transition"
+                  >
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <span
+                        className="w-5 h-5 rounded-lg text-xs flex items-center justify-center shrink-0 text-white font-mono font-bold"
+                        style={{ backgroundColor: colorMeta.hex }}
+                      >
+                        {iconMeta.icon}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+                          {p.orderNumber && <span className="text-amber-500 mr-1 font-mono">#{p.orderNumber}</span>}
+                          {p.label}
+                        </div>
+                        {p.assignedParty && (
+                          <div className="text-[10px] text-slate-400 truncate">
+                            {p.assignedParty}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {onEditPin && (
+                      <button
+                        type="button"
+                        onClick={() => onEditPin(p)}
+                        className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 text-xs transition cursor-pointer"
+                        title="คลิกเพื่อแก้ไขหมุดนี้"
+                      >
+                        ✏️
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+      )}
+
+      {/* 5. Action Buttons (Export Image & Copy Discord) */}
       <div className="space-y-2">
         <button
           type="button"

@@ -42,3 +42,4 @@ VALUES
     (1, '[]'::jsonb, NOW()),
     (2, '[]'::jsonb, NOW())
 ON CONFLICT (id) DO NOTHING;
+

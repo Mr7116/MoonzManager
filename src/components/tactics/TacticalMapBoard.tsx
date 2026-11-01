@@ -75,9 +75,8 @@ export default function TacticalMapBoard({
       updatedAt: new Date().toISOString(),
     });
 
-    // Auto open edit modal for user convenience
+    // Select the newly placed pin without popping up modal
     setSelectedPin(newPin);
-    setIsEditModalOpen(true);
   };
 
   // Dragging Pin logic
@@ -293,6 +292,9 @@ export default function TacticalMapBoard({
                 isDragging={draggingPinId === pin.id}
                 onSelect={(p) => {
                   setSelectedPin(p);
+                }}
+                onEdit={(p) => {
+                  setSelectedPin(p);
                   setIsEditModalOpen(true);
                 }}
                 onDragStart={handleDragStart}
@@ -304,7 +306,7 @@ export default function TacticalMapBoard({
         {/* Map Bottom Hint Pill */}
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 pointer-events-none z-20">
           <div className="px-3 py-1 rounded-full bg-slate-950/85 backdrop-blur-md border border-slate-700/80 text-[11px] font-bold text-slate-300 shadow-xl flex items-center gap-2">
-            <span>{isDrawingMode ? '✏️ โหมดวาดเส้น: ลากเมาส์/นิ้วเพื่อวาดเส้นเดินทัพ' : '📌 โหมดวางหมุด: คลิกบนแผนที่เพื่อปักหมุด / ลากเพื่อย้าย'}</span>
+            <span>{isDrawingMode ? '✏️ โหมดวาดเส้น: ลากเมาส์/นิ้วเพื่อวาดเส้นเดินทัพ' : '📌 คลิกแผนที่เพื่อปักหมุด · ลากเพื่อย้าย · ดับเบิ้ลคลิก 2 ครั้งเพื่อแก้ไข'}</span>
           </div>
         </div>
       </div>

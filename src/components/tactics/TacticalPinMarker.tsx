@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
-import { TacticalPin, TacticalColorType } from '@/types/tactics';
+import React, { useRef } from 'react';
+import { TacticalPin } from '@/types/tactics';
 import { TACTICAL_ICONS, TACTICAL_COLORS } from '@/config/tacticsConfig';
 
 interface TacticalPinMarkerProps {
@@ -9,6 +9,7 @@ interface TacticalPinMarkerProps {
   isSelected: boolean;
   isDragging?: boolean;
   onSelect: (pin: TacticalPin) => void;
+  onEdit: (pin: TacticalPin) => void;
   onDragStart?: (pin: TacticalPin, e: React.MouseEvent | React.TouchEvent) => void;
 }
 
@@ -17,13 +18,31 @@ export default function TacticalPinMarker({
   isSelected,
   isDragging = false,
   onSelect,
+  onEdit,
   onDragStart,
 }: TacticalPinMarkerProps) {
   const iconMeta = TACTICAL_ICONS.find((i) => i.type === pin.icon) || TACTICAL_ICONS[0];
   const colorMeta = TACTICAL_COLORS.find((c) => c.type === pin.color) || TACTICAL_COLORS[0];
 
+  const pointerDownPosRef = useRef<{ x: number; y: number } | null>(null);
+  const isDragActionRef = useRef<boolean>(false);
+  const lastTapTimeRef = useRef<number>(0);
+
   const handlePointerDown = (e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation();
+    isDragActionRef.current = false;
+
+    let clientX = 0;
+    let clientY = 0;
+    if ('touches' in e && e.touches.length > 0) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else if ('clientX' in e) {
+      clientX = (e as React.MouseEvent).clientX;
+      clientY = (e as React.MouseEvent).clientY;
+    }
+    pointerDownPosRef.current = { x: clientX, y: clientY };
+
     if (onDragStart) {
       onDragStart(pin, e);
     }
@@ -31,7 +50,30 @@ export default function TacticalPinMarker({
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    // If it was a drag gesture, do not treat as click
+    if (isDragActionRef.current) return;
     onSelect(pin);
+  };
+
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onEdit(pin);
+  };
+
+  // Double-tap support for mobile touch screens
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    if (isDragActionRef.current) return;
+
+    const now = Date.now();
+    if (now - lastTapTimeRef.current < 380) {
+      // Double tap detected!
+      onEdit(pin);
+      lastTapTimeRef.current = 0;
+    } else {
+      lastTapTimeRef.current = now;
+      onSelect(pin);
+    }
   };
 
   return (
@@ -42,8 +84,10 @@ export default function TacticalPinMarker({
       }`}
       onMouseDown={handlePointerDown}
       onTouchStart={handlePointerDown}
+      onTouchEnd={handleTouchEnd}
       onClick={handleClick}
-      title={`${pin.label} (${iconMeta.label}) - คลิกเพื่อแก้ไข / ลากเพื่อย้าย`}
+      onDoubleClick={handleDoubleClick}
+      title={`${pin.label} (${iconMeta.label}) - ดับเบิ้ลคลิก 2 ครั้งเพื่อแก้ไข / ลากเพื่อย้าย`}
     >
       {/* Outer Pulse when selected */}
       {isSelected && (
@@ -107,4 +151,3 @@ export default function TacticalPinMarker({
     </div>
   );
 }
-
