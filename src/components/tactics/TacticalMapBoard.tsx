@@ -256,28 +256,28 @@ export default function TacticalMapBoard({
           }}
           className="relative max-w-full max-h-full flex items-center justify-center"
         >
-          {/* Main Map Canvas Container with 1:1 or aspect ratio matching the map image */}
+          {/* Main Map Canvas Container: Perfectly shrink-wrapped around the image */}
           <div
             ref={containerRef}
             onClick={handleMapClick}
-            className={`relative rounded-2xl shadow-2xl overflow-hidden border-2 border-slate-700/80 bg-slate-900 select-none ${
+            className={`relative inline-block rounded-2xl shadow-2xl overflow-hidden border-2 border-slate-700/80 bg-slate-900 select-none shrink-0 ${
               isReadOnly
                 ? 'cursor-default'
                 : isDrawingMode
                 ? 'cursor-crosshair'
                 : 'cursor-cell hover:border-indigo-500/70 transition-colors'
             }`}
-            style={{
-              width: 'min(92vw, 980px)',
-              maxHeight: '82vh',
-            }}
           >
-            {/* The Map Image */}
+            {/* The Map Image: Preserves natural aspect ratio without clipping on any screen */}
             <img
               src={mapImageUrl}
               alt={plan.name}
               draggable={false}
-              className="w-full h-auto object-contain block pointer-events-none select-none"
+              className={`block w-auto h-auto select-none pointer-events-none ${
+                isFullscreen
+                  ? 'max-h-[88vh] max-w-[94vw]'
+                  : 'max-h-[72vh] max-w-[min(90vw,900px)]'
+              }`}
             />
 
             {/* Tactical Route Drawing Layer */}
