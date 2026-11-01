@@ -1,7 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useGuildStore } from '@/lib/guildStore';
+import { supabase } from '@/lib/supabase';
+import { GUILD_ID } from '@/config/guildConfig';
 import { TacticalPlan, TacticalIconType, TacticalColorType, TacticalMapPresetId } from '@/types/tactics';
 import { DEFAULT_TACTICAL_PLANS, MAP_PRESETS, TACTICAL_ICONS, TACTICAL_COLORS } from '@/config/tacticsConfig';
 import TacticalMapBoard from '@/components/tactics/TacticalMapBoard';
@@ -63,12 +65,72 @@ export default function TacticsPage() {
     return Array.from(set);
   }, [gvgParties, siegeParties]);
 
-  // Persist plans to localStorage
+  const lastUserActionTimeRef = useRef<number>(0);
+
+  // Load from Supabase Cloud on mount & subscribe to Realtime updates
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadTacticsFromCloud = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('guild_tactics')
+          .select('*')
+          .eq('id', GUILD_ID)
+          .maybeSingle();
+
+        if (!error && data && Array.isArray(data.plans) && data.plans.length > 0 && isMounted) {
+          setPlans(data.plans);
+          try {
+            localStorage.setItem('Moonz_tactical_plans', JSON.stringify(data.plans));
+          } catch (_) {}
+        }
+      } catch (_) {}
+    };
+
+    loadTacticsFromCloud();
+
+    // Supabase Realtime Channel
+    const channel = supabase
+      .channel(`tactics_realtime_${GUILD_ID}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'guild_tactics', filter: `id=eq.${GUILD_ID}` },
+        (payload: any) => {
+          // Prevent overwriting if local user just made changes in last 2.5s
+          if (Date.now() - lastUserActionTimeRef.current < 2500) return;
+          if (payload?.new && Array.isArray(payload.new.plans) && payload.new.plans.length > 0) {
+            setPlans(payload.new.plans);
+            try {
+              localStorage.setItem('Moonz_tactical_plans', JSON.stringify(payload.new.plans));
+            } catch (_) {}
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      isMounted = false;
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // Persist plans to localStorage + Supabase Cloud
   const savePlans = useCallback((newPlans: TacticalPlan[]) => {
+    lastUserActionTimeRef.current = Date.now();
     setPlans(newPlans);
     try {
       localStorage.setItem('Moonz_tactical_plans', JSON.stringify(newPlans));
     } catch (_) {}
+
+    // Async Cloud Sync to Supabase
+    void Promise.resolve(
+      supabase.from('guild_tactics').upsert({
+        id: GUILD_ID,
+        plans: newPlans,
+        updated_at: new Date().toISOString(),
+      })
+    ).catch(() => {});
   }, []);
 
   const showToast = (text: string, icon = '✅') => {
