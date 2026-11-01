@@ -194,7 +194,7 @@ export default function TacticalSidebar({
         <div className="flex items-center justify-between">
           <span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
             <span>🏰</span>
-            <span>เลือกแผนที่ (Castle Maps)</span>
+            <span>{isReadOnly ? 'แผนที่ประจำแผนนี้' : 'เลือกแผนที่ (1 แผน / 1 แผนที่)'}</span>
           </span>
           {!isReadOnly && (
             <label className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer flex items-center gap-1">
@@ -211,16 +211,44 @@ export default function TacticalSidebar({
         </div>
 
         <div className="grid grid-cols-1 gap-2">
+          {activePlan.mapId === 'custom' && (
+            <div className="p-2.5 rounded-2xl border-2 border-indigo-500 bg-indigo-50/70 dark:bg-indigo-950/40 flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-slate-200 dark:bg-slate-800 overflow-hidden flex items-center justify-center shrink-0 border border-indigo-200 dark:border-indigo-800">
+                {activePlan.customImageUrl ? (
+                  <img src={activePlan.customImageUrl} alt="Custom" className="w-full h-full object-cover" />
+                ) : (
+                  <span>🗺️</span>
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-xs font-black text-slate-900 dark:text-white truncate">
+                  แผนที่กำหนดเอง
+                </div>
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                  รูปภาพที่อัปโหลด
+                </div>
+              </div>
+              <span className="w-5 h-5 rounded-full bg-indigo-600 text-white text-[10px] font-black flex items-center justify-center shrink-0">
+                ✓
+              </span>
+            </div>
+          )}
+
           {MAP_PRESETS.map((map) => {
             const isSelected = activePlan.mapId === map.id;
             return (
               <button
                 key={map.id}
                 type="button"
+                disabled={isReadOnly}
                 onClick={() => onChangePlanMap(map.id)}
-                className={`p-2.5 rounded-2xl border-2 flex items-center gap-3 text-left transition cursor-pointer ${
+                className={`p-2.5 rounded-2xl border-2 flex items-center gap-3 text-left transition ${
+                  isReadOnly ? 'cursor-default' : 'cursor-pointer'
+                } ${
                   isSelected
                     ? 'border-indigo-500 bg-indigo-50/70 dark:bg-indigo-950/40 shadow-sm'
+                    : isReadOnly
+                    ? 'opacity-40 border-slate-200 dark:border-slate-800'
                     : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
                 }`}
               >

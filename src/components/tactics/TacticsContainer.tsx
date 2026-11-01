@@ -41,6 +41,12 @@ export default function TacticsContainer({ mode }: TacticsContainerProps) {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [viewingPin, setViewingPin] = useState<TacticalPin | null>(null);
   const [toastMsg, setToastMsg] = useState<{ text: string; icon?: string } | null>(null);
+  const [pendingMapChange, setPendingMapChange] = useState<{
+    mapId: TacticalMapPresetId;
+    customUrl?: string;
+    targetMapName: string;
+    pinCount: number;
+  } | null>(null);
 
   // Active Plan Object
   const activePlan = useMemo(() => {
@@ -208,20 +214,49 @@ export default function TacticsContainer({ mode }: TacticsContainerProps) {
     showToast('ลบแผนเรียบร้อย');
   };
 
-  const handleChangePlanMap = (mapId: TacticalMapPresetId, customUrl?: string) => {
-    if (isReadOnly) return;
+  const executeMapChange = (mapId: TacticalMapPresetId, customUrl?: string) => {
     const next = plans.map((p) =>
       p.id === activePlanId
         ? {
             ...p,
             mapId,
-            customImageUrl: customUrl !== undefined ? customUrl : p.customImageUrl,
+            customImageUrl: customUrl !== undefined ? customUrl : undefined,
+            pins: [], // หมุดที่เคยวางหายไป
+            lines: [], // เส้นเดินทัพหายไป
             updatedAt: new Date().toISOString(),
           }
         : p
     );
     savePlans(next);
-    showToast('เปลี่ยนแผนที่เรียบร้อย');
+    setPendingMapChange(null);
+    showToast('เปลี่ยนแผนที่และล้างหมุดเรียบร้อย', '🗺️');
+  };
+
+  const handleChangePlanMap = (mapId: TacticalMapPresetId, customUrl?: string) => {
+    if (isReadOnly) return;
+
+    // If clicking same map preset and not uploading new custom image, do nothing
+    if (activePlan.mapId === mapId && !customUrl && activePlan.mapId !== 'custom') return;
+
+    const pinCount = activePlan.pins?.length || 0;
+    const lineCount = activePlan.lines?.length || 0;
+
+    const targetMapPreset = MAP_PRESETS.find((m) => m.id === mapId);
+    const targetMapName = customUrl ? 'แผนที่รูปภาพที่อัปโหลด' : (targetMapPreset?.name || 'แผนที่ใหม่');
+
+    // If there are pins or lines placed, show popup warning first!
+    if (pinCount > 0 || lineCount > 0) {
+      setPendingMapChange({
+        mapId,
+        customUrl,
+        targetMapName,
+        pinCount,
+      });
+      return;
+    }
+
+    // If no pins, change directly and clear pins & lines
+    executeMapChange(mapId, customUrl);
   };
 
   // Undo / Clear Lines
@@ -441,7 +476,7 @@ export default function TacticsContainer({ mode }: TacticsContainerProps) {
                   แผนยุทธการกิลด์ {displayGuildName}: {activePlan.name}
                 </div>
                 <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                  คลิกที่เข็มหมุดบนแผนที่เพื่อดูคำสั่งประจำจุด หรือเลือกดูแผนที่อื่นได้จากเมนูด้านขวา
+                  คลิกที่เข็มหมุดบนแผนที่เพื่อดูคำสั่งประจำจุด หรือเลือกดูแผนยุทธการอื่นได้จากเมนูด้านขวา
                 </div>
               </div>
             </div>
@@ -535,6 +570,53 @@ export default function TacticsContainer({ mode }: TacticsContainerProps) {
         plan={activePlan}
         guildName={displayGuildName}
       />
+
+      {/* Map Change Warning Confirmation Modal */}
+      {pendingMapChange && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-md rounded-3xl bg-white dark:bg-[#0f1423] border border-amber-300 dark:border-amber-500/40 p-6 shadow-2xl space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700/60 flex items-center justify-center text-2xl mx-auto shadow-inner">
+              ⚠️
+            </div>
+
+            <div className="text-center space-y-1.5">
+              <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
+                ยืนยันการเปลี่ยนแผนที่?
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                แผนยุทธการเลือกได้เพียง <span className="font-bold text-indigo-600 dark:text-indigo-400">1 แผนที่</span> เท่านั้น
+              </p>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 text-xs text-amber-900 dark:text-amber-200 space-y-1">
+              <div className="font-bold flex items-center gap-1.5">
+                <span>🚨</span>
+                <span>หมุดและเส้นเดินทัพจะหายไปทั้งหมด:</span>
+              </div>
+              <p className="text-[11px] leading-relaxed text-amber-800 dark:text-amber-300">
+                หากเปลี่ยนไปใช้แผนที่ <b>&ldquo;{pendingMapChange.targetMapName}&rdquo;</b> หมุดคำสั่งที่เคยวางไว้ ({pendingMapChange.pinCount} จุด) และเส้นทางเดินทัพทั้งหมดในแผนนี้จะถูกล้างออกทันที
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setPendingMapChange(null)}
+                className="flex-1 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 transition cursor-pointer"
+              >
+                ยกเลิก (คงเดิม)
+              </button>
+              <button
+                type="button"
+                onClick={() => executeMapChange(pendingMapChange.mapId, pendingMapChange.customUrl)}
+                className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-rose-600 hover:from-amber-500 hover:to-rose-500 text-white text-xs font-black shadow-md transition cursor-pointer"
+              >
+                ยืนยันเปลี่ยนแผนที่ (ล้างหมุด)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
