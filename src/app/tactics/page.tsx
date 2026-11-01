@@ -14,24 +14,11 @@ import AutoSaveBadge from '@/components/common/AutoSaveBadge';
 
 export default function TacticsPage() {
   const { guildName, gvgParties, siegeParties } = useGuildStore();
+  const [mounted, setMounted] = useState(false);
 
-  // Load tactical plans from localStorage or defaults
-  const [plans, setPlans] = useState<TacticalPlan[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('Moonz_tactical_plans');
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-        }
-      } catch (_) {}
-    }
-    return DEFAULT_TACTICAL_PLANS;
-  });
-
-  const [activePlanId, setActivePlanId] = useState<string>(() => {
-    return plans[0]?.id || 'plan_outer_assault';
-  });
+  // Initialize with DEFAULT_TACTICAL_PLANS for consistent SSR
+  const [plans, setPlans] = useState<TacticalPlan[]>(DEFAULT_TACTICAL_PLANS);
+  const [activePlanId, setActivePlanId] = useState<string>('plan_outer_assault');
 
   // Current Tool State
   const [selectedIcon, setSelectedIcon] = useState<TacticalIconType>('sword');
@@ -70,7 +57,21 @@ export default function TacticsPage() {
   // Load from Supabase Cloud on mount & subscribe to Realtime updates
   useEffect(() => {
     let isMounted = true;
+    setMounted(true);
 
+    // 1. Read localStorage first for immediate UI
+    try {
+      const saved = localStorage.getItem('Moonz_tactical_plans');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setPlans(parsed);
+          setActivePlanId(parsed[0]?.id || 'plan_outer_assault');
+        }
+      }
+    } catch (_) {}
+
+    // 2. Sync from Supabase Cloud
     const loadTacticsFromCloud = async () => {
       try {
         const { data, error } = await supabase
@@ -277,6 +278,15 @@ export default function TacticsPage() {
         alert('ไม่สามารถคัดลอกได้ กรุณาลองใหม่อีกครั้ง');
       });
   };
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-[#070a12] flex flex-col items-center justify-center gap-3">
+        <div className="w-10 h-10 rounded-full border-2 border-indigo-600 border-t-transparent animate-spin" />
+        <p className="text-xs font-bold text-slate-400">กำลังโหลดแผนที่ยุทธการ...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#070a12] text-slate-900 dark:text-slate-100 pb-16 transition-colors">

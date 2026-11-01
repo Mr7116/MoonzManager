@@ -112,8 +112,8 @@ export const DEFAULT_TACTICAL_PLANS: TacticalPlan[] = [
         note: 'เคลียร์แนวหน้าแล้วดันเข้าข้างในพร้อมกัน',
       },
     ],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: '2026-11-01T00:00:00.000Z',
+    updatedAt: '2026-11-01T00:00:00.000Z',
   },
   {
     id: 'plan_emperium_defense',
@@ -177,8 +177,8 @@ export const DEFAULT_TACTICAL_PLANS: TacticalPlan[] = [
         note: 'พรีสต์ยืนโซนนี้ ปลอดภัยจากสกิลหมู่ศัตรู',
       },
     ],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: '2026-11-01T00:00:00.000Z',
+    updatedAt: '2026-11-01T00:00:00.000Z',
   },
   {
     id: 'plan_corridor_push',
@@ -231,8 +231,8 @@ export const DEFAULT_TACTICAL_PLANS: TacticalPlan[] = [
         note: 'วิ่งเร็วเข้าไปปักธงให้ทัน',
       },
     ],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: '2026-11-01T00:00:00.000Z',
+    updatedAt: '2026-11-01T00:00:00.000Z',
   },
 ];
 
