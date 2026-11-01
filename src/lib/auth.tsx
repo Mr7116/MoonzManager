@@ -23,7 +23,7 @@ const PUBLIC_ROUTES = [
   '/auction/join',
   '/queues',
   '/queue/join',
-  '/tactics',
+  '/tactics/view',
 ];
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
